@@ -36,14 +36,18 @@
         td { padding: 10px; font-size: 13px; border-bottom: 1px solid #1a1a1a; }
 
         .btn-pay { background: var(--green); color: #000; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .btn-del { background: var(--red); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; margin-right: 5px; }
+
+        .search-bar { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; outline: none; }
+        .search-bar:focus { border-color: var(--accent); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--accent); width: 380px; }
         .modal-content input, .modal-content select { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
 
-        .filter-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; }
+        .filter-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; flex-wrap: wrap; }
         .filter-box label { font-size: 12px; color: #888; }
-        .filter-box input { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
+        .filter-box input[type="date"] { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -124,7 +128,7 @@
                     <div class="stat-box" style="border-color:var(--red)"><span>نواقص</span><strong id="short-count">0</strong></div>
                 </div>
                 <table>
-                    <thead><tr><th>الصنف</th><th>الرصيد</th><th>التكلفة</th><th>الحالة</th></tr></thead>
+                    <thead><tr><th>الصنف</th><th>رصيد</th><th>تكلفة</th><th>الحالة</th></tr></thead>
                     <tbody id="inventory-list"></tbody>
                 </table>
             </div>
@@ -166,8 +170,9 @@
             </div>
             <div class="report-card" id="pdf-vendors">
                 <button class="download-btn" onclick="downloadPDF('pdf-vendors', 'Vendors_Debt')">📥 PDF</button>
+                <input type="text" id="vendor-search" class="search-bar" placeholder="ابحث عن مورد..." oninput="filterVendors()">
                 <table>
-                    <thead><tr><th>المورد</th><th>المديونية</th><th>آخر حركة</th><th>إجراء</th></tr></thead>
+                    <thead><tr><th>المورد</th><th>المديونية</th><th>آخر حركة</th><th>إجراءات الدفع والحذف</th></tr></thead>
                     <tbody id="vendors-list-body"></tbody>
                 </table>
             </div>
@@ -180,6 +185,7 @@
                 <div class="filter-box">
                     <label>من:</label> <input type="date" id="staff-from" onchange="loadStaffPerformance()">
                     <label>إلى:</label> <input type="date" id="staff-to" onchange="loadStaffPerformance()">
+                    <input type="text" id="staff-search" class="search-bar" style="margin: 10px 0 0 0;" placeholder="ابحث عن اسم موظف..." oninput="filterStaff()">
                 </div>
                 <table>
                     <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
@@ -205,6 +211,9 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
+
+        let allVendors = [];
+        let allStaffData = [];
 
         async function init() {
             if(!storeKey) return location.href='index.html';
@@ -323,27 +332,46 @@
             document.getElementById('total-sales-val').innerText = totalSales.toFixed(2) + " ج.م";
         }
 
+        // الموردين: تحميل وتصفية وحذف
         async function loadVendors() {
             const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
-            const list = document.getElementById('vendors-list-body'); list.innerHTML = '';
-            data?.forEach(v => {
-                list.innerHTML += `
-                    <tr>
-                        <td>${v.vendor_name}</td>
-                        <td>${v.total_debt}</td>
-                        <td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString()}</td>
-                        <td><button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt}, '${v.vendor_name}')">تم الدفع</button></td>
-                    </tr>`;
-            });
+            allVendors = data || [];
+            renderVendors(allVendors);
+        }
+
+        function renderVendors(listData) {
+            const list = document.getElementById('vendors-list-body');
+            list.innerHTML = listData.map(v => `
+                <tr>
+                    <td>${v.vendor_name}</td>
+                    <td><strong style="color:var(--red)">${v.total_debt} ج.م</strong></td>
+                    <td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt}, '${v.vendor_name}')">💰 دفع</button>
+                        <button class="btn-del" onclick="deleteVendorDebt('${v.id}', '${v.vendor_name}')">🗑️ حذف المديونية</button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function filterVendors() {
+            const query = document.getElementById('vendor-search').value.toLowerCase();
+            const filtered = allVendors.filter(v => v.vendor_name.toLowerCase().includes(query));
+            renderVendors(filtered);
+        }
+
+        async function deleteVendorDebt(id, name) {
+            if(confirm(`هل أنت متأكد من حذف مديونية المورد "${name}" تماماً من السجلات؟`)) {
+                await _supabase.from('vendors').delete().eq('id', id);
+                alert("تم الحذف بنجاح");
+                loadVendors();
+            }
         }
 
         async function payVendor(id, currentDebt, name) {
             const amt = prompt(`دفع للمورد: ${name}\nالمديونية الحالية: ${currentDebt}\nأدخل المبلغ المدفوع الآن:`, currentDebt);
             if(amt === null || amt === "" || isNaN(amt)) return;
-            
             const paid = parseFloat(amt);
             const remaining = currentDebt - paid;
-            
             if(confirm(`تأكيد عملية الدفع:\n- المورد: ${name}\n- المديونية السابقة: ${currentDebt}\n- المدفوع الآن: ${paid}\n- المديونية المتبقية: ${remaining}`)) {
                 await _supabase.from('vendors').update({ total_debt: remaining, last_payment_date: new Date() }).eq('id', id);
                 alert("تم تحديث حساب المورد بنجاح"); 
@@ -351,16 +379,11 @@
             }
         }
 
+        // الموظفين: تحميل وتصفية
         async function loadStaffPerformance() {
             const from = document.getElementById('staff-from').value;
             const to = document.getElementById('staff-to').value;
-            
-            const { data } = await _supabase.from('sales')
-                .select('*')
-                .eq('store_key', storeKey)
-                .eq('type', 'sale')
-                .gte('created_at', from)
-                .lte('created_at', to + 'T23:59:59');
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', from).lte('created_at', to + 'T23:59:59');
 
             let staff = {};
             data?.forEach(s => {
@@ -369,8 +392,19 @@
                 staff[name].count++; 
                 staff[name].total += s.total_amount;
             });
+            allStaffData = Object.entries(staff);
+            renderStaff(allStaffData);
+        }
+
+        function renderStaff(listData) {
             const list = document.getElementById('staff-performance-list');
-            list.innerHTML = Object.entries(staff).map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td></tr>`).join('');
+            list.innerHTML = listData.map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td></tr>`).join('');
+        }
+
+        function filterStaff() {
+            const query = document.getElementById('staff-search').value.toLowerCase();
+            const filtered = allStaffData.filter(([name]) => name.toLowerCase().includes(query));
+            renderStaff(filtered);
         }
 
         async function saveVendorInv() {
