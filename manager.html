@@ -26,9 +26,13 @@
         .btn-action { background: var(--gray); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 12px; width: 100%; margin-top: 10px; }
         .btn-action:hover { background: var(--accent); color: #000; }
         
-        .quick-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .nav-item { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 1px solid var(--gray); text-decoration: none; color: #fff; font-weight: bold; }
-        .nav-item:hover { border-color: var(--accent); background: rgba(0,242,254,0.05); }
+        /* التعديل هنا: زيادة عدد الأعمدة ليتناسب مع الزر الجديد */
+        .quick-nav { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
+        @media (min-width: 600px) { .quick-nav { grid-template-columns: repeat(4, 1fr); } }
+
+        .nav-item { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 1px solid var(--gray); text-decoration: none; color: #fff; font-weight: bold; font-size: 14px; }
+        .nav-item:hover { border-color: var(--accent); background: rgba(0,242,254,0.05); color: var(--accent); }
+        .nav-item.highlight { border-color: var(--accent); color: var(--accent); background: rgba(0,242,254,0.05); }
 
         .sales-log { margin-top: 20px; background: var(--card); border-radius: 20px; border: 1px solid var(--gray); padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -85,6 +89,7 @@
     <div class="quick-nav">
         <a href="inventory.html" class="nav-item">📦 المخزن والطلبيات</a>
         <a href="pos.html" class="nav-item">🖥️ شاشة الكاشير</a>
+        <a href="reports.html" class="nav-item highlight">📊 مركز التقارير</a>
         <a href="settings.html" class="nav-item">⚙️ الإعدادات</a>
     </div>
 
@@ -121,21 +126,17 @@
         async function loadManagerData() {
             if (!userStoreKey) return window.location.href = 'index.html';
 
-            // 1. جلب بيانات المتجر الأساسية
             const { data: store } = await _supabase.from('stores').select('*').eq('store_key', userStoreKey).single();
             if (store) {
                 document.getElementById('mgr-store-name').innerText = "متجر " + store.store_name;
                 document.getElementById('mgr-total-sales').innerText = (store.total_sales || 0) + " ج.م";
             }
 
-            // 2. جلب الفيرجن
             const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
             if(vData) document.getElementById('sys-v').innerText = "V " + vData.value;
 
-            // 3. جلب مبيعات اليوم وتفصيلها
             await loadTodayReports();
 
-            // 4. جلب فريق العمل
             const { data: users } = await _supabase.from('users').select('username, role').eq('store_key', userStoreKey);
             const teamDisplay = document.getElementById('team-list');
             teamDisplay.innerHTML = '';
@@ -195,11 +196,9 @@
         async function processReturn(saleId) {
             if(!confirm("هل أنت متأكد من إتمام المرتجع؟ سيتم إعادة الكميات للمخزن وإلغاء الربح.")) return;
 
-            // 1. جلب بيانات الفاتورة
             const { data: sale } = await _supabase.from('sales').select('*').eq('id', saleId).single();
             if(!sale) return;
 
-            // 2. إعادة البضاعة للمخزن
             for (let item of sale.items) {
                 const { data: p } = await _supabase.from('products').select('stock').eq('id', item.id).single();
                 if(p) {
@@ -207,7 +206,6 @@
                 }
             }
 
-            // 3. تحويل العملية لمرتجع
             await _supabase.from('sales').update({ type: 'return' }).eq('id', saleId);
             
             alert("تم إرجاع العملية بنجاح");
@@ -233,7 +231,7 @@
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
         loadManagerData();
-        setInterval(loadManagerData, 30000); // تحديث كل 30 ثانية
+        setInterval(loadManagerData, 30000);
     </script>
 </body>
 </html>
