@@ -12,7 +12,6 @@
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar */
         .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .sidebar-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
         #display-store-name { color: var(--accent); font-size: 18px; margin: 0; }
@@ -20,7 +19,6 @@
         .nav-btn { background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; font-size: 13px; width: 100%; }
         .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
 
-        /* Content Area */
         .main-content { flex: 1; padding: 25px; overflow-y: auto; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.4s; }
@@ -88,6 +86,28 @@
             </div>
         </div>
 
+        <div id="top-items-tab" class="tab-content">
+            <div class="report-card" id="pdf-top-items">
+                <button class="download-btn" onclick="downloadPDF('pdf-top-items', 'Top_Selling_Items')">📥 PDF</button>
+                <h3>الأصناف الأكثر مبيعاً (توب 10)</h3>
+                <table>
+                    <thead><tr><th>الصنف</th><th>الكمية المباعة</th><th>إجمالي الإيراد</th></tr></thead>
+                    <tbody id="top-items-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="returns-tab" class="tab-content">
+            <div class="report-card" id="pdf-returns">
+                <button class="download-btn" onclick="downloadPDF('pdf-returns', 'Returns_Report')">📥 PDF</button>
+                <h3>سجل المرتجعات</h3>
+                <table>
+                    <thead><tr><th>الوقت</th><th>الفاتورة الأصلية</th><th>القيمة المستردة</th><th>السبب/الموظف</th></tr></thead>
+                    <tbody id="returns-list"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div id="inv-status-tab" class="tab-content">
             <div class="report-card" id="pdf-inventory">
                 <button class="download-btn" onclick="downloadPDF('pdf-inventory', 'Inventory_Status')">📥 PDF</button>
@@ -100,6 +120,32 @@
                 <table>
                     <thead><tr><th>الصنف</th><th>الرصيد</th><th>التكلفة</th><th>الحالة</th></tr></thead>
                     <tbody id="inventory-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="inv-move-tab" class="tab-content">
+            <div class="report-card">
+                <h3>بحث حركة صنف معين</h3>
+                <select id="product-selector" onchange="loadProductHistory()" style="width:100%; background:#000; color:#fff; padding:10px; border:1px solid var(--gray); border-radius:8px;">
+                    <option value="">اختر الصنف لمعاينة حركته...</option>
+                </select>
+                <div id="product-history-content">
+                    <table>
+                        <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>الكمية</th><th>الرصيد بعدها</th></tr></thead>
+                        <tbody id="product-history-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="staff-tab" class="tab-content">
+            <div class="report-card" id="pdf-staff">
+                <button class="download-btn" onclick="downloadPDF('pdf-staff', 'Staff_Performance')">📥 PDF</button>
+                <h3>إحصائيات الموظفين</h3>
+                <table>
+                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th><th>المرتجعات</th></tr></thead>
+                    <tbody id="staff-performance-list"></tbody>
                 </table>
             </div>
         </div>
@@ -128,12 +174,12 @@
                 <button class="download-btn" onclick="downloadPDF('pdf-vendors', 'Vendors_Debt')">📥 PDF</button>
                 <table id="vendors-table">
                     <thead><tr><th>المورد</th><th>المديونية</th><th>آخر حركة</th></tr></thead>
-                    <tbody></tbody>
+                    <tbody id="vendors-list-body"></tbody>
                 </table>
             </div>
         </div>
 
-        </div>
+    </div>
 
     <div id="vendorModal" class="modal">
         <div class="modal-content">
@@ -153,18 +199,13 @@
 
         async function init() {
             if(!storeKey) return location.href='index.html';
-            
-            // جلب بيانات المتجر والفيرجن
             const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
             const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
-            
             document.getElementById('display-store-name').innerText = "متجر " + (store?.store_name || "");
             document.getElementById('display-sys-v').innerText = "V " + (vData?.value || "1.0.0");
             
-            loadSalesData();
-            loadInventoryData();
-            loadVendors();
-            initPeakChart();
+            document.getElementById('sale-date').valueAsDate = new Date();
+            loadAllReports();
         }
 
         function showTab(tabId, btn) {
@@ -174,24 +215,105 @@
             btn.classList.add('active');
         }
 
-        // تسجيل فاتورة مورد (تغذية مديونية الموردين)
+        async function loadAllReports() {
+            loadSalesData();
+            loadInventoryData();
+            loadTopItems();
+            loadReturns();
+            loadStaffPerformance();
+            loadVendors();
+            initPeakChart();
+        }
+
+        // 1. المبيعات اليومية
+        async function loadSalesData() {
+            const date = document.getElementById('sale-date').value;
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', date).lte('created_at', date + 'T23:59:59');
+            
+            const list = document.getElementById('sales-list');
+            list.innerHTML = '';
+            let total = 0;
+            data?.forEach(s => {
+                if(s.type === 'sale') total += s.total_amount;
+                list.innerHTML += `<tr><td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td><td>#${s.id.slice(0,5)}</td><td>${s.total_amount}</td><td>${s.payment_method}</td></tr>`;
+            });
+            document.getElementById('day-sales').innerText = total.toFixed(2);
+            document.getElementById('day-orders').innerText = data?.length || 0;
+        }
+
+        // 2. الأكثر مبيعاً
+        async function loadTopItems() {
+            const { data } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
+            let counts = {};
+            data?.forEach(s => {
+                s.items.forEach(item => {
+                    counts[item.name] = (counts[item.name] || 0) + item.qty;
+                });
+            });
+            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            const list = document.getElementById('top-items-list');
+            list.innerHTML = sorted.map(i => `<tr><td>${i[0]}</td><td>${i[1]}</td><td>--</td></tr>`).join('');
+        }
+
+        // 3. المرتجعات
+        async function loadReturns() {
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'return');
+            const list = document.getElementById('returns-list');
+            list.innerHTML = data?.map(r => `<tr><td>${new Date(r.created_at).toLocaleString('ar-EG')}</td><td>#${r.id.slice(0,5)}</td><td>${r.total_amount}</td><td>${r.seller_name || 'مدير'}</td></tr>`).join('') || '';
+        }
+
+        // 4. المخزن والجرد
+        async function loadInventoryData() {
+            const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            const list = document.getElementById('inventory-list');
+            const selector = document.getElementById('product-selector');
+            list.innerHTML = '';
+            let saleVal = 0, costVal = 0, shorts = 0;
+            
+            data?.forEach(p => {
+                saleVal += (p.stock * p.price);
+                costVal += (p.stock * (p.cost_price || 0));
+                if(p.stock <= 5) shorts++;
+                list.innerHTML += `<tr><td>${p.name}</td><td>${p.stock}</td><td>${p.cost_price || 0}</td><td>${p.stock <= 5 ? '🔴 ناقص' : '✅ متوفر'}</td></tr>`;
+                selector.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+            document.getElementById('inv-val-sale').innerText = saleVal.toFixed(2);
+            document.getElementById('inv-val-cost').innerText = costVal.toFixed(2);
+            document.getElementById('short-count').innerText = shorts;
+        }
+
+        // 5. أداء الموظفين
+        async function loadStaffPerformance() {
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey);
+            let staff = {};
+            data?.forEach(s => {
+                let name = s.seller_name || 'المدير';
+                if(!staff[name]) staff[name] = { count: 0, total: 0, returns: 0 };
+                if(s.type === 'sale') { staff[name].count++; staff[name].total += s.total_amount; }
+                else { staff[name].returns++; }
+            });
+            const list = document.getElementById('staff-performance-list');
+            list.innerHTML = Object.entries(staff).map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td><td>${stats.returns}</td></tr>`).join('');
+        }
+
+        // 6. الموردين
+        async function loadVendors() {
+            const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
+            const list = document.getElementById('vendors-list-body');
+            list.innerHTML = data?.map(v => `<tr><td>${v.vendor_name}</td><td>${v.total_debt}</td><td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString('ar-EG')}</td></tr>`).join('') || '';
+        }
+
         async function saveVendorInv() {
             const name = document.getElementById('v-name-in').value;
             const amt = parseFloat(document.getElementById('v-amount-in').value);
             if(!name || !amt) return;
-
             const { data: ext } = await _supabase.from('vendors').select('*').eq('vendor_name', name).eq('store_key', storeKey).single();
-            if(ext) {
-                await _supabase.from('vendors').update({ total_debt: ext.total_debt + amt, last_payment_date: new Date() }).eq('id', ext.id);
-            } else {
-                await _supabase.from('vendors').insert([{ store_key: storeKey, vendor_name: name, total_debt: amt }]);
-            }
-            alert("تم الحفظ");
+            if(ext) await _supabase.from('vendors').update({ total_debt: ext.total_debt + amt, last_payment_date: new Date() }).eq('id', ext.id);
+            else await _supabase.from('vendors').insert([{ store_key: storeKey, vendor_name: name, total_debt: amt }]);
             document.getElementById('vendorModal').style.display='none';
             loadVendors();
         }
 
-        // وظيفة تحميل PDF لكل تقرير
         function downloadPDF(divId, name) {
             const el = document.getElementById(divId);
             const btn = el.querySelector('.download-btn');
@@ -199,13 +321,12 @@
             html2pdf().from(el).set({ margin: 0.5, filename: name+'.pdf', html2canvas: {scale:2, backgroundColor:'#111'} }).save().then(()=> btn.style.display='block');
         }
 
-        // تحليل أوقات الذروة (بناءً على ساعات البيع)
         function initPeakChart() {
             const ctx = document.getElementById('peakChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: { labels: ['9am','12pm','3pm','6pm','9pm','12am'], datasets: [{ label: 'الزحمة', data: [5,15,25,60,90,40], backgroundColor: '#00f2fe' }] },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
 
