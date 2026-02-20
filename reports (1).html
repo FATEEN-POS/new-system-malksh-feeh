@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | Ultra Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* القائمة الجانبية */
+        .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; }
+        .sidebar h2 { color: var(--accent); font-size: 20px; text-align: center; margin-bottom: 30px; }
+        .nav-btn { background: none; border: none; color: #888; padding: 12px; text-align: right; cursor: pointer; border-radius: 10px; margin-bottom: 5px; font-weight: bold; font-size: 15px; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
+
+        /* المحتوى الرئيسي */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-mini { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--gray); }
+        .stat-mini span { display: block; color: #888; font-size: 12px; }
+        .stat-mini strong { font-size: 20px; color: var(--accent); }
+
+        .chart-container { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); margin-top: 20px; height: 350px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: right; color: #555; padding: 12px; border-bottom: 1px solid var(--gray); }
+        td { padding: 12px; border-bottom: 1px solid #1a1a1a; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>مركز التقارير</h2>
+        <button class="nav-btn active" onclick="showTab('profit-tab', this)">💰 تقرير الأرباح</button>
+        <button class="nav-btn" onclick="showTab('inventory-tab', this)">📦 تقرير المخزن</button>
+        <button class="nav-btn" onclick="showTab('staff-tab', this)">👥 تقرير الموظفين</button>
+        <button class="nav-btn" onclick="showTab('vendors-tab', this)">🚚 ديون الموردين</button>
+        <hr style="width:100%; border:0; border-top:1px solid var(--gray); margin: 20px 0;">
+        <button class="nav-btn" onclick="location.href='manager.html'" style="color:var(--red)">↩ خروج</button>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="profit-tab" class="tab-content active">
+            <div class="report-header">
+                <h2>تحليل الأرباح والنمو</h2>
+                <input type="month" id="profit-month" onchange="loadProfitData()" style="background:#000; color:#fff; border:1px solid var(--gray); padding:8px; border-radius:10px;">
+            </div>
+            <div class="stats-grid">
+                <div class="stat-mini"><span>صافي الربح</span><strong id="net-profit">0.00</strong></div>
+                <div class="stat-mini"><span>أعلى يوم مبيعاً</span><strong id="peak-day">---</strong></div>
+                <div class="stat-mini"><span>نسبة الفيزا</span><strong id="visa-perc">0%</strong></div>
+            </div>
+            <div class="chart-container">
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+
+        <div id="inventory-tab" class="tab-content">
+            <h2>حالة المخزون الحالية</h2>
+            <div class="stats-grid">
+                <div class="stat-mini"><span>إجمالي قيمة المخزن</span><strong>45,000 ج.م</strong></div>
+                <div class="stat-mini" style="border-color:var(--red)"><span>أصناف ناقصة</span><strong style="color:var(--red)">12</strong></div>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>اسم الصنف</th><th>الكمية</th><th>حركة البيع</th><th>الحالة</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>بيبسي كانز</td><td>50</td><td>سريع</td><td>✅ متوفر</td></tr>
+                    <tr><td>شيبسي عائلي</td><td>3</td><td>متوسط</td><td style="color:var(--red)">⚠️ شارق على الانتهاء</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="staff-tab" class="tab-content">
+            <h2>أداء فريق العمل</h2>
+            <table>
+                <thead>
+                    <tr><th>الموظف</th><th>عدد الفواتير</th><th>إجمالي المبيعات</th><th>المرتجعات</th></tr>
+                </thead>
+                <tbody id="staff-table">
+                    <tr><td>أحمد محمد</td><td>45</td><td>12,500 ج.م</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="vendors-tab" class="tab-content">
+            <h2>مستحقات الموردين</h2>
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="vendorChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // دالة التنقل بين التبويبات
+        function showTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+
+            if(tabId === 'profit-tab') renderProfitChart();
+        }
+
+        // رسم بياني تجريبي للأرباح (Chart.js)
+        function renderProfitChart() {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+                    datasets: [{
+                        label: 'صافي الأرباح اليومية',
+                        data: [1200, 1900, 1500, 2500, 2200, 3000, 4500],
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#222' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        // تشغيل أول رسم بياني عند التحميل
+        window.onload = renderProfitChart;
+    </script>
+</body>
+</html>
