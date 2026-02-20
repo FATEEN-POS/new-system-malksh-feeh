@@ -14,7 +14,6 @@
         
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: var(--card); border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 25px; }
         
-        /* ستايل بوكس تحديث النسخة الجديد */
         .v-update-box { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 10px; border: 1px solid #333; }
         .v-input-field { background: #000; border: 1px solid var(--gray); color: var(--accent); padding: 3px 8px; width: 60px; border-radius: 5px; outline: none; font-size: 12px; text-align: center; }
         .btn-v-save { background: var(--accent); color: #000; border: none; padding: 4px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px; }
@@ -30,7 +29,7 @@
         .btn-add-store { padding: 12px 30px; background: var(--white); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
         
         .stores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .store-card { background: var(--card); border: 1px solid var(--gray); border-radius: 22px; padding: 20px; cursor: pointer; position: relative; overflow: hidden; }
+        .store-card { background: var(--card); border: 1px solid var(--gray); border-radius: 22px; padding: 20px; position: relative; overflow: hidden; }
         .days-left { position: absolute; top: 15px; left: 15px; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: bold; }
 
         .version-badge { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(0, 242, 254, 0.3); font-weight: bold; }
@@ -143,48 +142,31 @@
         let allStores = [];
         let activeStoreKey = null;
 
-        // دالة تحديث نسخة النظام
         async function updateSystemVersion() {
             const newV = document.getElementById('sys-v-input').value;
             if(!newV) return alert("يرجى إدخال رقم الإصدار أولاً");
-            
-            const { error } = await _supabase
-                .from('system_settings')
-                .update({ value: newV })
-                .eq('key', 'sys_version');
-            
-            if(!error) {
-                alert("تم تحديث إصدار النظام بنجاح");
-                loadData();
-            } else {
-                alert("خطأ أثناء التحديث: " + error.message);
-            }
+            const { error } = await _supabase.from('system_settings').update({ value: newV }).eq('key', 'sys_version');
+            if(!error) { alert("تم تحديث إصدار النظام بنجاح"); loadData(); } else { alert("خطأ: " + error.message); }
         }
 
         async function loadData() {
-            // جلب الإصدار الحالي
             const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
             if(vData) {
                 document.getElementById('sys-v').innerText = vData.value;
                 if(!document.getElementById('sys-v-input').value) document.getElementById('sys-v-input').value = vData.value;
             }
-
             const { data: stores } = await _supabase.from('stores').select('*');
             const { data: users } = await _supabase.from('users').select('*');
-            
             allStores = stores || [];
             displayStores(allStores);
-            
             let totalRevenue = 0;
             stores?.forEach(st => totalRevenue += Number(st.subscription_price || 0));
-            
             document.getElementById('stat-revenue').innerText = totalRevenue + ' ج.م';
             document.getElementById('stat-stores').innerText = stores?.length || 0;
             document.getElementById('stat-emps').innerText = users?.filter(u => u.role === 'employee').length || 0;
             document.getElementById('stat-mgrs').innerText = users?.filter(u => u.role === 'manager').length || 0;
         }
 
-        // باقي الدوال (displayStores, filterStores, saveNewStore, etc.) كما هي في ملفك الأصلي تماماً
         function displayStores(storesList) {
             const grid = document.getElementById('stores-display');
             grid.innerHTML = '';
@@ -192,8 +174,25 @@
                 const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
                 let daysText = diffDays > 0 ? `باقي ${diffDays} يوم` : 'منتهي';
                 let daysColor = diffDays > 5 ? 'var(--accent)' : 'var(--red)';
-                grid.innerHTML += `<div class="store-card" onclick='showStoreDetails(${JSON.stringify(st)})'><div class="days-left" style="color:${daysColor}; background:rgba(0,0,0,0.5)">${daysText}</div><h3>${st.store_name}</h3><p style="color:var(--accent);">${st.subscription_price} ج.م</p></div>`;
+                const storeData = JSON.stringify(st);
+
+                grid.innerHTML += `
+                    <div class="store-card">
+                        <div class="days-left" style="color:${daysColor}; background:rgba(0,0,0,0.5)">${daysText}</div>
+                        <h3 style="margin-bottom:5px;">${st.store_name}</h3>
+                        <p style="color:var(--accent); font-weight:bold; margin-top:0;">${st.subscription_price} ج.م</p>
+                        
+                        <div style="display:flex; gap:8px; margin-top:15px;">
+                            <button onclick='showStoreDetails(${storeData})' style="flex:1; background:var(--gray); color:#fff; border:none; padding:8px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:bold;">⚙️ الإدارة</button>
+                            <button onclick='openStoreReports("${st.store_key}")' style="flex:1; background:rgba(0,242,254,0.1); color:var(--accent); border:1px solid var(--accent); padding:8px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:bold;">📊 التقارير</button>
+                        </div>
+                    </div>`;
             });
+        }
+
+        function openStoreReports(key) {
+            sessionStorage.setItem('store_key', key);
+            window.open('reports.html', '_blank');
         }
 
         function filterStores() {
@@ -215,10 +214,7 @@
             const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
             const expiryString = expiry.toISOString().split('T')[0];
             const key = 'ST' + Math.floor(Math.random() * 9000 + 1000);
-            await _supabase.from('stores').insert([{ 
-                store_key: key, store_name: name, phone: phone, subscription_price: price, 
-                expiry_date: expiryString, notes: notes, is_active: true 
-            }]);
+            await _supabase.from('stores').insert([{ store_key: key, store_name: name, phone: phone, subscription_price: price, expiry_date: expiryString, notes: notes, is_active: true }]);
             closeModal('addStoreModal'); loadData();
         }
 
@@ -275,10 +271,7 @@
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Stores"); XLSX.writeFile(wb, "Fateen_Stores.xlsx");
         }
 
-        // تشغيل التحميل الأول
         loadData();
-
-        // تحديث الصفحة تلقائياً كل دقيقة واحدة (60000ms)
         setInterval(loadData, 60000);
     </script>
 </body>
