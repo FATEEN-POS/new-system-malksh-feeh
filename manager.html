@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | Manager Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --white: #ffffff; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+        body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-radius: 15px; border: 1px solid var(--gray); margin-bottom: 20px; }
+        .badge-v { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--accent); font-weight: bold; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--gray); position: relative; overflow: hidden; }
+        .card h3 { margin-top: 0; color: #888; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .card .value { font-size: 32px; font-weight: 700; margin: 15px 0; color: var(--white); }
+        
+        .report-line { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+        .val-cash { color: var(--green); font-weight: bold; }
+        .val-visa { color: var(--accent); font-weight: bold; }
+        .val-return { color: var(--red); font-weight: bold; }
+
+        .btn-action { background: var(--gray); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 12px; width: 100%; margin-top: 10px; }
+        .btn-action:hover { background: var(--accent); color: #000; }
+        
+        .quick-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .nav-item { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; border: 1px solid var(--gray); text-decoration: none; color: #fff; font-weight: bold; }
+        .nav-item:hover { border-color: var(--accent); background: rgba(0,242,254,0.05); }
+
+        .sales-log { margin-top: 20px; background: var(--card); border-radius: 20px; border: 1px solid var(--gray); padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; color: #555; font-size: 12px; padding: 10px; border-bottom: 1px solid var(--gray); }
+        td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
+        .status-return { color: var(--red); font-size: 12px; font-weight: bold; }
+
+        textarea { width: 100%; background: #000; border: 1px solid var(--gray); border-radius: 10px; color: #fff; padding: 10px; margin-top: 10px; resize: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1 style="margin:0; font-size:24px;">لوحة المدير</h1>
+            <div id="mgr-store-name" style="color:var(--accent); font-weight:bold;">جاري التحميل...</div>
+        </div>
+        <div style="text-align:left;">
+            <div id="sys-v" class="badge-v">V ...</div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--red); cursor:pointer; margin-top:10px; font-weight:bold;">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>📊 مبيعات اليوم (التفاصيل)</h3>
+            <div class="report-line">
+                <span>💵 مبيعات كاش:</span>
+                <span id="rep-cash" class="val-cash">0.00</span>
+            </div>
+            <div class="report-line">
+                <span>💳 مبيعات فيزا:</span>
+                <span id="rep-visa" class="val-visa">0.00</span>
+            </div>
+            <div class="report-line">
+                <span>🔄 إجمالي المرتجعات:</span>
+                <span id="rep-returns" class="val-return">0.00</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>💰 إجمالي المبيعات (الكل)</h3>
+            <div class="value" id="mgr-total-sales">0.00</div>
+            <button class="btn-action" onclick="updateSales()">تعديل يدوي</button>
+        </div>
+
+        <div class="card">
+            <h3>👥 فريق العمل النشط</h3>
+            <div id="team-list" style="margin-top:10px;"></div>
+            <button class="btn-action" onclick="location.href='settings.html'">إدارة الموظفين</button>
+        </div>
+    </div>
+
+    <div class="quick-nav">
+        <a href="inventory.html" class="nav-item">📦 المخزن والطلبيات</a>
+        <a href="pos.html" class="nav-item">🖥️ شاشة الكاشير</a>
+        <a href="settings.html" class="nav-item">⚙️ الإعدادات</a>
+    </div>
+
+    <div class="sales-log">
+        <h3 style="margin:0 0 15px 0;">🧾 آخر العمليات (اليوم)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الوقت</th>
+                    <th>الإجمالي</th>
+                    <th>الطريقة</th>
+                    <th>الحالة</th>
+                    <th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody id="sales-table-body">
+                </tbody>
+        </table>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h3>💬 ملاحظات للمطور</h3>
+        <textarea id="mgr-feedback" rows="3" placeholder="اكتب هنا أي مشكلة أو ميزة عايز تضيفها..."></textarea>
+        <button class="btn-action" onclick="sendFeedback()" style="background:var(--accent); color:#000;">إرسال الملاحظة</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const userStoreKey = sessionStorage.getItem('store_key');
+
+        async function loadManagerData() {
+            if (!userStoreKey) return window.location.href = 'index.html';
+
+            // 1. جلب بيانات المتجر الأساسية
+            const { data: store } = await _supabase.from('stores').select('*').eq('store_key', userStoreKey).single();
+            if (store) {
+                document.getElementById('mgr-store-name').innerText = "متجر " + store.store_name;
+                document.getElementById('mgr-total-sales').innerText = (store.total_sales || 0) + " ج.م";
+            }
+
+            // 2. جلب الفيرجن
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            if(vData) document.getElementById('sys-v').innerText = "V " + vData.value;
+
+            // 3. جلب مبيعات اليوم وتفصيلها
+            await loadTodayReports();
+
+            // 4. جلب فريق العمل
+            const { data: users } = await _supabase.from('users').select('username, role').eq('store_key', userStoreKey);
+            const teamDisplay = document.getElementById('team-list');
+            teamDisplay.innerHTML = '';
+            users?.forEach(u => {
+                const roleAr = u.role === 'manager' ? 'مدير' : 'كاشير';
+                teamDisplay.innerHTML += `<div style="font-size:13px; margin-bottom:5px;">• ${u.username} (${roleAr})</div>`;
+            });
+        }
+
+        async function loadTodayReports() {
+            const today = new Date().toISOString().split('T')[0];
+            const { data: sales } = await _supabase.from('sales')
+                .select('*')
+                .eq('store_key', userStoreKey)
+                .gte('created_at', today)
+                .order('created_at', { ascending: false });
+
+            let cash = 0, visa = 0, returns = 0;
+            const tableBody = document.getElementById('sales-table-body');
+            tableBody.innerHTML = '';
+
+            sales?.forEach(s => {
+                const time = new Date(s.created_at).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+                
+                if(s.type === 'sale') {
+                    if(s.payment_method === 'كاش') cash += s.total_amount;
+                    else visa += s.total_amount;
+                    
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${time}</td>
+                            <td>${s.total_amount}</td>
+                            <td>${s.payment_method}</td>
+                            <td style="color:var(--green)">ناجحة</td>
+                            <td><button onclick="processReturn('${s.id}')" style="color:var(--red); background:none; border:none; cursor:pointer; font-size:12px;">🔙 مرتجع</button></td>
+                        </tr>
+                    `;
+                } else {
+                    returns += s.total_amount;
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${time}</td>
+                            <td>${s.total_amount}</td>
+                            <td>${s.payment_method}</td>
+                            <td class="status-return">مرتجع</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('rep-cash').innerText = cash.toFixed(2) + " ج.م";
+            document.getElementById('rep-visa').innerText = visa.toFixed(2) + " ج.م";
+            document.getElementById('rep-returns').innerText = returns.toFixed(2) + " ج.م";
+        }
+
+        async function processReturn(saleId) {
+            if(!confirm("هل أنت متأكد من إتمام المرتجع؟ سيتم إعادة الكميات للمخزن وإلغاء الربح.")) return;
+
+            // 1. جلب بيانات الفاتورة
+            const { data: sale } = await _supabase.from('sales').select('*').eq('id', saleId).single();
+            if(!sale) return;
+
+            // 2. إعادة البضاعة للمخزن
+            for (let item of sale.items) {
+                const { data: p } = await _supabase.from('products').select('stock').eq('id', item.id).single();
+                if(p) {
+                    await _supabase.from('products').update({ stock: p.stock + item.qty }).eq('id', item.id);
+                }
+            }
+
+            // 3. تحويل العملية لمرتجع
+            await _supabase.from('sales').update({ type: 'return' }).eq('id', saleId);
+            
+            alert("تم إرجاع العملية بنجاح");
+            loadManagerData();
+        }
+
+        async function updateSales() {
+            const newVal = prompt("أدخل إجمالي المبيعات الجديد:");
+            if (newVal) { 
+                await _supabase.from('stores').update({ total_sales: newVal }).eq('store_key', userStoreKey); 
+                loadManagerData(); 
+            }
+        }
+
+        async function sendFeedback() {
+            const fb = document.getElementById('mgr-feedback').value;
+            if(!fb) return;
+            await _supabase.from('stores').update({ feedback: fb }).eq('store_key', userStoreKey);
+            alert("تم الإرسال للمطور بنجاح");
+            document.getElementById('mgr-feedback').value = '';
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        loadManagerData();
+        setInterval(loadManagerData, 30000); // تحديث كل 30 ثانية
+    </script>
+</body>
+</html>

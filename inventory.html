@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | Inventory & Orders</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --white: #ffffff; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+        body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
+        
+        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .version-badge { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--accent); font-weight: bold; }
+
+        .main-title { font-size: 32px; font-weight: 700; color: var(--white); text-align: center; margin-bottom: 10px; }
+
+        .inventory-container { background: var(--card); border-radius: 20px; border: 1px solid var(--gray); padding: 20px; }
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-bar { flex: 1; padding: 12px; background: #000; border: 1px solid var(--gray); border-radius: 10px; color: #fff; outline: none; }
+        
+        .btn-action { border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-add { background: var(--accent); color: #000; }
+        .btn-order { background: var(--green); color: #000; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #1a1a1a; color: var(--accent); padding: 15px; text-align: right; border-bottom: 2px solid var(--gray); }
+        td { padding: 15px; border-bottom: 1px solid var(--gray); font-size: 14px; }
+        .expiry-warning { color: var(--red); font-weight: bold; }
+
+        /* المودال */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 25px; width: 90%; max-width: 500px; border: 1px solid var(--gray); }
+        label { display: block; margin-bottom: 5px; font-size: 12px; color: var(--accent); }
+        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid var(--gray); border-radius: 10px; color: #fff; margin-bottom: 15px; outline: none; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-save { background: var(--accent); color: #000; flex: 1; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-close { background: none; border: 1px solid var(--gray); color: #fff; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="header-nav">
+        <button onclick="location.href='manager.html'" style="background:none; border:1px solid var(--gray); color:#888; padding:8px 20px; border-radius:10px; cursor:pointer;">← عودة</button>
+        <span id="sys-v" class="version-badge">V ...</span>
+    </div>
+
+    <h1 class="main-title">إدارة المخزن والطلبيات</h1>
+    <div id="store-name-display" style="text-align: center; color: var(--accent); margin-bottom: 20px;">متجر ...</div>
+
+    <div class="inventory-container">
+        <div class="controls">
+            <input type="text" id="inv-search" class="search-bar" placeholder="بحث بالاسم أو الباركود..." oninput="loadInventory()">
+            <button class="btn-action btn-order" onclick="showOrderModal()">📦 إضافة طلبية جديدة</button>
+            <button class="btn-action btn-add" onclick="showAddModal()">+ صنف جديد</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>الباركود</th>
+                    <th>اسم المنتج</th>
+                    <th>الكمية</th>
+                    <th>سعر البيع</th>
+                    <th>تاريخ الصلاحية</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-table"></tbody>
+        </table>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:var(--accent); margin-top:0;">إضافة صنف جديد للمخزن</h2>
+            <input type="text" id="p-name" placeholder="اسم المنتج">
+            <input type="text" id="p-barcode" placeholder="الباركود">
+            <input type="number" id="p-price" placeholder="سعر البيع للمستهلك">
+            <label>تاريخ الصلاحية</label>
+            <input type="date" id="p-expiry">
+            <div class="modal-btns">
+                <button class="btn-save" onclick="saveNewProduct()">حفظ</button>
+                <button class="btn-close" onclick="closeModal('addModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:var(--green); margin-top:0;">إضافة طلبية (توريد مخزون)</h2>
+            <label>اختر المنتج من المخزن</label>
+            <select id="order-product-select">
+                </select>
+            <label>سعر الشراء (التكلفة)</label>
+            <input type="number" id="order-cost" placeholder="0.00">
+            <label>الكمية المستلمة</label>
+            <input type="number" id="order-qty" placeholder="أدخل الكمية الجديدة">
+            <label>تحديث تاريخ الصلاحية للكمية الجديدة</label>
+            <input type="date" id="order-expiry">
+            
+            <div class="modal-btns">
+                <button class="btn-save" style="background:var(--green);" onclick="processOrder()">إضافة للمخزن</button>
+                <button class="btn-close" onclick="closeModal('orderModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const storeKey = sessionStorage.getItem('store_key');
+
+        function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+        async function showOrderModal() { 
+            const { data: products } = await _supabase.from('products').select('id, product_name').eq('store_key', storeKey);
+            const select = document.getElementById('order-product-select');
+            select.innerHTML = products.map(p => `<option value="${p.id}">${p.product_name}</option>`).join('');
+            document.getElementById('orderModal').style.display = 'flex'; 
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // إضافة صنف جديد لأول مرة
+        async function saveNewProduct() {
+            const data = {
+                product_name: document.getElementById('p-name').value,
+                barcode: document.getElementById('p-barcode').value,
+                price: parseFloat(document.getElementById('p-price').value),
+                expiry_date: document.getElementById('p-expiry').value || null,
+                store_key: storeKey,
+                stock: 0 // الصنف الجديد يبدأ بصفر ونضيفله من الطلبيات
+            };
+            await _supabase.from('products').insert([data]);
+            closeModal('addModal'); loadInventory();
+        }
+
+        // معالجة طلبية جديدة (زيادة المخزن)
+        async function processOrder() {
+            const pId = document.getElementById('order-product-select').value;
+            const newQty = parseInt(document.getElementById('order-qty').value);
+            const cost = parseFloat(document.getElementById('order-cost').value);
+            const expiry = document.getElementById('order-expiry').value;
+
+            // 1. جلب الكمية القديمة
+            const { data: current } = await _supabase.from('products').select('stock').eq('id', pId).single();
+            
+            // 2. تحديث المنتج (الكمية الجديدة = القديمة + المضافة)
+            const { error } = await _supabase.from('products').update({
+                stock: (current.stock || 0) + newQty,
+                cost_price: cost,
+                expiry_date: expiry || current.expiry_date
+            }).eq('id', pId);
+
+            if(!error) {
+                alert("تم تحديث المخزن بالطلبية الجديدة بنجاح");
+                closeModal('orderModal'); loadInventory();
+            }
+        }
+
+        async function loadInventory() {
+            if (!storeKey) return;
+            
+            // جلب البيانات الأساسية
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            if(vData) document.getElementById('sys-v').innerText = "V " + vData.value;
+
+            const searchTerm = document.getElementById('inv-search').value;
+            let query = _supabase.from('products').select('*').eq('store_key', storeKey).order('product_name');
+            if(searchTerm) query = query.or(`product_name.ilike.%${searchTerm}%,barcode.ilike.%${searchTerm}%`);
+
+            const { data: products } = await query;
+            const tableBody = document.getElementById('inventory-table');
+            tableBody.innerHTML = '';
+
+            products?.forEach(p => {
+                const isExpired = p.expiry_date && new Date(p.expiry_date) < new Date();
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${p.barcode || '---'}</td>
+                        <td>${p.product_name}</td>
+                        <td style="font-weight:bold; color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}">${p.stock}</td>
+                        <td>${p.price} ج.م</td>
+                        <td class="${isExpired ? 'expiry-warning' : ''}">${p.expiry_date || 'غير محدد'}</td>
+                        <td>
+                            <button onclick="deleteProduct('${p.id}')" style="color:var(--red); background:none; border:none; cursor:pointer;">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function deleteProduct(id) {
+            if(confirm("حذف الصنف نهائياً؟")) {
+                await _supabase.from('products').delete().eq('id', id);
+                loadInventory();
+            }
+        }
+
+        loadInventory();
+    </script>
+</body>
+</html>

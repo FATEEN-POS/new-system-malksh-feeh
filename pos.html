@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | POS Cashier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #000; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        .products-section { flex: 2; padding: 20px; border-left: 1px solid var(--gray); display: flex; flex-direction: column; }
+        .cart-section { flex: 1; background: var(--card); padding: 20px; display: flex; flex-direction: column; }
+        
+        .pos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; overflow-y: auto; }
+        .item { background: var(--gray); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid transparent; }
+        .item:hover { border-color: var(--accent); transform: scale(1.02); }
+
+        .cart-list { flex: 1; overflow-y: auto; margin: 15px 0; border-top: 1px solid var(--gray); }
+        .cart-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
+
+        .payment-toggle { display: flex; gap: 10px; margin-bottom: 15px; }
+        .pay-btn { flex: 1; padding: 10px; border: 1px solid var(--gray); border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; }
+        .pay-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0, 242, 254, 0.1); }
+
+        .btn-pay { background: var(--accent); color: #000; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer; border: none; }
+
+        /* تنسيق الطباعة */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; }
+            .no-print { display: none; }
+        }
+        #receipt { display: none; background: #fff; color: #000; padding: 20px; text-align: center; direction: rtl; }
+    </style>
+</head>
+<body>
+
+    <div class="products-section no-print">
+        <div class="pos-header">
+            <h2 id="store-name">جاري التحميل...</h2>
+            <input type="text" id="p-search" placeholder="بحث (اسم/باركود)..." oninput="loadProducts()" style="padding:10px; border-radius:8px; border:1px solid var(--gray); background:#000; color:#fff; width:250px;">
+        </div>
+        <div class="product-grid" id="product-list"></div>
+    </div>
+
+    <div class="cart-section no-print">
+        <h3>سلة المبيعات</h3>
+        <div class="cart-list" id="cart-display"></div>
+        
+        <div class="payment-toggle">
+            <div id="method-cash" class="pay-btn active" onclick="setPayment('كاش')">💵 كاش</div>
+            <div id="method-visa" class="pay-btn" onclick="setPayment('فيزا')">💳 فيزا</div>
+        </div>
+
+        <div style="font-size:24px; font-weight:bold; margin-bottom:15px; display:flex; justify-content:space-between;">
+            <span>الإجمالي:</span>
+            <span id="total-price">0.00</span>
+        </div>
+        <button class="btn-pay" onclick="checkout()">إتمام و طباعة الفاتورة</button>
+    </div>
+
+    <div id="receipt">
+        <h2 id="r-store"></h2>
+        <p id="r-date"></p>
+        <hr>
+        <div id="r-items" style="text-align: right;"></div>
+        <hr>
+        <h3 id="r-total"></h3>
+        <p>شكراً لزيارتكم</p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const storeKey = sessionStorage.getItem('store_key');
+        
+        let cart = [];
+        let paymentMethod = 'كاش';
+
+        function setPayment(m) {
+            paymentMethod = m;
+            document.getElementById('method-cash').classList.toggle('active', m === 'كاش');
+            document.getElementById('method-visa').classList.toggle('active', m === 'فيزا');
+        }
+
+        async function loadProducts() {
+            const search = document.getElementById('p-search').value;
+            let query = _supabase.from('products').select('*').eq('store_key', storeKey).gt('stock', 0);
+            if(search) query = query.or(`product_name.ilike.%${search}%,barcode.ilike.%${search}%`);
+            const { data } = await query;
+            
+            document.getElementById('product-list').innerHTML = data.map(p => `
+                <div class="item" onclick='addToCart(${JSON.stringify(p)})'>
+                    <strong>${p.product_name}</strong><br>
+                    <span style="color:var(--accent)">${p.price} ج.م</span>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(p) {
+            const exist = cart.find(i => i.id === p.id);
+            if(exist) exist.qty++; else cart.push({...p, qty: 1});
+            renderCart();
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cart-display');
+            list.innerHTML = cart.map((i, idx) => `
+                <div class="cart-item">
+                    <span>${i.product_name} x ${i.qty}</span>
+                    <span>${(i.price * i.qty).toFixed(2)} <button onclick="cart.splice(${idx},1);renderCart()" style="color:red; background:none; border:none; cursor:pointer;">X</button></span>
+                </div>
+            `).join('');
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            document.getElementById('total-price').innerText = total.toFixed(2);
+        }
+
+        async function checkout() {
+            if(cart.length === 0) return;
+            const total = parseFloat(document.getElementById('total-price').innerText);
+
+            // 1. تسجيل العملية
+            const { data: sale } = await _supabase.from('sales').insert([{
+                store_key: storeKey,
+                items: cart,
+                total_amount: total,
+                payment_method: paymentMethod,
+                type: 'sale'
+            }]);
+
+            // 2. خصم المخزن
+            for (let item of cart) {
+                const { data: p } = await _supabase.from('products').select('stock').eq('id', item.id).single();
+                await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
+            }
+
+            // 3. الطباعة
+            document.getElementById('r-store').innerText = document.getElementById('store-name').innerText;
+            document.getElementById('r-date').innerText = new Date().toLocaleString('ar-EG');
+            document.getElementById('r-items').innerHTML = cart.map(i => `<div>${i.product_name} (${i.qty}) .. ${i.price * i.qty}</div>`).join('');
+            document.getElementById('r-total').innerText = "الإجمالي: " + total + " ج.م (" + paymentMethod + ")";
+            
+            window.print();
+            cart = [];
+            renderCart();
+            loadProducts();
+        }
+
+        async function init() {
+            const { data: st } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
+            document.getElementById('store-name').innerText = st.store_name;
+            loadProducts();
+        }
+        init();
+    </script>
+</body>
+</html>

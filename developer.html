@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fateen OS | Developer PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --red: #ff4d4d; --white: #ffffff; --gray: #222; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+        body { margin: 0; background: var(--bg); color: var(--white); padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: var(--card); border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 25px; }
+        
+        /* ستايل بوكس تحديث النسخة الجديد */
+        .v-update-box { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 10px; border: 1px solid #333; }
+        .v-input-field { background: #000; border: 1px solid var(--gray); color: var(--accent); padding: 3px 8px; width: 60px; border-radius: 5px; outline: none; font-size: 12px; text-align: center; }
+        .btn-v-save { background: var(--accent); color: #000; border: none; padding: 4px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-item { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); text-align: center; }
+        .stat-item h4 { margin: 0; color: #888; font-size: 14px; }
+        .stat-item p { margin: 10px 0 0; font-size: 24px; font-weight: 700; color: var(--accent); }
+
+        .search-container { margin-bottom: 25px; display: flex; gap: 15px; align-items: center; }
+        .search-input { flex: 1; padding: 12px 20px; background: var(--card); border: 1px solid var(--gray); border-radius: 12px; color: #fff; outline: none; }
+        
+        .btn-add-store { padding: 12px 30px; background: var(--white); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        
+        .stores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .store-card { background: var(--card); border: 1px solid var(--gray); border-radius: 22px; padding: 20px; cursor: pointer; position: relative; overflow: hidden; }
+        .days-left { position: absolute; top: 15px; left: 15px; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: bold; }
+
+        .version-badge { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(0, 242, 254, 0.3); font-weight: bold; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(10px); }
+        .modal-content { background: #111; width: 90%; max-width: 550px; padding: 30px; border-radius: 25px; border: 1px solid var(--gray); max-height: 90vh; overflow-y: auto; }
+        
+        input, select, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid var(--gray); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none; }
+        .btn-action { width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; margin-top: 10px; }
+        .btn-save { background: var(--accent); color: #000; }
+        .btn-cancel { background: transparent; color: #888; border: 1px solid var(--gray); }
+
+        .emp-list-item { background: #000; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <h1 style="margin:0; font-size: 22px;">لوحة تحكم فطين <span style="color:var(--accent)">PRO</span></h1>
+            
+            <div class="v-update-box">
+                <span id="sys-v" class="version-badge">تحميل...</span>
+                <input type="text" id="sys-v-input" class="v-input-field" placeholder="الإصدار">
+                <button class="btn-v-save" onclick="updateSystemVersion()">تحديث</button>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="exportToExcel()" style="background:var(--gray); color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">تصدير Excel</button>
+            <button onclick="logout()" style="background:none; border: 1px solid var(--red); color: var(--red); padding: 5px 15px; border-radius: 10px; cursor: pointer;">خروج</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-item">
+            <h4>إجمالي الأرباح المتوقعة</h4>
+            <p id="stat-revenue">0</p>
+        </div>
+        <div class="stat-item">
+            <h4>المتاجر المشتركة</h4>
+            <p id="stat-stores">0</p>
+        </div>
+        <div class="stat-item">
+            <h4>إجمالي الموظفين</h4>
+            <p id="stat-emps">0</p>
+        </div>
+        <div class="stat-item">
+            <h4>إجمالي المديرين</h4>
+            <p id="stat-mgrs">0</p>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="storeSearch" class="search-input" placeholder="بحث عن متجر بالاسم أو الكود..." oninput="filterStores()">
+        <button class="btn-add-store" onclick="openModal('addStoreModal')">+ إضافة متجر جديد</button>
+    </div>
+
+    <div class="stores-grid" id="stores-display"></div>
+
+    <div id="addStoreModal" class="modal">
+        <div class="modal-content">
+            <h2>إضافة متجر جديد</h2>
+            <input type="text" id="st-name" placeholder="اسم المتجر">
+            <input type="text" id="st-phone" placeholder="رقم الهاتف">
+            <input type="number" id="st-price" placeholder="سعر الاشتراك">
+            <select id="st-duration">
+                <option value="1">فترة تجريبية لمدة شهر</option>
+                <option value="3">ربع سنوي (3 شهور)</option>
+                <option value="6">نص سنوي (6 شهور)</option>
+                <option value="12">سنة كاملة (12 شهر)</option>
+            </select>
+            <textarea id="st-notes" placeholder="ملاحظات المطور"></textarea>
+            <button class="btn-action btn-save" onclick="saveNewStore()">حفظ المتجر</button>
+            <button class="btn-action btn-cancel" onclick="closeModal('addStoreModal')">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="storeDetailModal" class="modal">
+        <div class="modal-content">
+            <h2 id="view-st-name"></h2>
+            <div id="store-meta" style="margin-bottom: 20px; color: #666;"></div>
+            <div id="toggle-container"></div>
+            <h4>بلاغات وفيدباك المدير:</h4>
+            <div id="mgr-feedback-display" style="background:#000; padding:15px; border-radius:15px; border:1px solid var(--gray); color:var(--accent); margin-bottom:15px;">لا يوجد فيدباك حالياً</div>
+            <h4>ملاحظات المطور:</h4>
+            <textarea id="edit-st-notes"></textarea>
+            <button onclick="updateNotes()" class="btn-action btn-save" style="width:auto; padding:5px 15px; font-size:12px;">تحديث الملاحظات</button>
+            <h4>فريق العمل الحالي:</h4>
+            <div id="employee-list"></div>
+            <div style="background:#000; padding:15px; border-radius:15px; margin-top:15px; border:1px solid #222;">
+                <h4>إضافة عضو سريع:</h4>
+                <input type="text" id="q-u-name" placeholder="اسم المستخدم">
+                <input type="password" id="q-u-pass" placeholder="الباسورد">
+                <select id="q-u-role">
+                    <option value="employee">موظف كاشير</option>
+                    <option value="manager">مدير فرع</option>
+                </select>
+                <button class="btn-action btn-save" onclick="quickAddUser()">تأكيد الإضافة</button>
+            </div>
+            <button class="btn-action btn-cancel" onclick="deleteCurrentStore()" style="color:var(--red); border-color:var(--red); margin-top:30px;">حذف المتجر نهائياً</button>
+            <button class="btn-action btn-cancel" onclick="closeModal('storeDetailModal')">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allStores = [];
+        let activeStoreKey = null;
+
+        // دالة تحديث نسخة النظام
+        async function updateSystemVersion() {
+            const newV = document.getElementById('sys-v-input').value;
+            if(!newV) return alert("يرجى إدخال رقم الإصدار أولاً");
+            
+            const { error } = await _supabase
+                .from('system_settings')
+                .update({ value: newV })
+                .eq('key', 'sys_version');
+            
+            if(!error) {
+                alert("تم تحديث إصدار النظام بنجاح");
+                loadData();
+            } else {
+                alert("خطأ أثناء التحديث: " + error.message);
+            }
+        }
+
+        async function loadData() {
+            // جلب الإصدار الحالي
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            if(vData) {
+                document.getElementById('sys-v').innerText = vData.value;
+                if(!document.getElementById('sys-v-input').value) document.getElementById('sys-v-input').value = vData.value;
+            }
+
+            const { data: stores } = await _supabase.from('stores').select('*');
+            const { data: users } = await _supabase.from('users').select('*');
+            
+            allStores = stores || [];
+            displayStores(allStores);
+            
+            let totalRevenue = 0;
+            stores?.forEach(st => totalRevenue += Number(st.subscription_price || 0));
+            
+            document.getElementById('stat-revenue').innerText = totalRevenue + ' ج.م';
+            document.getElementById('stat-stores').innerText = stores?.length || 0;
+            document.getElementById('stat-emps').innerText = users?.filter(u => u.role === 'employee').length || 0;
+            document.getElementById('stat-mgrs').innerText = users?.filter(u => u.role === 'manager').length || 0;
+        }
+
+        // باقي الدوال (displayStores, filterStores, saveNewStore, etc.) كما هي في ملفك الأصلي تماماً
+        function displayStores(storesList) {
+            const grid = document.getElementById('stores-display');
+            grid.innerHTML = '';
+            storesList.forEach(st => {
+                const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
+                let daysText = diffDays > 0 ? `باقي ${diffDays} يوم` : 'منتهي';
+                let daysColor = diffDays > 5 ? 'var(--accent)' : 'var(--red)';
+                grid.innerHTML += `<div class="store-card" onclick='showStoreDetails(${JSON.stringify(st)})'><div class="days-left" style="color:${daysColor}; background:rgba(0,0,0,0.5)">${daysText}</div><h3>${st.store_name}</h3><p style="color:var(--accent);">${st.subscription_price} ج.م</p></div>`;
+            });
+        }
+
+        function filterStores() {
+            const term = document.getElementById('storeSearch').value.toLowerCase();
+            const filtered = allStores.filter(st => st.store_name.toLowerCase().includes(term) || st.store_key.toLowerCase().includes(term));
+            displayStores(filtered);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function saveNewStore() {
+            const name = document.getElementById('st-name').value;
+            const phone = document.getElementById('st-phone').value;
+            const price = document.getElementById('st-price').value;
+            const duration = parseInt(document.getElementById('st-duration').value);
+            const notes = document.getElementById('st-notes').value;
+            const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
+            const expiryString = expiry.toISOString().split('T')[0];
+            const key = 'ST' + Math.floor(Math.random() * 9000 + 1000);
+            await _supabase.from('stores').insert([{ 
+                store_key: key, store_name: name, phone: phone, subscription_price: price, 
+                expiry_date: expiryString, notes: notes, is_active: true 
+            }]);
+            closeModal('addStoreModal'); loadData();
+        }
+
+        async function showStoreDetails(st) {
+            activeStoreKey = st.store_key; openModal('storeDetailModal');
+            document.getElementById('view-st-name').innerText = st.store_name;
+            document.getElementById('edit-st-notes').value = st.notes || '';
+            document.getElementById('mgr-feedback-display').innerText = st.feedback || 'لا يوجد فيدباك حالياً';
+            document.getElementById('store-meta').innerHTML = `كود: ${st.store_key} | هاتف: ${st.phone}`;
+            document.getElementById('toggle-container').innerHTML = st.is_active ? `<button onclick="handleToggle(true)" class="btn-action btn-cancel">إيقاف الخدمة مؤقتاً</button>` : `<button onclick="handleToggle(false)" class="btn-action btn-save">تنشيط الخدمة الآن</button>`;
+            loadStoreUsers();
+        }
+
+        async function loadStoreUsers() {
+            const { data: emps } = await _supabase.from('users').select('*').eq('store_key', activeStoreKey);
+            const list = document.getElementById('employee-list'); list.innerHTML = '';
+            emps?.filter(e => e.role !== 'developer').forEach(e => {
+                list.innerHTML += `<div class="emp-list-item"><span>${e.username} (${e.role === 'manager' ? 'مدير' : 'موظف'})</span><button onclick="delU('${e.username}')" style="color:var(--red); background:none; border:none; cursor:pointer;">حذف</button></div>`;
+            });
+        }
+
+        async function quickAddUser() {
+            const u = document.getElementById('q-u-name').value;
+            const p = document.getElementById('q-u-pass').value;
+            const r = document.getElementById('q-u-role').value;
+            await _supabase.from('users').insert([{ username: u, password: p, store_key: activeStoreKey, role: r }]);
+            loadStoreUsers();
+        }
+
+        async function handleToggle(status) {
+            await _supabase.from('stores').update({ is_active: !status }).eq('store_key', activeStoreKey);
+            closeModal('storeDetailModal'); loadData();
+        }
+
+        async function updateNotes() {
+            await _supabase.from('stores').update({ notes: document.getElementById('edit-st-notes').value }).eq('store_key', activeStoreKey);
+            alert("تم التحديث"); loadData();
+        }
+
+        async function delU(uname) {
+            if(confirm("حذف؟")) { await _supabase.from('users').delete().eq('username', uname); loadStoreUsers(); loadData(); }
+        }
+
+        async function deleteCurrentStore() {
+            if(confirm("حذف نهائي؟")) {
+                await _supabase.from('users').delete().eq('store_key', activeStoreKey);
+                await _supabase.from('stores').delete().eq('store_key', activeStoreKey);
+                closeModal('storeDetailModal'); loadData();
+            }
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(allStores);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Stores"); XLSX.writeFile(wb, "Fateen_Stores.xlsx");
+        }
+
+        // تشغيل التحميل الأول
+        loadData();
+
+        // تحديث الصفحة تلقائياً كل دقيقة واحدة (60000ms)
+        setInterval(loadData, 60000);
+    </script>
+</body>
+</html>
