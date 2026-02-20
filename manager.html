@@ -119,10 +119,7 @@
         const storeKey = sessionStorage.getItem('store_key');
         
         async function checkAuth() {
-            if(!storeKey) {
-                window.location.replace('index.html');
-                return;
-            }
+            if(!storeKey) { window.location.replace('index.html'); return; }
             init();
         }
 
