@@ -6,6 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
@@ -13,30 +14,33 @@
 
         /* Sidebar */
         .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; }
-        .sidebar h2 { color: var(--accent); font-size: 18px; text-align: center; margin-bottom: 25px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
-        .nav-group { margin-bottom: 20px; }
+        .sidebar h2 { color: var(--accent); font-size: 18px; text-align: center; margin-bottom: 5px; }
+        .version-tag { font-size: 10px; color: #444; text-align: center; margin-bottom: 25px; display: block; }
         .nav-group-title { font-size: 12px; color: #555; margin-bottom: 10px; display: block; text-transform: uppercase; }
-        .nav-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .nav-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
         .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
 
         /* Main Content */
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%); }
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.4s; }
 
-        .report-card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .report-card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; margin-bottom: 20px; position: relative; }
+        .download-btn { position: absolute; top: 20px; left: 20px; background: #fff; color: #000; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-box { background: #000; padding: 15px; border-radius: 12px; border-right: 3px solid var(--accent); }
         .stat-box span { font-size: 12px; color: #777; display: block; }
-        .stat-box strong { font-size: 18px; color: #fff; }
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: right; font-size: 13px; color: var(--accent); padding: 12px; border-bottom: 1px solid var(--gray); }
         td { padding: 12px; font-size: 14px; border-bottom: 1px solid #1a1a1a; }
 
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .bg-red { background: rgba(255, 77, 77, 0.1); color: var(--red); }
-        .bg-green { background: rgba(0, 255, 136, 0.1); color: var(--green); }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; }
+        .modal-content input { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; margin-bottom: 15px; border-radius: 8px; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -44,129 +48,155 @@
 <body>
 
     <div class="sidebar">
-        <h2>Fateen OS Reports</h2>
+        <h2 id="display-store-name">جاري التحميل...</h2>
+        <span id="display-sys-v" class="version-tag">V 0.0.0</span>
         
-        <div class="nav-group">
-            <span class="nav-group-title">المبيعات</span>
+        <div class="nav-group"><span class="nav-group-title">المبيعات</span>
             <button class="nav-btn active" onclick="showTab('sales-tab', this)">📊 مبيعات ومرتجعات</button>
         </div>
-
-        <div class="nav-group">
-            <span class="nav-group-title">المخزن</span>
+        <div class="nav-group"><span class="nav-group-title">المخزن</span>
             <button class="nav-btn" onclick="showTab('inv-tab', this)">📦 جرد ونواقص</button>
         </div>
-
-        <div class="nav-group">
-            <span class="nav-group-title">الموظفين</span>
-            <button class="nav-btn" onclick="showTab('staff-tab', this)">👥 أداء الموظفين</button>
-        </div>
-
-        <div class="nav-group">
-            <span class="nav-group-title">المالية</span>
+        <div class="nav-group"><span class="nav-group-title">المالية</span>
             <button class="nav-btn" onclick="showTab('profit-tab', this)">💰 الأرباح والذروة</button>
             <button class="nav-btn" onclick="showTab('vendors-tab', this)">🚚 ديون الموردين</button>
         </div>
-
         <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩ العودة للمدير</button>
     </div>
 
     <div class="main-content">
         
         <div id="sales-tab" class="tab-content active">
-            <h2>تقارير المبيعات</h2>
-            <div class="report-card">
+            <div class="report-header"><h2>تقرير المبيعات والنشاط</h2></div>
+            <div class="report-card" id="pdf-sales">
+                <button class="download-btn" onclick="downloadPDF('pdf-sales', 'Sales_Report')">📥 تحميل PDF</button>
                 <div class="stats-row">
-                    <div class="stat-box"><span>مبيعات اليوم</span><strong id="day-total">0</strong></div>
-                    <div class="stat-box"><span>المرتجعات</span><strong style="color:var(--red)">0</strong></div>
-                    <div class="stat-box"><span>الأكثر مبيعاً</span><strong id="top-item">---</strong></div>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <input type="date" id="sale-from"> إلى <input type="date" id="sale-to">
-                    <button class="nav-btn" style="display:inline; width:auto; background:var(--accent); color:#000;">بحث</button>
+                    <div class="stat-box"><span>إجمالي البيع</span><strong>0.00</strong></div>
+                    <div class="stat-box"><span>المرتجعات</span><strong style="color:var(--red)">0.00</strong></div>
                 </div>
                 <table>
-                    <thead><tr><th>التاريخ</th><th>النوع</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
-                    <tbody id="sales-report-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="inv-tab" class="tab-content">
-            <h2>إدارة المخزون والهاك</h2>
-            <div class="stats-row">
-                <div class="stat-box" style="border-color:var(--orange)"><span>قيمة المخزن حالياً</span><strong>0.00</strong></div>
-                <div class="stat-box" style="border-color:var(--red)"><span>نواقص (أقل من 5)</span><strong>0</strong></div>
-                <div class="stat-box" style="border-color:var(--red)"><span>إجمالي الهاك/تالف</span><strong>0</strong></div>
-            </div>
-            <div class="report-card">
-                <h3>تقرير النواقص والطلب</h3>
-                <table id="shortage-table">
-                    <thead><tr><th>الصنف</th><th>الرصيد الحالي</th><th>حركة الصنف</th><th>إجراء</th></tr></thead>
+                    <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوسيلة</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
         </div>
 
-        <div id="staff-tab" class="tab-content">
-            <h2>مراقبة الوردية والموظف</h2>
-            <div class="report-card">
-                <table>
-                    <thead><tr><th>اسم الموظف</th><th>مبيعات الوردية</th><th>عدد الفواتير</th><th>صافي التحصيل</th></tr></thead>
-                    <tbody id="staff-report-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="profit-tab" class="tab-content">
-            <h2>صافي الربح وتحليل الذروة</h2>
-            <div class="stats-row">
-                <div class="stat-box" style="border-color:var(--green)"><span>صافي الربح التقديري</span><strong>0.00</strong></div>
-                <div class="stat-box"><span>أكثر ساعة بيع</span><strong>09:00 PM</strong></div>
-            </div>
-            <div class="report-card" style="height: 300px;">
-                <canvas id="peakChart"></canvas>
-            </div>
-        </div>
-
         <div id="vendors-tab" class="tab-content">
-            <h2>كشف حساب الموردين</h2>
-            <button class="nav-btn" style="background:var(--accent); color:#000; width:auto; margin-bottom:15px;">+ فاتورة مشتريات آجلة</button>
-            <div class="report-card">
+            <div class="report-header">
+                <h2>ديون الموردين والمشتريات</h2>
+                <button class="nav-btn" onclick="openVendorModal()" style="background:var(--accent); color:#000; width:auto;">+ فاتورة مشتريات آجلة</button>
+            </div>
+            <div class="report-card" id="pdf-vendors">
+                <button class="download-btn" onclick="downloadPDF('pdf-vendors', 'Vendors_Report')">📥 تحميل PDF</button>
                 <table>
-                    <thead><tr><th>المورد</th><th>إجمالي المديونية</th><th>آخر دفعة</th><th>الحالة</th></tr></thead>
-                    <tbody>
-                        <tr><td>شركة المراعي</td><td>5,400 ج.م</td><td>2023-10-01</td><td><span class="badge bg-red">غير مسدد</span></td></tr>
-                    </tbody>
+                    <thead><tr><th>المورد</th><th>إجمالي الدين</th><th>آخر حركة</th><th>الحالة</th></tr></thead>
+                    <tbody id="vendor-table-body"></tbody>
                 </table>
             </div>
         </div>
 
+        </div>
+
+    <div id="vendorModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--accent)">تسجيل فاتورة آجلة</h3>
+            <input type="text" id="v-name" placeholder="اسم المورد">
+            <input type="number" id="v-amount" placeholder="قيمة الفاتورة">
+            <button onclick="saveVendorInvoice()" style="width:100%; background:var(--accent); border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">حفظ الفاتورة</button>
+            <button onclick="closeVendorModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">إلغاء</button>
+        </div>
     </div>
 
     <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const storeKey = sessionStorage.getItem('store_key');
+
+        async function init() {
+            if(!storeKey) return location.href='index.html';
+            
+            // جلب اسم المتجر والفيرجن
+            const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            
+            document.getElementById('display-store-name').innerText = store?.store_name || "متجر غير معروف";
+            document.getElementById('display-sys-v').innerText = "V " + (vData?.value || "1.0.0");
+            
+            loadVendors();
+        }
+
+        // --- وظائف الموردين ---
+        function openVendorModal() { document.getElementById('vendorModal').style.display = 'flex'; }
+        function closeVendorModal() { document.getElementById('vendorModal').style.display = 'none'; }
+
+        async function saveVendorInvoice() {
+            const name = document.getElementById('v-name').value;
+            const amount = parseFloat(document.getElementById('v-amount').value);
+            if(!name || !amount) return alert("أكمل البيانات");
+
+            // البحث عن المورد أو إنشاء جديد
+            const { data: existing } = await _supabase.from('vendors').select('*').eq('vendor_name', name).eq('store_key', storeKey).single();
+
+            if(existing) {
+                await _supabase.from('vendors').update({ 
+                    total_debt: existing.total_debt + amount,
+                    last_payment_date: new Date()
+                }).eq('id', existing.id);
+            } else {
+                await _supabase.from('vendors').insert([{
+                    store_key: storeKey,
+                    vendor_name: name,
+                    total_debt: amount,
+                    last_payment_date: new Date()
+                }]);
+            }
+            
+            alert("تم تسجيل الفاتورة بنجاح");
+            closeVendorModal();
+            loadVendors();
+        }
+
+        async function loadVendors() {
+            const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
+            const tbody = document.getElementById('vendor-table-body');
+            tbody.innerHTML = data.map(v => `
+                <tr>
+                    <td>${v.vendor_name}</td>
+                    <td style="color:var(--red); font-weight:bold;">${v.total_debt.toFixed(2)} ج.م</td>
+                    <td>${new Date(v.last_payment_date).toLocaleDateString('ar-EG')}</td>
+                    <td><span class="badge" style="background:rgba(255,0,0,0.1)">مستحق</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- وظيفة تحميل PDF لكل تقرير ---
+        function downloadPDF(elementId, fileName) {
+            const element = document.getElementById(elementId);
+            // إخفاء زر التحميل مؤقتاً أثناء التصوير
+            const btn = element.querySelector('.download-btn');
+            btn.style.opacity = '0';
+            
+            const opt = {
+                margin: 0.5,
+                filename: fileName + '_' + new Date().toLocaleDateString() + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#111' },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.style.opacity = '1';
+            });
+        }
+
         function showTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
-            if(tabId === 'profit-tab') initPeakChart();
         }
 
-        function initPeakChart() {
-            const ctx = document.getElementById('peakChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['12pm', '3pm', '6pm', '9pm', '12am'],
-                    datasets: [{
-                        label: 'حجم الزحمة (عدد الفواتير)',
-                        data: [12, 19, 45, 80, 23],
-                        backgroundColor: '#00f2fe'
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
+        init();
     </script>
 </body>
 </html>
