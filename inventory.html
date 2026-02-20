@@ -39,8 +39,8 @@
         .modal-content h2 { margin-top: 0; color: var(--accent); }
         .modal-content input { width: 100%; margin-bottom: 15px; }
         
-        .btn-edit { color: var(--accent); background: none; border: none; cursor: pointer; margin-left: 10px; }
-        .btn-delete { color: var(--red); background: none; border: none; cursor: pointer; }
+        .btn-edit { color: var(--accent); background: none; border: none; cursor: pointer; margin-left: 10px; font-weight: bold; }
+        .btn-delete { color: var(--red); background: none; border: none; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,6 +72,7 @@
                     <th>الباركود</th>
                     <th>اسم الصنف</th>
                     <th>الكمية</th>
+                    <th>سعر الشراء</th>
                     <th>سعر البيع</th>
                     <th>تاريخ الانتهاء</th>
                     <th>إجراءات</th>
@@ -86,12 +87,24 @@
         <div class="modal-content">
             <h2 id="modal-title">إضافة صنف جديد</h2>
             <input type="hidden" id="edit-id">
-            <input type="text" id="p-barcode" placeholder="الباركود (اختياري)">
+            <label style="font-size: 12px; color: #888;">الباركود</label>
+            <input type="text" id="p-barcode" placeholder="الباركود">
+            <label style="font-size: 12px; color: #888;">اسم الصنف</label>
             <input type="text" id="p-name" placeholder="اسم الصنف">
-            <input type="number" id="p-stock" placeholder="الكمية الحالية">
-            <input type="number" id="p-price" placeholder="سعر البيع">
-            <input type="number" id="p-cost" placeholder="سعر التكلفة">
-            <input type="date" id="p-expiry" placeholder="تاريخ الانتهاء">
+            <label style="font-size: 12px; color: #888;">الكمية</label>
+            <input type="number" id="p-stock" placeholder="الكمية">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 12px; color: #888;">سعر الشراء</label>
+                    <input type="number" id="p-cost" placeholder="الشراء">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 12px; color: #888;">سعر البيع</label>
+                    <input type="number" id="p-price" placeholder="البيع">
+                </div>
+            </div>
+            <label style="font-size: 12px; color: #888;">تاريخ الانتهاء</label>
+            <input type="date" id="p-expiry">
             <button class="btn-add" style="width:100%" onclick="saveProduct()">حفظ البيانات</button>
             <button class="btn-add" style="width:100%; background:none; color:#888; margin-top:10px;" onclick="closeModal()">إلغاء</button>
         </div>
@@ -107,7 +120,6 @@
         async function init() {
             if(!storeKey) return location.href='index.html';
             
-            // جلب بيانات المتجر والإصدار
             const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
             const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
             
@@ -143,7 +155,8 @@
                         <td>${p.barcode || '---'}</td>
                         <td>${p.product_name}</td>
                         <td style="font-weight:bold; color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}">${p.stock}</td>
-                        <td>${p.price} ج.م</td>
+                        <td style="color:#aaa">${p.cost_price || 0} ج.م</td>
+                        <td style="font-weight:bold">${p.price} ج.م</td>
                         <td class="${isExpired ? 'expiry-warning' : ''}">${p.expiry_date || 'غير محدد'}</td>
                         <td>
                             <button class="btn-edit" onclick="openEditModal('${p.id}')">تعديل</button>
@@ -179,7 +192,7 @@
                 document.getElementById('p-name').value = p.product_name;
                 document.getElementById('p-stock').value = p.stock;
                 document.getElementById('p-price').value = p.price;
-                document.getElementById('p-cost').value = p.cost_price || "";
+                document.getElementById('p-cost').value = p.cost_price || 0;
                 document.getElementById('p-expiry').value = p.expiry_date || "";
                 document.getElementById('productModal').style.display = 'flex';
             }
@@ -204,10 +217,8 @@
             if(!productData.product_name || isNaN(productData.stock)) return alert("يرجى ملء البيانات الأساسية");
 
             if(id) {
-                // تعديل
                 await _supabase.from('products').update(productData).eq('id', id);
             } else {
-                // إضافة جديد
                 await _supabase.from('products').insert([productData]);
             }
 
@@ -216,7 +227,7 @@
         }
 
         async function deleteProduct(id) {
-            if(confirm("هل أنت متأكد من حذف هذا الصنف نهائياً من المخزن؟")) {
+            if(confirm("هل أنت متأكد من حذف هذا الصنف نهائياً؟")) {
                 await _supabase.from('products').delete().eq('id', id);
                 loadInventory();
             }
