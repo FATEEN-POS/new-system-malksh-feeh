@@ -13,138 +13,196 @@
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
         .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-        .sidebar-header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; }
-        .sidebar-header h2 { margin: 0; color: var(--accent); }
-        .nav-btn { background: none; border: 1px solid transparent; color: #fff; padding: 15px; margin-bottom: 10px; border-radius: 12px; cursor: pointer; text-align: right; font-size: 16px; transition: 0.3s; }
-        .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); border-color: var(--accent); color: var(--accent); }
+        .sidebar-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
+        #display-store-name { color: var(--accent); font-size: 18px; margin: 0; }
+        .nav-group-title { font-size: 11px; color: #555; margin: 15px 0 5px; display: block; }
+        .nav-btn { background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; font-size: 13px; width: 100%; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
 
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; background: var(--bg); }
-        .section { display: none; animation: fadeIn 0.4s; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
 
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn { padding: 8px 16px; background: var(--accent); color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; }
-        .stat-card h3 { color: #888; margin: 0 0 10px 0; font-size: 14px; }
-        .stat-card p { color: var(--accent); margin: 0; font-size: 28px; font-weight: bold; }
+        .report-card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; margin-bottom: 20px; position: relative; }
+        .download-btn { position: absolute; top: 20px; left: 20px; background: #fff; color: #000; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
 
-        .chart-container { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--gray); margin-bottom: 30px; }
-        
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; }
-        th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--gray); }
-        th { background: #1a1a1a; color: var(--accent); font-size: 14px; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--accent); width: 400px; }
-        .modal-content input { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--gray); color: #fff; border-radius: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #000; padding: 12px; border-radius: 10px; border-right: 3px solid var(--accent); }
+        .stat-box span { font-size: 11px; color: #777; display: block; }
+        .stat-box strong { font-size: 16px; }
 
-        .download-btn { background: var(--green); color: #000; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; font-size: 12px; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--gray); }
+        td { padding: 10px; font-size: 13px; border-bottom: 1px solid #1a1a1a; }
+
+        .btn-pay { background: var(--green); color: #000; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .btn-del { background: var(--red); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; margin-right: 5px; }
+
+        .search-bar { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; outline: none; }
+        .search-bar:focus { border-color: var(--accent); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--accent); width: 380px; }
+        .modal-content input, .modal-content select { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+
+        .filter-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; flex-wrap: wrap; }
+        .filter-box label { font-size: 12px; color: #888; }
+        .filter-box input[type="date"] { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>📊 مركز التقارير</h2>
-            <p style="font-size:12px; color:#888;">Fateen OS Analytics</p>
+            <h2 id="display-store-name">تحميل...</h2>
+            <span id="display-sys-v" style="font-size: 10px; color: #444;">V 1.0.0</span>
         </div>
-        <button class="nav-btn active" onclick="showSection('overview')">📈 نظرة عامة شاملة</button>
-        <button class="nav-btn" onclick="showSection('sales-details')">🧾 تفاصيل المبيعات</button>
-        <button class="nav-btn" onclick="showSection('products-analytics')">📦 حركة الأصناف</button>
-        <button class="nav-btn" onclick="showSection('staff-performance')">👥 أداء الموظفين</button>
-        <button class="nav-btn" onclick="showSection('vendors')">🤝 الموردين والديون</button>
-        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; background:var(--red); color:#fff; text-align:center;">رجوع للوحة التحكم</button>
+        
+        <span class="nav-group-title">📊 المبيعات</span>
+        <button class="nav-btn active" onclick="showTab('sales-tab', this)">ملخص يومي وفترات</button>
+        <button class="nav-btn" onclick="showTab('top-items-tab', this)">الأصناف الأكثر مبيعاً</button>
+        <button class="nav-btn" onclick="showTab('returns-tab', this)">تقارير المرتجعات</button>
+
+        <span class="nav-group-title">📦 المخزن</span>
+        <button class="nav-btn" onclick="showTab('inv-status-tab', this)">القيمة والجرد الحالي</button>
+        <button class="nav-btn" onclick="showTab('inv-move-tab', this)">حركة الصنف والهاك</button>
+
+        <span class="nav-group-title">👥 الموظفين</span>
+        <button class="nav-btn" onclick="showTab('staff-tab', this)">أداء الموظف والوردية</button>
+
+        <span class="nav-group-title">💰 المالية</span>
+        <button class="nav-btn" onclick="showTab('profit-tab', this)">الأرباح والذروة</button>
+        <button class="nav-btn" onclick="showTab('vendors-tab', this)">ديون الموردين</button>
+
+        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩ خروج</button>
     </div>
 
     <div class="main-content">
-        
-        <div id="overview" class="section active">
-            <div class="header-top">
-                <h2>نظرة عامة والربحية</h2>
-                <button class="btn download-btn" onclick="downloadPDF('overview', 'تقرير_النظرة_العامة')">تحميل PDF</button>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card"><h3>مبيعات اليوم</h3><p id="ov-today">0 ج.م</p></div>
-                <div class="stat-card"><h3>مبيعات الشهر</h3><p id="ov-month">0 ج.م</p></div>
-                <div class="stat-card"><h3>إجمالي الأرباح التقديرية</h3><p id="ov-profit" style="color:var(--green)">0 ج.م</p></div>
-                <div class="stat-card"><h3>إجمالي ديون الموردين</h3><p id="ov-debt" style="color:var(--red)">0 ج.م</p></div>
-            </div>
-            <div class="chart-container">
-                <canvas id="salesChart" height="100"></canvas>
+        <div id="sales-tab" class="tab-content active">
+            <div class="report-card" id="pdf-sales">
+                <button class="download-btn" onclick="downloadPDF('pdf-sales', 'Daily_Sales')">📥 PDF</button>
+                <h3>ملخص المبيعات</h3>
+                <input type="date" id="sale-date" onchange="loadSalesData()">
+                <div class="stats-grid">
+                    <div class="stat-box"><span>إجمالي البيع</span><strong id="day-sales">0.00</strong></div>
+                    <div class="stat-box"><span>عدد الفواتير</span><strong id="day-orders">0</strong></div>
+                </div>
+                <table>
+                    <thead><tr><th>الوقت</th><th>رقم الفاتورة</th><th>المبلغ</th><th>الوسيلة</th></tr></thead>
+                    <tbody id="sales-list"></tbody>
+                </table>
             </div>
         </div>
 
-        <div id="sales-details" class="section">
-            <div class="header-top">
-                <h2>سجل المبيعات والمرتجعات</h2>
-                <button class="btn download-btn" onclick="downloadPDF('sales-details', 'تقرير_المبيعات')">تحميل PDF</button>
+        <div id="top-items-tab" class="tab-content">
+            <div class="report-card" id="pdf-top-items">
+                <button class="download-btn" onclick="downloadPDF('pdf-top-items', 'Top_Selling_Items')">📥 PDF</button>
+                <h3>الأصناف الأكثر مبيعاً (توب 10)</h3>
+                <table>
+                    <thead><tr><th>الصنف</th><th>الكمية المباعة</th></tr></thead>
+                    <tbody id="top-items-list"></tbody>
+                </table>
             </div>
-            <div style="margin-bottom: 20px; display:flex; gap:10px;">
-                <input type="date" id="filter-date" style="padding:10px; background:#111; color:#fff; border:1px solid var(--gray); border-radius:8px;">
-                <button class="btn" onclick="loadSalesDetails()">فلترة</button>
-            </div>
-            <table>
-                <thead>
-                    <tr><th>رقم الفاتورة</th><th>التاريخ والوقت</th><th>الإجمالي</th><th>النوع</th><th>الكاشير</th></tr>
-                </thead>
-                <tbody id="sales-tbody"></tbody>
-            </table>
         </div>
 
-        <div id="products-analytics" class="section">
-            <div class="header-top">
-                <h2>النواقص والأصناف الأكثر مبيعاً</h2>
-                <button class="btn download-btn" onclick="downloadPDF('products-analytics', 'تقرير_المخزون')">تحميل PDF</button>
+        <div id="returns-tab" class="tab-content">
+            <div class="report-card" id="pdf-returns">
+                <button class="download-btn" onclick="downloadPDF('pdf-returns', 'Returns_Report')">📥 PDF</button>
+                <h3>سجل المرتجعات</h3>
+                <table>
+                    <thead><tr><th>الوقت</th><th>رقم الفاتورة</th><th>الأصناف المرتجعة</th><th>القيمة المستردة</th><th>الموظف</th></tr></thead>
+                    <tbody id="returns-list"></tbody>
+                </table>
             </div>
-            <div class="stats-grid">
-                <div class="stat-card"><h3>إجمالي قيمة المخزن</h3><p id="inv-value">0 ج.م</p></div>
-                <div class="stat-card"><h3>أصناف قاربت على النفاذ (< 5)</h3><p id="inv-low" style="color:var(--orange)">0</p></div>
-            </div>
-            <h3>النواقص الحرجة</h3>
-            <table style="margin-bottom:30px;">
-                <thead><tr><th>الصنف</th><th>الباركود</th><th>الكمية المتبقية</th></tr></thead>
-                <tbody id="low-stock-tbody"></tbody>
-            </table>
         </div>
 
-        <div id="staff-performance" class="section">
-            <div class="header-top">
-                <h2>إحصائيات الموظفين (الكاشير)</h2>
-                <button class="btn download-btn" onclick="downloadPDF('staff-performance', 'تقرير_الموظفين')">تحميل PDF</button>
+        <div id="inv-status-tab" class="tab-content">
+            <div class="report-card" id="pdf-inventory">
+                <button class="download-btn" onclick="downloadPDF('pdf-inventory', 'Inventory_Status')">📥 PDF</button>
+                <h3>جرد وقيمة المخزن</h3>
+                <div class="stats-grid">
+                    <div class="stat-box"><span>قيمة المخزن (بيع)</span><strong id="inv-val-sale">0.00</strong></div>
+                    <div class="stat-box"><span>قيمة المخزن (تكلفة)</span><strong id="inv-val-cost">0.00</strong></div>
+                    <div class="stat-box" style="border-color:var(--red)"><span>نواقص</span><strong id="short-count">0</strong></div>
+                </div>
+                <table>
+                    <thead><tr><th>الصنف</th><th>رصيد</th><th>تكلفة</th><th>الحالة</th></tr></thead>
+                    <tbody id="inventory-list"></tbody>
+                </table>
             </div>
-            <div class="chart-container">
-                <canvas id="peakChart" height="100"></canvas>
-            </div>
-            <table>
-                <thead><tr><th>اسم الموظف</th><th>عدد الفواتير المنفذة</th><th>إجمالي المبيعات</th></tr></thead>
-                <tbody id="staff-tbody"></tbody>
-            </table>
         </div>
 
-        <div id="vendors" class="section">
-            <div class="header-top">
-                <h2>حسابات الموردين</h2>
-                <button class="btn" onclick="document.getElementById('vendorModal').style.display='flex'">+ إضافة حساب مورد / مديونية</button>
+        <div id="inv-move-tab" class="tab-content">
+            <div class="report-card">
+                <h3>بحث حركة صنف معين</h3>
+                <select id="product-selector" onchange="loadProductHistory()" style="width:100%; background:#000; color:#fff; padding:10px; border:1px solid var(--gray); border-radius:8px; margin-bottom:15px;">
+                    <option value="">اختر الصنف لمعاينة حركته...</option>
+                </select>
+                <div id="product-history-content">
+                    <table>
+                        <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>الكمية</th></tr></thead>
+                        <tbody id="product-history-list"></tbody>
+                    </table>
+                </div>
             </div>
-            <table>
-                <thead><tr><th>اسم المورد</th><th>المديونية (له)</th><th>تاريخ آخر سداد</th><th>إجراءات</th></tr></thead>
-                <tbody id="vendors-tbody"></tbody>
-            </table>
+        </div>
+
+        <div id="profit-tab" class="tab-content">
+            <div class="report-card" id="pdf-profit">
+                <button class="download-btn" onclick="downloadPDF('pdf-profit', 'Profit_Report')">📥 PDF</button>
+                <h3>صافي الأرباح والذروة</h3>
+                <div class="stats-grid">
+                    <div class="stat-box" style="border-color:var(--green)"><span>صافي الربح التقديري</span><strong id="net-profit-val">0.00</strong></div>
+                    <div class="stat-box"><span>إجمالي المبيعات</span><strong id="total-sales-val">0.00</strong></div>
+                </div>
+                <div style="height: 250px; margin-top: 20px;">
+                    <canvas id="peakChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="vendors-tab" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2>ديون الموردين</h2>
+                <button onclick="document.getElementById('vendorModal').style.display='flex'" style="background:var(--accent); border:none; padding:8px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ فاتورة آجلة</button>
+            </div>
+            <div class="report-card" id="pdf-vendors">
+                <button class="download-btn" onclick="downloadPDF('pdf-vendors', 'Vendors_Debt')">📥 PDF</button>
+                <input type="text" id="vendor-search" class="search-bar" placeholder="ابحث عن مورد..." oninput="filterVendors()">
+                <table>
+                    <thead><tr><th>المورد</th><th>المديونية</th><th>آخر حركة</th><th>إجراءات الدفع والحذف</th></tr></thead>
+                    <tbody id="vendors-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="staff-tab" class="tab-content">
+            <div class="report-card" id="pdf-staff">
+                <button class="download-btn" onclick="downloadPDF('pdf-staff', 'Staff_Performance')">📥 PDF</button>
+                <h3>إحصائيات الموظفين</h3>
+                <div class="filter-box">
+                    <label>من:</label> <input type="date" id="staff-from" onchange="loadStaffPerformance()">
+                    <label>إلى:</label> <input type="date" id="staff-to" onchange="loadStaffPerformance()">
+                    <input type="text" id="staff-search" class="search-bar" style="margin: 10px 0 0 0;" placeholder="ابحث عن اسم موظف..." oninput="filterStaff()">
+                </div>
+                <table>
+                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
+                    <tbody id="staff-performance-list"></tbody>
+                </table>
+            </div>
         </div>
 
     </div>
 
     <div id="vendorModal" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--accent); margin-top:0;">إدارة حساب المورد</h3>
-            <input type="text" id="v-name-in" placeholder="اسم المورد أو الشركة">
-            <input type="number" id="v-amount-in" placeholder="المبلغ (جنيه)">
-            <button class="btn" style="width:100%; margin-bottom:10px;" onclick="saveVendor()">حفظ / تحديث</button>
-            <button class="btn btn-outline" style="width:100%; border-color:var(--gray); color:#888;" onclick="document.getElementById('vendorModal').style.display='none'">إلغاء</button>
+            <h3>تسجيل مشتريات آجلة</h3>
+            <input type="text" id="v-name-in" placeholder="اسم المورد">
+            <input type="number" id="v-amount-in" placeholder="قيمة الفاتورة">
+            <button onclick="saveVendorInv()" style="width:100%; background:var(--accent); border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">حفظ</button>
+            <button onclick="document.getElementById('vendorModal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">إلغاء</button>
         </div>
     </div>
 
@@ -154,148 +212,202 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
 
-        if(!storeKey) window.location.href = 'index.html';
+        let allVendors = [];
+        let allStaffData = [];
 
-        function showSection(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
+        async function init() {
+            if(!storeKey) return location.href='index.html';
+            const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            document.getElementById('display-store-name').innerText = "متجر " + (store?.store_name || "");
+            document.getElementById('display-sys-v').innerText = "V " + (vData?.value || "1.0.0");
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('sale-date').value = today;
+            document.getElementById('staff-from').value = today;
+            document.getElementById('staff-to').value = today;
+
+            loadAllReports();
         }
 
-        async function initData() {
-            await loadOverview();
-            await loadSalesDetails();
-            await loadInventoryStats();
-            await loadStaff();
-            await loadVendors();
+        function showTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        async function loadAllReports() {
+            loadSalesData();
+            loadInventoryData();
+            loadTopItems();
+            loadReturns();
+            loadStaffPerformance();
+            loadVendors();
+            loadProfitData();
             initPeakChart();
         }
 
-        async function loadOverview() {
-            const today = new Date().toISOString().split('T')[0];
-            const currentMonth = today.substring(0,7);
+        async function loadSalesData() {
+            const date = document.getElementById('sale-date').value;
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', date).lte('created_at', date + 'T23:59:59');
+            const list = document.getElementById('sales-list'); list.innerHTML = '';
+            let total = 0;
+            data?.forEach(s => {
+                if(s.type === 'sale') total += s.total_amount;
+                list.innerHTML += `<tr><td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td><td>#${s.id.slice(0,5)}</td><td>${s.total_amount}</td><td>${s.payment_method}</td></tr>`;
+            });
+            document.getElementById('day-sales').innerText = total.toFixed(2);
+            document.getElementById('day-orders').innerText = data?.length || 0;
+        }
 
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
-            let dToday = 0, dMonth = 0, profit = 0;
+        async function loadTopItems() {
+            const { data } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
+            let counts = {};
+            data?.forEach(s => {
+                if(s.items && Array.isArray(s.items)){
+                    s.items.forEach(item => {
+                        let name = item.name || item.product_name || "صنف غير معرف";
+                        counts[name] = (counts[name] || 0) + item.qty;
+                    });
+                }
+            });
+            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            const list = document.getElementById('top-items-list');
+            list.innerHTML = sorted.map(i => `<tr><td>${i[0]}</td><td>${i[1]}</td></tr>`).join('');
+        }
 
-            sales?.forEach(s => {
-                const sDate = s.created_at.split('T')[0];
-                if(sDate === today) dToday += s.total_amount;
-                if(sDate.startsWith(currentMonth)) dMonth += s.total_amount;
-                
-                // حساب الربح التقديري
-                s.items?.forEach(item => {
-                    const price = item.price || 0;
-                    const cost = item.cost_price || (price * 0.7); // تقدير 30% ربح إذا لم يسجل التكلفة
-                    profit += (price - cost) * item.qty;
+        async function loadReturns() {
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'return');
+            const list = document.getElementById('returns-list');
+            list.innerHTML = data?.map(r => {
+                const itemNames = r.items?.map(i => i.name || i.product_name).join(' + ') || 'غير محدد';
+                return `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${itemNames}</td><td>${r.total_amount}</td><td>${r.seller_name || 'مدير'}</td></tr>`;
+            }).join('') || '';
+        }
+
+        async function loadInventoryData() {
+            const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            const list = document.getElementById('inventory-list');
+            const selector = document.getElementById('product-selector');
+            list.innerHTML = ''; selector.innerHTML = '<option value="">اختر الصنف...</option>';
+            let saleVal = 0, costVal = 0, shorts = 0;
+            data?.forEach(p => {
+                let pName = p.name || p.product_name || "غير مسمى";
+                saleVal += (p.stock * p.price);
+                costVal += (p.stock * (p.cost_price || 0));
+                if(p.stock <= 5) shorts++;
+                list.innerHTML += `<tr><td>${pName}</td><td>${p.stock}</td><td>${p.cost_price || 0}</td><td>${p.stock <= 5 ? '🔴 ناقص' : '✅ متوفر'}</td></tr>`;
+                selector.innerHTML += `<option value="${p.id}">${pName}</option>`;
+            });
+            document.getElementById('inv-val-sale').innerText = saleVal.toFixed(2);
+            document.getElementById('inv-val-cost').innerText = costVal.toFixed(2);
+            document.getElementById('short-count').innerText = shorts;
+        }
+
+        async function loadProductHistory() {
+            const pid = document.getElementById('product-selector').value;
+            if(!pid) return;
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey);
+            const list = document.getElementById('product-history-list'); list.innerHTML = '';
+            data?.forEach(s => {
+                const item = s.items.find(i => i.id == pid);
+                if(item) {
+                    list.innerHTML += `<tr><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${s.type === 'sale' ? 'مبيعات' : 'مرتجع'}</td><td>${item.qty}</td></tr>`;
+                }
+            });
+        }
+
+        async function loadProfitData() {
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
+            let totalSales = 0, totalProfit = 0;
+            data?.forEach(s => {
+                totalSales += s.total_amount;
+                s.items.forEach(item => {
+                    let cost = item.cost_price || 0;
+                    totalProfit += (item.price - cost) * item.qty;
                 });
             });
-
-            document.getElementById('ov-today').innerText = dToday.toLocaleString() + " ج.م";
-            document.getElementById('ov-month').innerText = dMonth.toLocaleString() + " ج.م";
-            document.getElementById('ov-profit').innerText = profit.toLocaleString() + " ج.م";
-
-            // رسم بياني المبيعات آخر 7 أيام
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['اليوم','أمس','منذ 2','منذ 3','منذ 4','منذ 5','منذ 6'],
-                    datasets: [{ label: 'مبيعات الأيام الماضية', data: [dToday, dToday*0.8, dToday*1.2, dToday*0.9, dToday*1.1, dToday*0.7, dToday], borderColor: '#00f2fe', tension: 0.4 }]
-                }
-            });
+            document.getElementById('net-profit-val').innerText = totalProfit.toFixed(2) + " ج.م";
+            document.getElementById('total-sales-val').innerText = totalSales.toFixed(2) + " ج.م";
         }
 
-        async function loadSalesDetails() {
-            const filter = document.getElementById('filter-date').value;
-            let query = _supabase.from('sales').select('*').eq('store_key', storeKey).order('created_at', { ascending: false });
-            if(filter) query = query.gte('created_at', filter+'T00:00:00').lte('created_at', filter+'T23:59:59');
-            
-            const { data: sales } = await query;
-            const tbody = document.getElementById('sales-tbody');
-            tbody.innerHTML = '';
-            sales?.forEach(s => {
-                const isRet = s.type === 'return';
-                tbody.innerHTML += `
-                    <tr style="color:${isRet?'var(--red)':'#fff'}">
-                        <td>#${s.id.toString().slice(-5)}</td>
-                        <td>${new Date(s.created_at).toLocaleString('ar-EG')}</td>
-                        <td>${s.total_amount} ج.م</td>
-                        <td>${isRet ? 'مرتجع' : 'مبيعات'}</td>
-                        <td>${s.cashier_name || s.cashier || s.username || 'مدير'}</td>
-                    </tr>
-                `;
-            });
+        // الموردين: تحميل وتصفية وحذف
+        async function loadVendors() {
+            const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
+            allVendors = data || [];
+            renderVendors(allVendors);
         }
 
-        async function loadInventoryStats() {
-            const { data: prods } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            let totalVal = 0; let lowCount = 0;
-            const lowBody = document.getElementById('low-stock-tbody');
-            lowBody.innerHTML = '';
-
-            prods?.forEach(p => {
-                totalVal += (p.price * p.stock);
-                if(p.stock <= 5) {
-                    lowCount++;
-                    lowBody.innerHTML += `<tr><td>${p.product_name}</td><td>${p.barcode||'--'}</td><td style="color:var(--red); font-weight:bold;">${p.stock}</td></tr>`;
-                }
-            });
-
-            document.getElementById('inv-value').innerText = totalVal.toLocaleString() + " ج.م";
-            document.getElementById('inv-low').innerText = lowCount;
+        function renderVendors(listData) {
+            const list = document.getElementById('vendors-list-body');
+            list.innerHTML = listData.map(v => `
+                <tr>
+                    <td>${v.vendor_name}</td>
+                    <td><strong style="color:var(--red)">${v.total_debt} ج.م</strong></td>
+                    <td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt}, '${v.vendor_name}')">💰 دفع</button>
+                        <button class="btn-del" onclick="deleteVendorDebt('${v.id}', '${v.vendor_name}')">🗑️ حذف المديونية</button>
+                    </td>
+                </tr>`).join('');
         }
 
-        async function loadStaff() {
-            const tbody = document.getElementById('staff-tbody');
-            tbody.innerHTML = '<tr><td colspan="3">جاري التحميل...</td></tr>';
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
-            let staff = {};
-            
-            // التعديل هنا لقراءة اسم الكاشير بشكل أدق
-            sales?.forEach(s => {
-                const u = s.cashier_name || s.cashier || s.username || 'مدير';
-                if(!staff[u]) staff[u] = { count: 0, total: 0 };
-                staff[u].count += 1;
-                staff[u].total += s.total_amount;
-            });
+        function filterVendors() {
+            const query = document.getElementById('vendor-search').value.toLowerCase();
+            const filtered = allVendors.filter(v => v.vendor_name.toLowerCase().includes(query));
+            renderVendors(filtered);
+        }
 
-            tbody.innerHTML = '';
-            for(let u in staff) {
-                tbody.innerHTML += `<tr><td>${u}</td><td>${staff[u].count}</td><td style="color:var(--green)">${staff[u].total} ج.م</td></tr>`;
+        async function deleteVendorDebt(id, name) {
+            if(confirm(`هل أنت متأكد من حذف مديونية المورد "${name}" تماماً من السجلات؟`)) {
+                await _supabase.from('vendors').delete().eq('id', id);
+                alert("تم الحذف بنجاح");
+                loadVendors();
             }
         }
 
-        async function loadVendors() {
-            const { data: vendors } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
-            const tbody = document.getElementById('vendors-tbody');
-            tbody.innerHTML = '';
-            let tDebt = 0;
-            vendors?.forEach(v => {
-                tDebt += v.total_debt;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${v.vendor_name}</td>
-                        <td style="color:var(--red)">${v.total_debt} ج.م</td>
-                        <td>${v.last_payment_date ? new Date(v.last_payment_date).toLocaleDateString('ar-EG') : '---'}</td>
-                        <td><button class="btn btn-outline" onclick="payVendor('${v.id}', ${v.total_debt})">تسديد جزء</button></td>
-                    </tr>
-                `;
+        async function payVendor(id, currentDebt, name) {
+            const amt = prompt(`دفع للمورد: ${name}\nالمديونية الحالية: ${currentDebt}\nأدخل المبلغ المدفوع الآن:`, currentDebt);
+            if(amt === null || amt === "" || isNaN(amt)) return;
+            const paid = parseFloat(amt);
+            const remaining = currentDebt - paid;
+            if(confirm(`تأكيد عملية الدفع:\n- المورد: ${name}\n- المديونية السابقة: ${currentDebt}\n- المدفوع الآن: ${paid}\n- المديونية المتبقية: ${remaining}`)) {
+                await _supabase.from('vendors').update({ total_debt: remaining, last_payment_date: new Date() }).eq('id', id);
+                alert("تم تحديث حساب المورد بنجاح"); 
+                loadVendors();
+            }
+        }
+
+        // الموظفين: تحميل وتصفية
+        async function loadStaffPerformance() {
+            const from = document.getElementById('staff-from').value;
+            const to = document.getElementById('staff-to').value;
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', from).lte('created_at', to + 'T23:59:59');
+
+            let staff = {};
+            data?.forEach(s => {
+                let name = s.seller_name || 'المدير';
+                if(!staff[name]) staff[name] = { count: 0, total: 0 };
+                staff[name].count++; 
+                staff[name].total += s.total_amount;
             });
-            document.getElementById('ov-debt').innerText = tDebt.toLocaleString() + " ج.م";
+            allStaffData = Object.entries(staff);
+            renderStaff(allStaffData);
         }
 
-        async function payVendor(id, currentDebt) {
-            const p = prompt("أدخل المبلغ المراد تسديده:");
-            if(!p || isNaN(p)) return;
-            const amt = parseFloat(p);
-            if(amt > currentDebt) return alert("المبلغ أكبر من الدين!");
-            await _supabase.from('vendors').update({ total_debt: currentDebt - amt, last_payment_date: new Date() }).eq('id', id);
-            loadVendors();
+        function renderStaff(listData) {
+            const list = document.getElementById('staff-performance-list');
+            list.innerHTML = listData.map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td></tr>`).join('');
         }
 
-        async function saveVendor() {
+        function filterStaff() {
+            const query = document.getElementById('staff-search').value.toLowerCase();
+            const filtered = allStaffData.filter(([name]) => name.toLowerCase().includes(query));
+            renderStaff(filtered);
+        }
+
+        async function saveVendorInv() {
             const name = document.getElementById('v-name-in').value;
             const amt = parseFloat(document.getElementById('v-amount-in').value);
             if(!name || !amt) return;
@@ -318,11 +430,11 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: { labels: ['9am','12pm','3pm','6pm','9pm','12am'], datasets: [{ label: 'النشاط', data: [10,30,50,90,70,20], backgroundColor: '#00f2fe' }] },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
 
-        initData();
+        init();
     </script>
 </body>
 </html>
