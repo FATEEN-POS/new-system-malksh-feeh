@@ -7,142 +7,166 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* القائمة الجانبية */
+        /* Sidebar */
         .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; }
-        .sidebar h2 { color: var(--accent); font-size: 20px; text-align: center; margin-bottom: 30px; }
-        .nav-btn { background: none; border: none; color: #888; padding: 12px; text-align: right; cursor: pointer; border-radius: 10px; margin-bottom: 5px; font-weight: bold; font-size: 15px; }
+        .sidebar h2 { color: var(--accent); font-size: 18px; text-align: center; margin-bottom: 25px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
+        .nav-group { margin-bottom: 20px; }
+        .nav-group-title { font-size: 12px; color: #555; margin-bottom: 10px; display: block; text-transform: uppercase; }
+        .nav-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; margin-bottom: 5px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
         .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
 
-        /* المحتوى الرئيسي */
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        /* Main Content */
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%); }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.4s; }
 
-        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-mini { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--gray); }
-        .stat-mini span { display: block; color: #888; font-size: 12px; }
-        .stat-mini strong { font-size: 20px; color: var(--accent); }
+        .report-card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: #000; padding: 15px; border-radius: 12px; border-right: 3px solid var(--accent); }
+        .stat-box span { font-size: 12px; color: #777; display: block; }
+        .stat-box strong { font-size: 18px; color: #fff; }
 
-        .chart-container { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); margin-top: 20px; height: 350px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { text-align: right; color: #555; padding: 12px; border-bottom: 1px solid var(--gray); }
-        td { padding: 12px; border-bottom: 1px solid #1a1a1a; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: right; font-size: 13px; color: var(--accent); padding: 12px; border-bottom: 1px solid var(--gray); }
+        td { padding: 12px; font-size: 14px; border-bottom: 1px solid #1a1a1a; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .bg-red { background: rgba(255, 77, 77, 0.1); color: var(--red); }
+        .bg-green { background: rgba(0, 255, 136, 0.1); color: var(--green); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2>مركز التقارير</h2>
-        <button class="nav-btn active" onclick="showTab('profit-tab', this)">💰 تقرير الأرباح</button>
-        <button class="nav-btn" onclick="showTab('inventory-tab', this)">📦 تقرير المخزن</button>
-        <button class="nav-btn" onclick="showTab('staff-tab', this)">👥 تقرير الموظفين</button>
-        <button class="nav-btn" onclick="showTab('vendors-tab', this)">🚚 ديون الموردين</button>
-        <hr style="width:100%; border:0; border-top:1px solid var(--gray); margin: 20px 0;">
-        <button class="nav-btn" onclick="location.href='manager.html'" style="color:var(--red)">↩ خروج</button>
+        <h2>Fateen OS Reports</h2>
+        
+        <div class="nav-group">
+            <span class="nav-group-title">المبيعات</span>
+            <button class="nav-btn active" onclick="showTab('sales-tab', this)">📊 مبيعات ومرتجعات</button>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-group-title">المخزن</span>
+            <button class="nav-btn" onclick="showTab('inv-tab', this)">📦 جرد ونواقص</button>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-group-title">الموظفين</span>
+            <button class="nav-btn" onclick="showTab('staff-tab', this)">👥 أداء الموظفين</button>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-group-title">المالية</span>
+            <button class="nav-btn" onclick="showTab('profit-tab', this)">💰 الأرباح والذروة</button>
+            <button class="nav-btn" onclick="showTab('vendors-tab', this)">🚚 ديون الموردين</button>
+        </div>
+
+        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩ العودة للمدير</button>
     </div>
 
     <div class="main-content">
         
-        <div id="profit-tab" class="tab-content active">
-            <div class="report-header">
-                <h2>تحليل الأرباح والنمو</h2>
-                <input type="month" id="profit-month" onchange="loadProfitData()" style="background:#000; color:#fff; border:1px solid var(--gray); padding:8px; border-radius:10px;">
-            </div>
-            <div class="stats-grid">
-                <div class="stat-mini"><span>صافي الربح</span><strong id="net-profit">0.00</strong></div>
-                <div class="stat-mini"><span>أعلى يوم مبيعاً</span><strong id="peak-day">---</strong></div>
-                <div class="stat-mini"><span>نسبة الفيزا</span><strong id="visa-perc">0%</strong></div>
-            </div>
-            <div class="chart-container">
-                <canvas id="profitChart"></canvas>
+        <div id="sales-tab" class="tab-content active">
+            <h2>تقارير المبيعات</h2>
+            <div class="report-card">
+                <div class="stats-row">
+                    <div class="stat-box"><span>مبيعات اليوم</span><strong id="day-total">0</strong></div>
+                    <div class="stat-box"><span>المرتجعات</span><strong style="color:var(--red)">0</strong></div>
+                    <div class="stat-box"><span>الأكثر مبيعاً</span><strong id="top-item">---</strong></div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <input type="date" id="sale-from"> إلى <input type="date" id="sale-to">
+                    <button class="nav-btn" style="display:inline; width:auto; background:var(--accent); color:#000;">بحث</button>
+                </div>
+                <table>
+                    <thead><tr><th>التاريخ</th><th>النوع</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
+                    <tbody id="sales-report-body"></tbody>
+                </table>
             </div>
         </div>
 
-        <div id="inventory-tab" class="tab-content">
-            <h2>حالة المخزون الحالية</h2>
-            <div class="stats-grid">
-                <div class="stat-mini"><span>إجمالي قيمة المخزن</span><strong>45,000 ج.م</strong></div>
-                <div class="stat-mini" style="border-color:var(--red)"><span>أصناف ناقصة</span><strong style="color:var(--red)">12</strong></div>
+        <div id="inv-tab" class="tab-content">
+            <h2>إدارة المخزون والهاك</h2>
+            <div class="stats-row">
+                <div class="stat-box" style="border-color:var(--orange)"><span>قيمة المخزن حالياً</span><strong>0.00</strong></div>
+                <div class="stat-box" style="border-color:var(--red)"><span>نواقص (أقل من 5)</span><strong>0</strong></div>
+                <div class="stat-box" style="border-color:var(--red)"><span>إجمالي الهاك/تالف</span><strong>0</strong></div>
             </div>
-            <table>
-                <thead>
-                    <tr><th>اسم الصنف</th><th>الكمية</th><th>حركة البيع</th><th>الحالة</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>بيبسي كانز</td><td>50</td><td>سريع</td><td>✅ متوفر</td></tr>
-                    <tr><td>شيبسي عائلي</td><td>3</td><td>متوسط</td><td style="color:var(--red)">⚠️ شارق على الانتهاء</td></tr>
-                </tbody>
-            </table>
+            <div class="report-card">
+                <h3>تقرير النواقص والطلب</h3>
+                <table id="shortage-table">
+                    <thead><tr><th>الصنف</th><th>الرصيد الحالي</th><th>حركة الصنف</th><th>إجراء</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="staff-tab" class="tab-content">
-            <h2>أداء فريق العمل</h2>
-            <table>
-                <thead>
-                    <tr><th>الموظف</th><th>عدد الفواتير</th><th>إجمالي المبيعات</th><th>المرتجعات</th></tr>
-                </thead>
-                <tbody id="staff-table">
-                    <tr><td>أحمد محمد</td><td>45</td><td>12,500 ج.م</td><td>1</td></tr>
-                </tbody>
-            </table>
+            <h2>مراقبة الوردية والموظف</h2>
+            <div class="report-card">
+                <table>
+                    <thead><tr><th>اسم الموظف</th><th>مبيعات الوردية</th><th>عدد الفواتير</th><th>صافي التحصيل</th></tr></thead>
+                    <tbody id="staff-report-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="profit-tab" class="tab-content">
+            <h2>صافي الربح وتحليل الذروة</h2>
+            <div class="stats-row">
+                <div class="stat-box" style="border-color:var(--green)"><span>صافي الربح التقديري</span><strong>0.00</strong></div>
+                <div class="stat-box"><span>أكثر ساعة بيع</span><strong>09:00 PM</strong></div>
+            </div>
+            <div class="report-card" style="height: 300px;">
+                <canvas id="peakChart"></canvas>
+            </div>
         </div>
 
         <div id="vendors-tab" class="tab-content">
-            <h2>مستحقات الموردين</h2>
-            <div class="chart-container" style="height: 250px;">
-                <canvas id="vendorChart"></canvas>
+            <h2>كشف حساب الموردين</h2>
+            <button class="nav-btn" style="background:var(--accent); color:#000; width:auto; margin-bottom:15px;">+ فاتورة مشتريات آجلة</button>
+            <div class="report-card">
+                <table>
+                    <thead><tr><th>المورد</th><th>إجمالي المديونية</th><th>آخر دفعة</th><th>الحالة</th></tr></thead>
+                    <tbody>
+                        <tr><td>شركة المراعي</td><td>5,400 ج.م</td><td>2023-10-01</td><td><span class="badge bg-red">غير مسدد</span></td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
     </div>
 
     <script>
-        // دالة التنقل بين التبويبات
         function showTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
-
-            if(tabId === 'profit-tab') renderProfitChart();
+            if(tabId === 'profit-tab') initPeakChart();
         }
 
-        // رسم بياني تجريبي للأرباح (Chart.js)
-        function renderProfitChart() {
-            const ctx = document.getElementById('profitChart').getContext('2d');
+        function initPeakChart() {
+            const ctx = document.getElementById('peakChart').getContext('2d');
             new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
-                    labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+                    labels: ['12pm', '3pm', '6pm', '9pm', '12am'],
                     datasets: [{
-                        label: 'صافي الأرباح اليومية',
-                        data: [1200, 1900, 1500, 2500, 2200, 3000, 4500],
-                        borderColor: '#00f2fe',
-                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
-                        fill: true,
-                        tension: 0.4
+                        label: 'حجم الزحمة (عدد الفواتير)',
+                        data: [12, 19, 45, 80, 23],
+                        backgroundColor: '#00f2fe'
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: '#222' } }, x: { grid: { display: false } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
-
-        // تشغيل أول رسم بياني عند التحميل
-        window.onload = renderProfitChart;
     </script>
 </body>
 </html>
