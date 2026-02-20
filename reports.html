@@ -41,6 +41,10 @@
         .modal-content { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--accent); width: 380px; }
         .modal-content input, .modal-content select { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
 
+        .filter-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; }
+        .filter-box label { font-size: 12px; color: #888; }
+        .filter-box input { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -104,7 +108,7 @@
                 <button class="download-btn" onclick="downloadPDF('pdf-returns', 'Returns_Report')">📥 PDF</button>
                 <h3>سجل المرتجعات</h3>
                 <table>
-                    <thead><tr><th>الوقت</th><th>الفاتورة الأصلية</th><th>القيمة المستردة</th><th>الموظف</th></tr></thead>
+                    <thead><tr><th>الوقت</th><th>رقم الفاتورة</th><th>الأصناف المرتجعة</th><th>القيمة المستردة</th><th>الموظف</th></tr></thead>
                     <tbody id="returns-list"></tbody>
                 </table>
             </div>
@@ -173,8 +177,12 @@
             <div class="report-card" id="pdf-staff">
                 <button class="download-btn" onclick="downloadPDF('pdf-staff', 'Staff_Performance')">📥 PDF</button>
                 <h3>إحصائيات الموظفين</h3>
+                <div class="filter-box">
+                    <label>من:</label> <input type="date" id="staff-from" onchange="loadStaffPerformance()">
+                    <label>إلى:</label> <input type="date" id="staff-to" onchange="loadStaffPerformance()">
+                </div>
                 <table>
-                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>المبيعات</th></tr></thead>
+                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
                     <tbody id="staff-performance-list"></tbody>
                 </table>
             </div>
@@ -205,7 +213,11 @@
             document.getElementById('display-store-name').innerText = "متجر " + (store?.store_name || "");
             document.getElementById('display-sys-v').innerText = "V " + (vData?.value || "1.0.0");
             
-            document.getElementById('sale-date').valueAsDate = new Date();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('sale-date').value = today;
+            document.getElementById('staff-from').value = today;
+            document.getElementById('staff-to').value = today;
+
             loadAllReports();
         }
 
@@ -240,7 +252,6 @@
             document.getElementById('day-orders').innerText = data?.length || 0;
         }
 
-        // حل مشكلة undefined في الأكثر مبيعاً
         async function loadTopItems() {
             const { data } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
             let counts = {};
@@ -257,7 +268,15 @@
             list.innerHTML = sorted.map(i => `<tr><td>${i[0]}</td><td>${i[1]}</td></tr>`).join('');
         }
 
-        // حل مشكلة undefined في الجرد
+        async function loadReturns() {
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'return');
+            const list = document.getElementById('returns-list');
+            list.innerHTML = data?.map(r => {
+                const itemNames = r.items?.map(i => i.name || i.product_name).join(' + ') || 'غير محدد';
+                return `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${itemNames}</td><td>${r.total_amount}</td><td>${r.seller_name || 'مدير'}</td></tr>`;
+            }).join('') || '';
+        }
+
         async function loadInventoryData() {
             const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
             const list = document.getElementById('inventory-list');
@@ -277,7 +296,6 @@
             document.getElementById('short-count').innerText = shorts;
         }
 
-        // تفعيل حركة الصنف
         async function loadProductHistory() {
             const pid = document.getElementById('product-selector').value;
             if(!pid) return;
@@ -291,7 +309,6 @@
             });
         }
 
-        // تفعيل صافي الأرباح
         async function loadProfitData() {
             const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
             let totalSales = 0, totalProfit = 0;
@@ -306,7 +323,6 @@
             document.getElementById('total-sales-val').innerText = totalSales.toFixed(2) + " ج.م";
         }
 
-        // تحديث الموردين (زر تم الدفع)
         async function loadVendors() {
             const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
             const list = document.getElementById('vendors-list-body'); list.innerHTML = '';
@@ -316,32 +332,42 @@
                         <td>${v.vendor_name}</td>
                         <td>${v.total_debt}</td>
                         <td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString()}</td>
-                        <td><button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt})">تم الدفع</button></td>
+                        <td><button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt}, '${v.vendor_name}')">تم الدفع</button></td>
                     </tr>`;
             });
         }
 
-        async function payVendor(id, currentDebt) {
-            const amt = prompt("أدخل المبلغ المدفوع حالياً:", currentDebt);
-            if(!amt || isNaN(amt)) return;
-            const newDebt = currentDebt - parseFloat(amt);
-            await _supabase.from('vendors').update({ total_debt: newDebt, last_payment_date: new Date() }).eq('id', id);
-            alert("تم تحديث حساب المورد"); loadVendors();
-        }
-
-        async function loadReturns() {
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'return');
-            const list = document.getElementById('returns-list');
-            list.innerHTML = data?.map(r => `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${r.total_amount}</td><td>${r.seller_name || 'مدير'}</td></tr>`).join('') || '';
+        async function payVendor(id, currentDebt, name) {
+            const amt = prompt(`دفع للمورد: ${name}\nالمديونية الحالية: ${currentDebt}\nأدخل المبلغ المدفوع الآن:`, currentDebt);
+            if(amt === null || amt === "" || isNaN(amt)) return;
+            
+            const paid = parseFloat(amt);
+            const remaining = currentDebt - paid;
+            
+            if(confirm(`تأكيد عملية الدفع:\n- المورد: ${name}\n- المديونية السابقة: ${currentDebt}\n- المدفوع الآن: ${paid}\n- المديونية المتبقية: ${remaining}`)) {
+                await _supabase.from('vendors').update({ total_debt: remaining, last_payment_date: new Date() }).eq('id', id);
+                alert("تم تحديث حساب المورد بنجاح"); 
+                loadVendors();
+            }
         }
 
         async function loadStaffPerformance() {
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
+            const from = document.getElementById('staff-from').value;
+            const to = document.getElementById('staff-to').value;
+            
+            const { data } = await _supabase.from('sales')
+                .select('*')
+                .eq('store_key', storeKey)
+                .eq('type', 'sale')
+                .gte('created_at', from)
+                .lte('created_at', to + 'T23:59:59');
+
             let staff = {};
             data?.forEach(s => {
                 let name = s.seller_name || 'المدير';
                 if(!staff[name]) staff[name] = { count: 0, total: 0 };
-                staff[name].count++; staff[name].total += s.total_amount;
+                staff[name].count++; 
+                staff[name].total += s.total_amount;
             });
             const list = document.getElementById('staff-performance-list');
             list.innerHTML = Object.entries(staff).map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td></tr>`).join('');
