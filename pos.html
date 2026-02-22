@@ -14,62 +14,62 @@
         .cart-section { flex: 1; background: var(--card); padding: 20px; display: flex; flex-direction: column; }
         
         .pos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; overflow-y: auto; flex-grow: 1; }
-        
-        .product-card { background: #080808; border: 1px solid var(--gray); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; }
-        .product-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-        .product-card h4 { margin: 10px 0 5px; font-size: 14px; }
-        .product-card span { color: var(--accent); font-weight: bold; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; overflow-y: auto; }
+        .item { background: var(--gray); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid transparent; }
+        .item:hover { border-color: var(--accent); transform: scale(1.02); }
 
-        .search-input { width: 100%; background: var(--card); border: 1px solid var(--gray); color: #fff; padding: 12px; border-radius: 10px; margin-bottom: 20px; }
+        .cart-list { flex: 1; overflow-y: auto; margin: 15px 0; border-top: 1px solid var(--gray); }
+        .cart-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
 
-        .cart-list { flex-grow: 1; overflow-y: auto; }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
-        
-        .total-box { padding: 20px 0; border-top: 2px solid var(--gray); }
-        .total-box h2 { margin: 0; display: flex; justify-content: space-between; }
-        
-        .checkout-btn { width: 100%; background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 15px; }
-        .checkout-btn:hover { background: #00d8e4; }
+        .payment-toggle { display: flex; gap: 10px; margin-bottom: 15px; }
+        .pay-btn { flex: 1; padding: 10px; border: 1px solid var(--gray); border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; }
+        .pay-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0, 242, 254, 0.1); }
 
-        .print-receipt { display: none; }
+        .btn-pay { background: var(--accent); color: #000; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer; border: none; }
+
+        /* تنسيق الطباعة */
         @media print {
-            body * { display: none; }
-            .print-receipt { display: block; color: #000; padding: 20px; font-size: 14px; }
+            body * { visibility: hidden; }
+            #receipt { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; }
+            .no-print { display: none; }
         }
+        #receipt { display: none; background: #fff; color: #000; padding: 20px; text-align: center; direction: rtl; }
     </style>
 </head>
 <body>
 
-    <div class="products-section">
+    <div class="products-section no-print">
         <div class="pos-header">
-            <h2 id="store-name">تحميل...</h2>
-            <input type="text" id="search" class="search-input" placeholder="ابحث عن صنف أو باركود..." oninput="renderProducts()">
+            <h2 id="store-name">جاري التحميل...</h2>
+            <input type="text" id="p-search" placeholder="بحث (اسم/باركود)..." oninput="loadProducts()" style="padding:10px; border-radius:8px; border:1px solid var(--gray); background:#000; color:#fff; width:250px;">
         </div>
         <div class="product-grid" id="product-list"></div>
     </div>
 
-    <div class="cart-section">
-        <h3>سلة البيع</h3>
-        <div class="cart-list" id="cart-list"></div>
-        <div class="total-box">
-            <h2><span>الإجمالي:</span> <span id="total-val">0</span></h2>
-            <button class="checkout-btn" onclick="checkout('نقدي')">💵 دفع كاش</button>
-            <button class="checkout-btn" style="background: var(--green);" onclick="checkout('فيزا')">💳 دفع فيزا</button>
-            <button class="checkout-btn" style="background: var(--red); font-size: 14px; margin-top: 10px;" onclick="cart=[]; renderCart();">❌ مسح السلة</button>
+    <div class="cart-section no-print">
+        <h3>سلة المبيعات</h3>
+        <div class="cart-list" id="cart-display"></div>
+        
+        <div class="payment-toggle">
+            <div id="method-cash" class="pay-btn active" onclick="setPayment('كاش')">💵 كاش</div>
+            <div id="method-visa" class="pay-btn" onclick="setPayment('فيزا')">💳 فيزا</div>
         </div>
+
+        <div style="font-size:24px; font-weight:bold; margin-bottom:15px; display:flex; justify-content:space-between;">
+            <span>الإجمالي:</span>
+            <span id="total-price">0.00</span>
+        </div>
+        <button class="btn-pay" onclick="checkout()">إتمام و طباعة الفاتورة</button>
     </div>
 
-    <div class="print-receipt" id="receipt">
-        <center>
-            <h2 id="r-store">اسم المحل</h2>
-            <p id="r-date"></p>
-        </center>
+    <div id="receipt">
+        <h2 id="r-store"></h2>
+        <p id="r-date"></p>
         <hr>
-        <div id="r-items"></div>
+        <div id="r-items" style="text-align: right;"></div>
         <hr>
         <h3 id="r-total"></h3>
-        <center><p>شكراً لزيارتكم</p></center>
+        <p>شكراً لزيارتكم</p>
     </div>
 
     <script>
@@ -77,79 +77,72 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
-
-        let products = [];
+        
         let cart = [];
+        let paymentMethod = 'كاش';
+
+        function setPayment(m) {
+            paymentMethod = m;
+            document.getElementById('method-cash').classList.toggle('active', m === 'كاش');
+            document.getElementById('method-visa').classList.toggle('active', m === 'فيزا');
+        }
 
         async function loadProducts() {
-            const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            products = data || [];
-            renderProducts();
+            const search = document.getElementById('p-search').value;
+            let query = _supabase.from('products').select('*').eq('store_key', storeKey).gt('stock', 0);
+            if(search) query = query.or(`product_name.ilike.%${search}%,barcode.ilike.%${search}%`);
+            const { data } = await query;
+            
+            document.getElementById('product-list').innerHTML = data.map(p => `
+                <div class="item" onclick='addToCart(${JSON.stringify(p)})'>
+                    <strong>${p.product_name}</strong><br>
+                    <span style="color:var(--accent)">${p.price} ج.م</span>
+                </div>
+            `).join('');
         }
 
-        function renderProducts() {
-            const query = document.getElementById('search').value.toLowerCase();
-            const list = document.getElementById('product-list');
-            list.innerHTML = '';
-            products.filter(p => p.product_name.toLowerCase().includes(query) || p.barcode?.includes(query)).forEach(p => {
-                list.innerHTML += `
-                    <div class="product-card" onclick="addToCart(${p.id})">
-                        <h4>${p.product_name}</h4>
-                        <span>${p.price} ج.م</span>
-                        <div style="font-size:10px; color:#555">مخزن: ${p.stock}</div>
-                    </div>`;
-            });
-        }
-
-        function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            const exist = cart.find(x => x.id === id);
-            if(exist) exist.qty++;
-            else cart.push({ ...p, qty: 1 });
+        function addToCart(p) {
+            const exist = cart.find(i => i.id === p.id);
+            if(exist) exist.qty++; else cart.push({...p, qty: 1});
             renderCart();
         }
 
         function renderCart() {
-            const list = document.getElementById('cart-list');
-            list.innerHTML = '';
-            let total = 0;
-            cart.forEach(item => {
-                total += (item.price * item.qty);
-                list.innerHTML += `
-                    <div class="cart-item">
-                        <div>${item.product_name} x ${item.qty}</div>
-                        <div>${item.price * item.qty} ج.م</div>
-                    </div>`;
-            });
-            document.getElementById('total-val').innerText = total;
+            const list = document.getElementById('cart-display');
+            list.innerHTML = cart.map((i, idx) => `
+                <div class="cart-item">
+                    <span>${i.product_name} x ${i.qty}</span>
+                    <span>${(i.price * i.qty).toFixed(2)} <button onclick="cart.splice(${idx},1);renderCart()" style="color:red; background:none; border:none; cursor:pointer;">X</button></span>
+                </div>
+            `).join('');
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            document.getElementById('total-price').innerText = total.toFixed(2);
         }
 
-        async function checkout(paymentMethod) {
-            if(cart.length === 0) return alert("السلة فارغة");
-            const total = parseFloat(document.getElementById('total-val').innerText);
+        async function checkout() {
+            if(cart.length === 0) return;
+            const total = parseFloat(document.getElementById('total-price').innerText);
             
-            // سحب اسم الموظف الحالي من الجلسة
-            const currentUser = sessionStorage.getItem('username') || 'المدير';
+            // جلب اسم الموظف من الـ Session
+            const currentUser = sessionStorage.getItem('username') || 'موظف غير معروف';
 
-            // 1. تسجيل الفاتورة
-            const { data: sale, error } = await _supabase.from('sales').insert([{
+            // 1. تسجيل العملية مع إضافة اسم البائع
+            const { data: sale } = await _supabase.from('sales').insert([{
                 store_key: storeKey,
                 items: cart,
                 total_amount: total,
                 payment_method: paymentMethod,
-                seller_name: currentUser, // الحقل المطلوب
+                seller_name: currentUser, // التعديل الجديد هنا
                 type: 'sale'
             }]);
-
-            if(error) return alert("خطأ في الحفظ: " + error.message);
 
             // 2. خصم المخزن
             for (let item of cart) {
                 const { data: p } = await _supabase.from('products').select('stock').eq('id', item.id).single();
-                if(p) await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
+                await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
             }
 
-            // 3. تجهيز الطباعة
+            // 3. الطباعة
             document.getElementById('r-store').innerText = document.getElementById('store-name').innerText;
             document.getElementById('r-date').innerText = new Date().toLocaleString('ar-EG');
             document.getElementById('r-items').innerHTML = cart.map(i => `<div>${i.product_name} (${i.qty}) .. ${i.price * i.qty}</div>`).join('');
@@ -162,9 +155,8 @@
         }
 
         async function init() {
-            if(!storeKey) return location.href='index.html';
             const { data: st } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
-            document.getElementById('store-name').innerText = st?.store_name || "Fateen OS";
+            document.getElementById('store-name').innerText = st.store_name;
             loadProducts();
         }
         init();
