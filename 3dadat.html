@@ -1,1 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+        body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
+        .sidebar { width: 280px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; }
+        .sidebar-header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; }
+        .sidebar-header h2 { margin: 0; color: var(--accent); font-size: 22px; }
+        
+        .nav-btn { background: none; border: 1px solid transparent; color: #fff; padding: 15px; margin-bottom: 10px; border-radius: 12px; cursor: pointer; text-align: right; font-size: 16px; width: 100%; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); border-color: var(--accent); color: var(--accent); }
+
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; background: var(--bg); }
+        .section { display: none; animation: fadeIn 0.4s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .setting-card { background: var(--card); border: 1px solid var(--gray); padding: 25px; border-radius: 20px; margin-bottom: 20px; }
+        .setting-card h3 { margin-top: 0; color: var(--accent); border-bottom: 1px solid var(--gray); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #888; font-size: 14px; }
+        .form-group input, .form-group textarea, .form-group select { 
+            width: 100%; padding: 12px; background: #000; border: 1px solid var(--gray); color: #fff; border-radius: 10px; font-size: 15px;
+        }
+        .form-group input:focus { border-color: var(--accent); outline: none; }
+
+        .btn { padding: 12px 25px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 15px; display: inline-flex; align-items: center; gap: 10px; }
+        .btn-save { background: var(--accent); color: #000; }
+        .btn-save:hover { background: #00d8e4; transform: scale(1.02); }
+        .btn-backup { background: var(--orange); color: #000; }
+
+        .preview-invoice { background: #fff; color: #000; padding: 20px; border-radius: 5px; width: 300px; margin-top: 20px; font-size: 12px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚙️ الإعدادات</h2>
+            <p style="font-size:12px; color:#888;">Fateen OS Config</p>
+        </div>
+        <button class="nav-btn active" onclick="showSection('identity')">🆔 إعدادات الهوية</button>
+        <button class="nav-btn" onclick="showSection('store')">🏪 إعدادات المتجر</button>
+        <button class="nav-btn" onclick="showSection('invoice')">🧾 إعدادات الفواتير</button>
+        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; background:var(--red); color:#fff; text-align:center;">خروج</button>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="identity" class="section active">
+            <div class="setting-card">
+                <h3>🆔 إعدادات الهوية (Brand)</h3>
+                <div class="form-group">
+                    <label>اسم المتجر / المحل</label>
+                    <input type="text" id="s-name" placeholder="مثلاً: محل فطين للبرمجيات">
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>رقم الهاتف</label>
+                        <input type="text" id="s-phone" placeholder="010xxxxxxx">
+                    </div>
+                    <div class="form-group">
+                        <label>الرقم الضريبي (إن وجد)</label>
+                        <input type="text" id="s-tax" placeholder="xxx-xxx-xxx">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>العنوان</label>
+                    <input type="text" id="s-address" placeholder="العنوان بالتفصيل">
+                </div>
+                <div class="form-group">
+                    <label>رابط اللوجو (Logo URL)</label>
+                    <input type="text" id="s-logo" placeholder="ضع رابط صورة اللوجو هنا">
+                </div>
+                <button class="btn btn-save" onclick="saveIdentity()">✅ حفظ بيانات الهوية</button>
+            </div>
+        </div>
+
+        <div id="store" class="section">
+            <div class="setting-card">
+                <h3>🔐 الحماية والأمان</h3>
+                <div class="form-group">
+                    <label>تغيير كلمة مرور المدير</label>
+                    <input type="password" id="m-pass" placeholder="أدخل كلمة المرور الجديدة">
+                </div>
+                <div class="form-group">
+                    <label>كود المحل (Store Key) - *احذر عند التغيير*</label>
+                    <input type="text" id="m-key" placeholder="الكود الحالي">
+                </div>
+                <button class="btn btn-save" onclick="updateSecurity()">🛡️ تحديث بيانات الأمان</button>
+            </div>
+
+            <div class="setting-card">
+                <h3>💾 النسخ الاحتياطي</h3>
+                <p style="color:#888; font-size:14px;">قم بتحميل نسخة من كافة بياناتك (منتجات، مبيعات، موظفين) في ملف واحد.</p>
+                <button class="btn btn-backup" onclick="exportBackup()">📥 تحميل نسخة احتياطية (Excel/JSON)</button>
+            </div>
+        </div>
+
+        <div id="invoice" class="section">
+            <div class="setting-card">
+                <h3>📄 تخصيص شكل الفاتورة</h3>
+                <div class="form-group">
+                    <label>رسالة أسفل الفاتورة (خاتمة)</label>
+                    <textarea id="inv-footer" rows="3" placeholder="مثلاً: البضاعة المباعة لا ترد ولا تستبدل.. شكراً لزيارتكم"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>حجم الورق</label>
+                    <select id="inv-size">
+                        <option value="80mm">طابعة حرارية (80mm)</option>
+                        <option value="58mm">طابعة حرارية (58mm)</option>
+                        <option value="A4">ورق عادي (A4)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="show-tax" checked> إظهار الرقم الضريبي في الفاتورة</label>
+                </div>
+                <button class="btn btn-save" onclick="saveInvSettings()">💾 حفظ إعدادات الفاتورة</button>
+            </div>
+
+            <h4 style="color:#888">👁️ معاينة سريعة</h4>
+            <div class="preview-invoice">
+                <center>
+                    <strong id="pre-name">اسم المتجر</strong><br>
+                    <span id="pre-address">العنوان هنا</span><br>
+                    <span id="pre-phone">010xxxxxxx</span>
+                </center>
+                <hr>
+                <span>فاتورة مبيعات #0001</span><br>
+                <span>التاريخ: 2024-01-01</span>
+                <hr>
+                <div style="display:flex; justify-content: space-between;">
+                    <span>صنف تجريبي</span>
+                    <span>100 ج.م</span>
+                </div>
+                <hr>
+                <center><p id="pre-footer">شكراً لزيارتكم</p></center>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const storeKey = sessionStorage.getItem('store_key');
+
+        if(!storeKey) location.href = 'index.html';
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadSettings() {
+            const { data: store } = await _supabase.from('stores').select('*').eq('store_key', storeKey).single();
+            if(store) {
+                document.getElementById('s-name').value = store.store_name || '';
+                document.getElementById('s-phone').value = store.phone || '';
+                document.getElementById('s-tax').value = store.tax_id || '';
+                document.getElementById('s-address').value = store.address || '';
+                document.getElementById('s-logo').value = store.logo_url || '';
+                document.getElementById('m-key').value = store.store_key;
+                
+                // تحديث المعاينة
+                document.getElementById('pre-name').innerText = store.store_name || 'اسم المتجر';
+                document.getElementById('pre-address').innerText = store.address || 'العنوان';
+                document.getElementById('pre-phone').innerText = store.phone || '';
+            }
+        }
+
+        async function saveIdentity() {
+            const updates = {
+                store_name: document.getElementById('s-name').value,
+                phone: document.getElementById('s-phone').value,
+                tax_id: document.getElementById('s-tax').value,
+                address: document.getElementById('s-address').value,
+                logo_url: document.getElementById('s-logo').value
+            };
+            const { error } = await _supabase.from('stores').update(updates).eq('store_key', storeKey);
+            if(!error) alert("✅ تم حفظ بيانات الهوية بنجاح");
+            loadSettings();
+        }
+
+        async function updateSecurity() {
+            const newPass = document.getElementById('m-pass').value;
+            const newKey = document.getElementById('m-key').value;
+
+            if(newPass) {
+                await _supabase.from('users').update({ password: newPass }).eq('store_key', storeKey).eq('role', 'manager');
+            }
+
+            if(newKey !== storeKey) {
+                if(confirm("تغيير كود المحل سيخرجك من النظام، هل أنت متأكد؟")) {
+                    await _supabase.from('stores').update({ store_key: newKey }).eq('store_key', storeKey);
+                    sessionStorage.clear();
+                    location.href = 'index.html';
+                }
+            } else {
+                alert("✅ تم تحديث الأمان");
+            }
+        }
+
+        async function saveInvSettings() {
+            const footer = document.getElementById('inv-footer').value;
+            // يمكنك حفظ هذه الإعدادات في جدول stores أو جدول إعدادات منفصل
+            await _supabase.from('stores').update({ invoice_footer: footer }).eq('store_key', storeKey);
+            document.getElementById('pre-footer').innerText = footer;
+            alert("✅ تم حفظ إعدادات الفاتورة");
+        }
+
+        async function exportBackup() {
+            alert("جاري تحضير النسخة الاحتياطية...");
+            const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey);
+            
+            const backupData = { products, sales, export_date: new Date() };
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FateenOS_Backup_${storeKey}.json`;
+            a.click();
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
