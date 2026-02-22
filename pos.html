@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>الكاشير</title>
+    <title>Fateen OS | POS Cashier</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -91,15 +91,13 @@
             const query = document.getElementById('search').value.toLowerCase();
             const list = document.getElementById('product-list');
             list.innerHTML = '';
-            
             products.filter(p => p.product_name.toLowerCase().includes(query) || p.barcode?.includes(query)).forEach(p => {
                 list.innerHTML += `
                     <div class="product-card" onclick="addToCart(${p.id})">
                         <h4>${p.product_name}</h4>
                         <span>${p.price} ج.م</span>
                         <div style="font-size:10px; color:#555">مخزن: ${p.stock}</div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
@@ -121,8 +119,7 @@
                     <div class="cart-item">
                         <div>${item.product_name} x ${item.qty}</div>
                         <div>${item.price * item.qty} ج.م</div>
-                    </div>
-                `;
+                    </div>`;
             });
             document.getElementById('total-val').innerText = total;
         }
@@ -130,45 +127,38 @@
         async function checkout(paymentMethod) {
             if(cart.length === 0) return alert("السلة فارغة");
             const total = parseFloat(document.getElementById('total-val').innerText);
+            
+            // سحب اسم الموظف الحالي من الجلسة
+            const currentUser = sessionStorage.getItem('username') || 'المدير';
 
-            // --- التعديل المطلوب: سحب اسم الموظف من الـ Session ---
-            const currentUser = sessionStorage.getItem('username') || 'موظف غير معروف';
-
-            // 1. تسجيل العملية في الداتا بيز مع إضافة حقل seller_name
+            // 1. تسجيل الفاتورة
             const { data: sale, error } = await _supabase.from('sales').insert([{
                 store_key: storeKey,
                 items: cart,
                 total_amount: total,
                 payment_method: paymentMethod,
-                seller_name: currentUser, // الحقل الجديد المربوط بالموظف
-                type: 'sale',
-                created_at: new Date()
+                seller_name: currentUser, // الحقل المطلوب
+                type: 'sale'
             }]);
 
-            if (error) {
-                console.error("خطأ في تسجيل العملية:", error);
-                return alert("حدث خطأ أثناء الحفظ");
-            }
+            if(error) return alert("خطأ في الحفظ: " + error.message);
 
             // 2. خصم المخزن
             for (let item of cart) {
                 const { data: p } = await _supabase.from('products').select('stock').eq('id', item.id).single();
-                if (p) {
-                    await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
-                }
+                if(p) await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
             }
 
-            // 3. الطباعة والمعاينة
+            // 3. تجهيز الطباعة
             document.getElementById('r-store').innerText = document.getElementById('store-name').innerText;
             document.getElementById('r-date').innerText = new Date().toLocaleString('ar-EG');
-            document.getElementById('r-items').innerHTML = cart.map(i => `<div>${i.product_name} (${i.qty}) .. ${i.price * i.qty} ج.م</div>`).join('');
+            document.getElementById('r-items').innerHTML = cart.map(i => `<div>${i.product_name} (${i.qty}) .. ${i.price * i.qty}</div>`).join('');
             document.getElementById('r-total').innerText = "الإجمالي: " + total + " ج.م (" + paymentMethod + ")";
             
             window.print();
             cart = [];
             renderCart();
             loadProducts();
-            alert("تمت العملية بنجاح بواسطة: " + currentUser);
         }
 
         async function init() {
