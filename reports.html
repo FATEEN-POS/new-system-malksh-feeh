@@ -282,7 +282,9 @@
             const list = document.getElementById('returns-list');
             list.innerHTML = data?.map(r => {
                 const itemNames = r.items?.map(i => i.name || i.product_name).join(' + ') || 'غير محدد';
-                return `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${itemNames}</td><td>${r.total_amount}</td><td>${r.seller_name || 'مدير'}</td></tr>`;
+                // تم تعديل سحب اسم الموظف هنا أيضاً
+                const seller = r.seller_name || r.cashier_name || r.username || 'مدير';
+                return `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${itemNames}</td><td>${r.total_amount}</td><td>${seller}</td></tr>`;
             }).join('') || '';
         }
 
@@ -387,7 +389,8 @@
 
             let staff = {};
             data?.forEach(s => {
-                let name = s.seller_name || 'المدير';
+                // الحل: البحث عن الاسم في جميع الأعمدة الممكنة (seller_name, cashier_name, username)
+                let name = s.seller_name || s.cashier_name || s.username || 'المدير';
                 if(!staff[name]) staff[name] = { count: 0, total: 0 };
                 staff[name].count++; 
                 staff[name].total += s.total_amount;
