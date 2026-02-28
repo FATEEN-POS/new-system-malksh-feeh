@@ -12,9 +12,10 @@
         .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; }
         .profile-side { text-align: center; }
-        .profile-img-container { position: relative; width: 150px; height: 150px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--accent); overflow: hidden; background: #000; }
+        .profile-img-container { position: relative; width: 150px; height: 150px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--accent); overflow: hidden; background: #000; box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
         .profile-img-container img { width: 100%; height: 100%; object-fit: cover; }
-        .upload-btn { display: block; margin-top: 10px; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
+        .upload-btn { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: none; border: 1px solid var(--accent); padding: 5px 15px; border-radius: 20px; transition: 0.3s; }
+        .upload-btn:hover { background: var(--accent); color: #000; }
         #file-input { display: none; }
         .input-group { margin-bottom: 15px; text-align: right; }
         .input-group label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; }
@@ -31,8 +32,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th { text-align: right; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--gray); }
         td { padding: 10px; border-bottom: 1px solid #1a1a1a; }
-        .filter-bar { display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
-        .filter-bar input { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
         @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -46,12 +45,12 @@
             <div class="profile-img-container">
                 <img id="profile-img" src="https://via.placeholder.com/150" alt="صورة الموظف">
             </div>
-            <label for="file-input" class="upload-btn">تغيير الصورة (PNG)</label>
-            <input type="file" id="file-input" accept="image/png" onchange="uploadImage()">
+            <label for="file-input" class="upload-btn">تحديث الصورة الشخصية</label>
+            <input type="file" id="file-input" accept="image/*" onchange="processAndUploadImage()">
 
-            <div class="input-group">
-                <label>اسم الموظف</label>
-                <input type="text" id="emp-name">
+            <div class="input-group" style="margin-top:20px;">
+                <label>الاسم الكامل</label>
+                <input type="text" id="emp-name" placeholder="أدخل اسمك الثلاثي">
             </div>
             <div class="input-group">
                 <label>رقم الهاتف</label>
@@ -61,7 +60,7 @@
                 <label>كلمة المرور</label>
                 <input type="password" id="emp-pass">
             </div>
-            <button class="btn-save" onclick="updateProfile()">حفظ البيانات</button>
+            <button class="btn-save" onclick="updateProfile()">حفظ التغييرات</button>
         </div>
 
         <div class="card">
@@ -75,7 +74,6 @@
                     <strong id="total-count-all">0</strong>
                 </div>
             </div>
-
             <div class="target-section">
                 <div style="display:flex; justify-content:space-between; font-size:14px;">
                     <span>تارجت الشهر الحالي</span>
@@ -85,21 +83,13 @@
                     <div id="progress-fill"></div>
                 </div>
             </div>
-
             <hr style="border:0; border-top:1px solid var(--gray); margin: 25px 0;">
-
-            <h3>مبيعات خلال فترة</h3>
-            <div class="filter-bar">
-                <label>من:</label> <input type="date" id="date-from">
-                <label>إلى:</label> <input type="date" id="date-to">
-                <button onclick="loadSalesHistory()" style="background:var(--gray); color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">عرض</button>
-            </div>
-
+            <h3>سجل مبيعاتك الأخير</h3>
             <table>
                 <thead>
                     <tr>
                         <th>التاريخ</th>
-                        <th>رقم الفاتورة</th>
+                        <th>رقم العملية</th>
                         <th>المبلغ</th>
                         <th>الوسيلة</th>
                     </tr>
@@ -121,12 +111,85 @@
             if(!currentUsername) return location.href='index.html';
             const { data: emp } = await _supabase.from('users').select('*').eq('username', currentUsername).eq('store_key', storeKey).single();
             if(emp) {
-                document.getElementById('emp-name').value = emp.full_name || emp.username;
+                document.getElementById('emp-name').value = emp.full_name || '';
                 document.getElementById('emp-phone').value = emp.phone || '';
                 document.getElementById('emp-pass').value = emp.password || '';
                 if(emp.image_url) document.getElementById('profile-img').src = emp.image_url;
                 loadEmployeeStats(emp.monthly_target || 0);
+                loadInitialSales();
             }
+        }
+
+        // دالة معالجة الصورة (القص والضغط)
+        async function processAndUploadImage() {
+            const file = document.getElementById('file-input').files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = async function() {
+                    // 1. إنشاء Canvas لعملية القص والضغط
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const size = 300; // حجم الصورة النهائي (مربع)
+                    canvas.width = size;
+                    canvas.height = size;
+
+                    // 2. حساب أبعاد القص (لجعلها في المنتصف دائماً - Smart Center Crop)
+                    let sourceX, sourceY, sourceWidth, sourceHeight;
+                    if (img.width > img.height) {
+                        sourceHeight = img.height;
+                        sourceWidth = img.height;
+                        sourceX = (img.width - img.height) / 2;
+                        sourceY = 0;
+                    } else {
+                        sourceWidth = img.width;
+                        sourceHeight = img.width;
+                        sourceX = 0;
+                        sourceY = (img.height - img.width) / 2;
+                    }
+
+                    // 3. رسم الصورة المقصوصة على الـ Canvas
+                    ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, size, size);
+
+                    // 4. تحويل الـ Canvas إلى ملف (Blob) بضغط عالي الجودة
+                    canvas.toBlob(async (blob) => {
+                        const fileName = `${currentUsername}-${Date.now()}.jpg`;
+                        
+                        // الرفع لـ Supabase
+                        const { data, error } = await _supabase.storage.from('avatars').upload(fileName, blob, {
+                            contentType: 'image/jpeg'
+                        });
+
+                        if (error) {
+                            alert("حدث خطأ في الرفع: تأكد من وجود Bucket باسم avatars");
+                            return;
+                        }
+
+                        const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(fileName);
+                        const publicUrl = urlData.publicUrl;
+
+                        // تحديث قاعدة البيانات
+                        await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentUsername).eq('store_key', storeKey);
+                        
+                        document.getElementById('profile-img').src = publicUrl;
+                        alert("تم تحسين الصورة ورفعها بنجاح! ✅");
+                    }, 'image/jpeg', 0.8); // 0.8 هي نسبة الضغط (خفيفة وجودة عالية)
+                };
+            };
+        }
+
+        async function updateProfile() {
+            const { error } = await _supabase.from('users').update({
+                full_name: document.getElementById('emp-name').value,
+                phone: document.getElementById('emp-phone').value,
+                password: document.getElementById('emp-pass').value
+            }).eq('username', currentUsername).eq('store_key', storeKey);
+            if(!error) alert("تم تحديث البيانات بنجاح ✅");
         }
 
         async function loadEmployeeStats(target) {
@@ -143,52 +206,10 @@
             }
         }
 
-        async function loadSalesHistory() {
-            const from = document.getElementById('date-from').value;
-            const to = document.getElementById('date-to').value;
-            if(!from || !to) return alert("حدد الفترة أولاً");
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('seller_name', currentUsername).gte('created_at', from).lte('created_at', to + 'T23:59:59');
+        async function loadInitialSales() {
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('seller_name', currentUsername).order('created_at', {ascending: false}).limit(10);
             const body = document.getElementById('sales-body');
-            body.innerHTML = sales?.map(s => `<tr><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td>#${s.id.slice(0,5)}</td><td>${s.total_amount.toFixed(2)}</td><td>${s.payment_method}</td></tr>`).join('') || '<tr><td colspan="4">لا توجد مبيعات</td></tr>';
-        }
-
-        async function updateProfile() {
-            const { error } = await _supabase.from('users').update({
-                full_name: document.getElementById('emp-name').value,
-                phone: document.getElementById('emp-phone').value,
-                password: document.getElementById('emp-pass').value
-            }).eq('username', currentUsername).eq('store_key', storeKey);
-            if(!error) alert("تم تحديث البيانات بنجاح ✅");
-            else alert("حدث خطأ أثناء التحديث");
-        }
-
-        async function uploadImage() {
-            const file = document.getElementById('file-input').files[0];
-            if(!file) return;
-
-            const fileName = `${currentUsername}-${Date.now()}.png`;
-            
-            try {
-                // الرفع لـ Supabase Storage
-                const { data, error } = await _supabase.storage.from('avatars').upload(fileName, file);
-                
-                if (error) {
-                    alert("خطأ: تأكد من إنشاء Bucket باسم avatars في سوبابيز وجعله Public");
-                    console.error(error);
-                    return;
-                }
-
-                const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(fileName);
-                const publicUrl = urlData.publicUrl;
-
-                // تحديث الرابط في قاعدة البيانات
-                await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentUsername).eq('store_key', storeKey);
-                
-                document.getElementById('profile-img').src = publicUrl;
-                alert("تم رفع الصورة وتحديثها بنجاح! ✅");
-            } catch (err) {
-                alert("حدث خطأ غير متوقع أثناء الرفع");
-            }
+            body.innerHTML = sales?.map(s => `<tr><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td>#${s.id.toString().slice(-5)}</td><td>${s.total_amount.toFixed(2)}</td><td>${s.payment_method}</td></tr>`).join('') || '';
         }
 
         init();
