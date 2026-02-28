@@ -204,6 +204,7 @@
             if(newKey !== storeKey) {
                 if(confirm("تغيير كود المحل سيخرجك من النظام، هل أنت متأكد؟")) {
                     await _supabase.from('stores').update({ store_key: newKey }).eq('store_key', storeKey);
+                    await _supabase.from('users').update({ store_key: newKey }).eq('store_key', storeKey);
                     sessionStorage.clear();
                     location.href = 'index.html';
                 }
