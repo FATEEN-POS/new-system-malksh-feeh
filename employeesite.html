@@ -9,48 +9,36 @@
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
         body { background: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
-
         .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; }
-
-        /* Profile Section */
         .profile-side { text-align: center; }
         .profile-img-container { position: relative; width: 150px; height: 150px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--accent); overflow: hidden; background: #000; }
         .profile-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .upload-btn { display: block; margin-top: 10px; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
         #file-input { display: none; }
-
-        /* Form Inputs */
         .input-group { margin-bottom: 15px; text-align: right; }
         .input-group label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; }
         .input-group input { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 8px; outline: none; }
         .input-group input:focus { border-color: var(--accent); }
         .btn-save { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-
-        /* Stats Section */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .stat-box { background: #000; padding: 15px; border-radius: 10px; border-right: 3px solid var(--accent); text-align: center; }
         .stat-box span { font-size: 11px; color: #777; display: block; }
         .stat-box strong { font-size: 18px; color: var(--green); }
-
-        /* Target Progress */
         .target-section { margin-top: 20px; }
         .progress-bar-bg { width: 100%; background: var(--gray); height: 12px; border-radius: 10px; margin-top: 8px; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: linear-gradient(to left, var(--accent), var(--green)); transition: 0.5s; }
-
-        /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th { text-align: right; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--gray); }
         td { padding: 10px; border-bottom: 1px solid #1a1a1a; }
-
         .filter-bar { display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
         .filter-bar input { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
-
         @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
+    <button onclick="history.back()" style="align-self: flex-start; background: none; border: 1px solid var(--gray); color: #fff; padding: 5px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 10px;">⬅️ عودة</button>
     <h2 style="color: var(--accent); margin-bottom: 30px;">لوحة بيانات الموظف</h2>
 
     <div class="container">
@@ -116,8 +104,7 @@
                         <th>الوسيلة</th>
                     </tr>
                 </thead>
-                <tbody id="sales-body">
-                    </tbody>
+                <tbody id="sales-body"></tbody>
             </table>
         </div>
     </div>
@@ -128,37 +115,26 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         const storeKey = sessionStorage.getItem('store_key');
-        const currentUsername = sessionStorage.getItem('username'); // الموظف اللي مسجل دخول
+        const currentUsername = sessionStorage.getItem('username');
 
         async function init() {
             if(!currentUsername) return location.href='index.html';
-            
-            // 1. جلب بيانات الموظف
             const { data: emp } = await _supabase.from('users').select('*').eq('username', currentUsername).eq('store_key', storeKey).single();
             if(emp) {
                 document.getElementById('emp-name').value = emp.full_name || emp.username;
                 document.getElementById('emp-phone').value = emp.phone || '';
                 document.getElementById('emp-pass').value = emp.password || '';
                 if(emp.image_url) document.getElementById('profile-img').src = emp.image_url;
-                
-                // التارجت (بيحدده المدير في جدول اليوزر)
-                const target = emp.monthly_target || 0;
-                loadEmployeeStats(target);
+                loadEmployeeStats(emp.monthly_target || 0);
             }
         }
 
-        // جلب الإحصائيات
         async function loadEmployeeStats(target) {
-            // كل مبيعات الموظف
             const { data: allSales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('seller_name', currentUsername).eq('type', 'sale');
-            
             let totalVal = 0;
             allSales?.forEach(s => totalVal += s.total_amount);
-            
             document.getElementById('total-sales-all').innerText = totalVal.toFixed(2) + " ج.م";
             document.getElementById('total-count-all').innerText = allSales?.length || 0;
-
-            // تحديث التارجت
             if(target > 0) {
                 let percent = (totalVal / target) * 100;
                 if(percent > 100) percent = 100;
@@ -167,65 +143,51 @@
             }
         }
 
-        // جلب تاريخ المبيعات
         async function loadSalesHistory() {
             const from = document.getElementById('date-from').value;
             const to = document.getElementById('date-to').value;
             if(!from || !to) return alert("حدد الفترة أولاً");
-
-            const { data: sales } = await _supabase.from('sales')
-                .select('*')
-                .eq('store_key', storeKey)
-                .eq('seller_name', currentUsername)
-                .gte('created_at', from)
-                .lte('created_at', to + 'T23:59:59');
-
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('seller_name', currentUsername).gte('created_at', from).lte('created_at', to + 'T23:59:59');
             const body = document.getElementById('sales-body');
-            body.innerHTML = sales?.map(s => `
-                <tr>
-                    <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td>#${s.id.slice(0,5)}</td>
-                    <td>${s.total_amount.toFixed(2)}</td>
-                    <td>${s.payment_method}</td>
-                </tr>
-            `).join('') || '<tr><td colspan="4">لا توجد مبيعات</td></tr>';
+            body.innerHTML = sales?.map(s => `<tr><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td>#${s.id.slice(0,5)}</td><td>${s.total_amount.toFixed(2)}</td><td>${s.payment_method}</td></tr>`).join('') || '<tr><td colspan="4">لا توجد مبيعات</td></tr>';
         }
 
-        // تحديث الملف الشخصي
         async function updateProfile() {
-            const name = document.getElementById('emp-name').value;
-            const phone = document.getElementById('emp-phone').value;
-            const pass = document.getElementById('emp-pass').value;
-
             const { error } = await _supabase.from('users').update({
-                full_name: name,
-                phone: phone,
-                password: pass
+                full_name: document.getElementById('emp-name').value,
+                phone: document.getElementById('emp-phone').value,
+                password: document.getElementById('emp-pass').value
             }).eq('username', currentUsername).eq('store_key', storeKey);
-
-            if(!error) alert("تم تحديث البيانات بنجاح");
+            if(!error) alert("تم تحديث البيانات بنجاح ✅");
             else alert("حدث خطأ أثناء التحديث");
         }
 
-        // رفع الصورة
         async function uploadImage() {
             const file = document.getElementById('file-input').files[0];
             if(!file) return;
 
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${currentUsername}-${Date.now()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
-
-            // رفع للصورة (بافتراض وجود bucket اسمه avatars)
-            const { data, error } = await _supabase.storage.from('avatars').upload(filePath, file);
+            const fileName = `${currentUsername}-${Date.now()}.png`;
             
-            if (data) {
-                const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(filePath);
+            try {
+                // الرفع لـ Supabase Storage
+                const { data, error } = await _supabase.storage.from('avatars').upload(fileName, file);
+                
+                if (error) {
+                    alert("خطأ: تأكد من إنشاء Bucket باسم avatars في سوبابيز وجعله Public");
+                    console.error(error);
+                    return;
+                }
+
+                const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(fileName);
                 const publicUrl = urlData.publicUrl;
 
-                await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentUsername);
+                // تحديث الرابط في قاعدة البيانات
+                await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentUsername).eq('store_key', storeKey);
+                
                 document.getElementById('profile-img').src = publicUrl;
-                alert("تم رفع الصورة بنجاح");
+                alert("تم رفع الصورة وتحديثها بنجاح! ✅");
+            } catch (err) {
+                alert("حدث خطأ غير متوقع أثناء الرفع");
             }
         }
 
