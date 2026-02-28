@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fateen OS | About</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --text: #fff; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
 
+        .about-container { width: 90%; max-width: 800px; background: var(--card); border: 1px solid var(--gray); border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        
+        h1 { color: var(--accent); margin-bottom: 10px; }
+        p.desc { color: #888; margin-bottom: 30px; }
+
+        .links-section { display: flex; gap: 15px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+        .btn { padding: 12px 25px; border-radius: 10px; text-decoration: none; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .btn-web { background: var(--accent); color: #000; }
+        .btn-wa { background: #25d366; color: #fff; }
+        .btn:hover { transform: translateY(-3px); opacity: 0.9; }
+
+        /* AI Chat Box */
+        .ai-chat-box { background: #000; border: 1px solid var(--gray); border-radius: 15px; overflow: hidden; display: flex; flex-direction: column; height: 350px; text-align: right; }
+        .chat-header { background: var(--gray); padding: 10px 15px; font-size: 13px; color: var(--accent); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 8px; }
+        .chat-content { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.6; }
+        .msg.bot { background: var(--gray); align-self: flex-start; border-bottom-right-radius: 0; }
+        .msg.user { background: var(--accent); color: #000; align-self: flex-end; border-bottom-left-radius: 0; }
+        
+        .chat-input-area { display: flex; border-top: 1px solid var(--gray); background: #080808; }
+        .chat-input-area input { flex: 1; background: transparent; border: none; color: #fff; padding: 12px; outline: none; font-size: 13px; }
+        .chat-input-area button { background: none; border: none; color: var(--accent); padding: 0 15px; cursor: pointer; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div class="about-container">
+        <h1>Fateen OS</h1>
+        <p class="desc">نظام متكامل لإدارة المبيعات والمخازن بأحدث التقنيات.</p>
+
+        <div class="links-section">
+            <a href="https://fateen-pos.github.io/system/" target="_blank" class="btn btn-web">
+                <i class="fas fa-globe"></i> الموقع الرسمي
+            </a>
+            <a href="https://wa.me/201273929303" target="_blank" class="btn btn-wa">
+                <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
+            </a>
+        </div>
+
+        <div class="ai-chat-box">
+            <div class="chat-header">
+                <i class="fas fa-robot"></i> مساعد Fateen الذكي (AI)
+            </div>
+            <div class="chat-content" id="chat-content">
+                <div class="msg bot">مرحباً بك! أنا مساعدك الذكي، كيف يمكنني مساعدتك اليوم بخصوص نظام Fateen؟</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="user-input" placeholder="اسأل المساعد الذكي..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        
+        <p style="font-size: 10px; color: #444; margin-top: 20px;">جميع الحقوق محفوظة &copy; 2026 Fateen POS</p>
+    </div>
+
+    <script>
+        const chatContent = document.getElementById('chat-content');
+        const userInput = document.getElementById('user-input');
+
+        const botResponses = {
+            "السعر": "نظام Fateen يوفر باقات مرنة تناسب مشروعك الصغير أو الكبير، تواصل مع الدعم عبر الواتساب للحصول على عرض سعر.",
+            "المميزات": "يتميز النظام بدعم الباركود، تقارير أرباح دقيقة، إدارة مخازن، ودعم فني متاح 24/7.",
+            "واتساب": "يمكنك الضغط على زر 'تواصل عبر واتساب' بالأعلى للتحدث مع الإدارة مباشرة.",
+            "تجربة": "نعم، يمكنك تجربة النسخة التجريبية من خلال موقعنا الرسمي المذكور في الصفحة.",
+            "default": "شكراً لسؤالك! أنا أتعلم باستمرار. لخدمة أفضل بخصوص هذا الموضوع، يفضل التواصل مع المطور مباشرة عبر الواتساب."
+        };
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // رسالة المستخدم
+            addMessage(text, 'user');
+            userInput.value = '';
+
+            // رد الـ AI (محاكاة)
+            setTimeout(() => {
+                let response = botResponses.default;
+                if (text.includes("سعر") || text.includes("كام")) response = botResponses["السعر"];
+                else if (text.includes("ميزة") || text.includes("بيعمل ايه")) response = botResponses["المميزات"];
+                else if (text.includes("واتساب") || text.includes("رقم")) response = botResponses["واتساب"];
+                else if (text.includes("تجربة") || text.includes("اجرب")) response = botResponses["تجربة"];
+
+                addMessage(response, 'bot');
+            }, 600);
+        }
+
+        function addMessage(text, side) {
+            const div = document.createElement('div');
+            div.className = `msg ${side}`;
+            div.innerText = text;
+            chatContent.appendChild(div);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        }
+    </script>
+</body>
+</html>
