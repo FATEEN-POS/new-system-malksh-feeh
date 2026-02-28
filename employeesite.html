@@ -1,1 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Fateen OS | Employee Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
 
+        .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; }
+
+        /* Profile Section */
+        .profile-side { text-align: center; }
+        .profile-img-container { position: relative; width: 150px; height: 150px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--accent); overflow: hidden; background: #000; }
+        .profile-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-btn { display: block; margin-top: 10px; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
+        #file-input { display: none; }
+
+        /* Form Inputs */
+        .input-group { margin-bottom: 15px; text-align: right; }
+        .input-group label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; }
+        .input-group input { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 8px; outline: none; }
+        .input-group input:focus { border-color: var(--accent); }
+        .btn-save { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+
+        /* Stats Section */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #000; padding: 15px; border-radius: 10px; border-right: 3px solid var(--accent); text-align: center; }
+        .stat-box span { font-size: 11px; color: #777; display: block; }
+        .stat-box strong { font-size: 18px; color: var(--green); }
+
+        /* Target Progress */
+        .target-section { margin-top: 20px; }
+        .progress-bar-bg { width: 100%; background: var(--gray); height: 12px; border-radius: 10px; margin-top: 8px; overflow: hidden; }
+        #progress-fill { width: 0%; height: 100%; background: linear-gradient(to left, var(--accent), var(--green)); transition: 0.5s; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th { text-align: right; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--gray); }
+        td { padding: 10px; border-bottom: 1px solid #1a1a1a; }
+
+        .filter-bar { display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+        .filter-bar input { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
+
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <h2 style="color: var(--accent); margin-bottom: 30px;">لوحة بيانات الموظف</h2>
+
+    <div class="container">
+        <div class="card profile-side">
+            <div class="profile-img-container">
+                <img id="profile-img" src="https://via.placeholder.com/150" alt="صورة الموظف">
+            </div>
+            <label for="file-input" class="upload-btn">تغيير الصورة (PNG)</label>
+            <input type="file" id="file-input" accept="image/png" onchange="uploadImage()">
+
+            <div class="input-group">
+                <label>اسم الموظف</label>
+                <input type="text" id="emp-name">
+            </div>
+            <div class="input-group">
+                <label>رقم الهاتف</label>
+                <input type="text" id="emp-phone">
+            </div>
+            <div class="input-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="emp-pass">
+            </div>
+            <button class="btn-save" onclick="updateProfile()">حفظ البيانات</button>
+        </div>
+
+        <div class="card">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span>إجمالي مبيعاتك (عام)</span>
+                    <strong id="total-sales-all">0.00</strong>
+                </div>
+                <div class="stat-box">
+                    <span>عدد العمليات</span>
+                    <strong id="total-count-all">0</strong>
+                </div>
+            </div>
+
+            <div class="target-section">
+                <div style="display:flex; justify-content:space-between; font-size:14px;">
+                    <span>تارجت الشهر الحالي</span>
+                    <span id="target-text">0 / 0 ج.م</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--gray); margin: 25px 0;">
+
+            <h3>مبيعات خلال فترة</h3>
+            <div class="filter-bar">
+                <label>من:</label> <input type="date" id="date-from">
+                <label>إلى:</label> <input type="date" id="date-to">
+                <button onclick="loadSalesHistory()" style="background:var(--gray); color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">عرض</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>رقم الفاتورة</th>
+                        <th>المبلغ</th>
+                        <th>الوسيلة</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const storeKey = sessionStorage.getItem('store_key');
+        const currentUsername = sessionStorage.getItem('username'); // الموظف اللي مسجل دخول
+
+        async function init() {
+            if(!currentUsername) return location.href='index.html';
+            
+            // 1. جلب بيانات الموظف
+            const { data: emp } = await _supabase.from('users').select('*').eq('username', currentUsername).eq('store_key', storeKey).single();
+            if(emp) {
+                document.getElementById('emp-name').value = emp.full_name || emp.username;
+                document.getElementById('emp-phone').value = emp.phone || '';
+                document.getElementById('emp-pass').value = emp.password || '';
+                if(emp.image_url) document.getElementById('profile-img').src = emp.image_url;
+                
+                // التارجت (بيحدده المدير في جدول اليوزر)
+                const target = emp.monthly_target || 0;
+                loadEmployeeStats(target);
+            }
+        }
+
+        // جلب الإحصائيات
+        async function loadEmployeeStats(target) {
+            // كل مبيعات الموظف
+            const { data: allSales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('seller_name', currentUsername).eq('type', 'sale');
+            
+            let totalVal = 0;
+            allSales?.forEach(s => totalVal += s.total_amount);
+            
+            document.getElementById('total-sales-all').innerText = totalVal.toFixed(2) + " ج.م";
+            document.getElementById('total-count-all').innerText = allSales?.length || 0;
+
+            // تحديث التارجت
+            if(target > 0) {
+                let percent = (totalVal / target) * 100;
+                if(percent > 100) percent = 100;
+                document.getElementById('progress-fill').style.width = percent + "%";
+                document.getElementById('target-text').innerText = `${totalVal.toFixed(0)} / ${target} ج.م`;
+            }
+        }
+
+        // جلب تاريخ المبيعات
+        async function loadSalesHistory() {
+            const from = document.getElementById('date-from').value;
+            const to = document.getElementById('date-to').value;
+            if(!from || !to) return alert("حدد الفترة أولاً");
+
+            const { data: sales } = await _supabase.from('sales')
+                .select('*')
+                .eq('store_key', storeKey)
+                .eq('seller_name', currentUsername)
+                .gte('created_at', from)
+                .lte('created_at', to + 'T23:59:59');
+
+            const body = document.getElementById('sales-body');
+            body.innerHTML = sales?.map(s => `
+                <tr>
+                    <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td>#${s.id.slice(0,5)}</td>
+                    <td>${s.total_amount.toFixed(2)}</td>
+                    <td>${s.payment_method}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4">لا توجد مبيعات</td></tr>';
+        }
+
+        // تحديث الملف الشخصي
+        async function updateProfile() {
+            const name = document.getElementById('emp-name').value;
+            const phone = document.getElementById('emp-phone').value;
+            const pass = document.getElementById('emp-pass').value;
+
+            const { error } = await _supabase.from('users').update({
+                full_name: name,
+                phone: phone,
+                password: pass
+            }).eq('username', currentUsername).eq('store_key', storeKey);
+
+            if(!error) alert("تم تحديث البيانات بنجاح");
+            else alert("حدث خطأ أثناء التحديث");
+        }
+
+        // رفع الصورة
+        async function uploadImage() {
+            const file = document.getElementById('file-input').files[0];
+            if(!file) return;
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${currentUsername}-${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            // رفع للصورة (بافتراض وجود bucket اسمه avatars)
+            const { data, error } = await _supabase.storage.from('avatars').upload(filePath, file);
+            
+            if (data) {
+                const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(filePath);
+                const publicUrl = urlData.publicUrl;
+
+                await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentUsername);
+                document.getElementById('profile-img').src = publicUrl;
+                alert("تم رفع الصورة بنجاح");
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
