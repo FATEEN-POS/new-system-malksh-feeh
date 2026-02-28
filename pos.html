@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>كاشير - Fateen OS</title>
+    <title>كاشير -  OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -19,10 +19,18 @@
         .user-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
         .store-title { font-weight: 800; font-size: 18px; color: var(--accent); margin: 0; }
         
-        /* تكبير صندوق التارجت */
-        .target-box { background: #000; padding: 10px 30px; border-radius: 12px; border: 1px solid var(--gray); text-align: center; min-width: 250px; }
-        .target-box span { font-size: 13px; color: #888; display: block; margin-bottom: 5px; }
-        .target-box strong { font-size: 20px; color: var(--green); letter-spacing: 1px; }
+        /* تحسين شكل صندوق التارجت */
+        .target-box { 
+            background: linear-gradient(145deg, #0a0a0a, #151515); 
+            padding: 10px 25px; 
+            border-radius: 12px; 
+            border: 1px solid var(--accent); 
+            text-align: center; 
+            min-width: 250px;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+        }
+        .target-box span { font-size: 12px; color: #aaa; display: block; margin-bottom: 2px; }
+        .target-box strong { font-size: 18px; color: var(--green); letter-spacing: 0.5px; }
 
         .search-controls { display: flex; gap: 10px; flex: 1; }
         .search-controls input {
@@ -51,14 +59,19 @@
 
         .btn-checkout { width: 100%; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 18px; cursor: pointer; }
 
-        /* --- تنسيق الفاتورة للطباعة --- */
+        /* --- تنسيق الفاتورة للطباعة (مطابق للمثال) --- */
         @media print {
             body * { display: none !important; }
-            #receipt-print { display: block !important; width: 80mm; color: #000; background: #fff; padding: 5px; font-size: 12px; line-height: 1.4; }
+            #receipt-print { display: block !important; width: 80mm; color: #000; background: #fff; padding: 10px; font-family: 'Cairo', sans-serif; font-size: 12px; }
             #receipt-print * { display: block !important; }
-            .print-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            .print-table th, .print-table td { text-align: right; padding: 4px; border-bottom: 1px solid #eee; }
-            .print-footer { margin-top: 15px; border-top: 1px dashed #000; padding-top: 10px; font-size: 11px; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000; text-align: center; padding: 5px; font-size: 11px; }
+            .print-table th { background: #f0f0f0 !important; }
+            .receipt-header { text-align: center; margin-bottom: 10px; }
+            .info-row { display: flex; justify-content: space-between; margin: 2px 0; font-size: 11px; }
+            .total-section { display: flex; margin-top: 10px; border: 1px solid #000; width: 100%; }
+            .total-label { flex: 1; background: #f0f0f0; padding: 5px; text-align: center; border-left: 1px solid #000; font-weight: bold; }
+            .total-value { flex: 1; padding: 5px; text-align: center; font-weight: bold; }
         }
         #receipt-print { display: none; }
 
@@ -109,34 +122,38 @@
     </main>
 
     <div id="receipt-print" dir="rtl">
-        <center>
-            <h2 id="r-store-name" style="margin-bottom:2px;"></h2>
-            <p style="margin:0; font-size:14px;">فاتورة مبيعات</p>
-            <hr style="border: 0.5px solid #000; margin: 5px 0;">
-        </center>
+        <div class="receipt-header">
+            <h2 id="r-store-name" style="margin: 0; font-size: 18px;"></h2>
+            <p style="margin: 5px 0; font-size: 14px; font-weight: bold;">فاتورة مبيعات</p>
+        </div>
         
+        <div class="info-row">
+            <span>التاريخ: <strong id="r-date"></strong></span>
+            <span>رقم الفاتورة: <strong id="r-order-id" style="font-size: 10px;"></strong></span>
+        </div>
+        <div class="info-row">
+            <span>الوقت: <strong id="r-time"></strong></span>
+            <span>البائع: <strong id="r-seller-name"></strong></span>
+        </div>
+
         <table class="print-table">
             <thead>
                 <tr>
-                    <th>الصنف</th>
+                    <th style="width: 45%;">الصنف</th>
                     <th>الكمية</th>
                     <th>السعر</th>
+                    <th>الإجمالي</th>
                 </tr>
             </thead>
             <tbody id="r-items-list"></tbody>
         </table>
 
-        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:16px; margin-top:10px; border:1px solid #000; padding:5px;">
-            <span>الإجمالي الصافي:</span>
-            <span id="r-total-amount"></span>
+        <div class="total-section">
+            <div class="total-label">صافي</div>
+            <div class="total-value" id="r-total-amount"></div>
         </div>
 
-        <div class="print-footer">
-            <p>رقم الفاتورة: <span id="r-order-id"></span></p>
-            <p>الكاشير: <span id="r-seller-name"></span></p>
-            <p>الوقت: <span id="r-date-time"></span></p>
-            <center><p style="margin-top:10px; font-weight:bold;">شكراً لزيارتكم</p></center>
-        </div>
+        <center><p style="margin-top:15px; font-size: 10px;">شكراً لزيارتكم</p></center>
     </div>
 
     <div id="returnModal">
@@ -177,13 +194,13 @@
             if(search) query = query.or(`product_name.ilike.%${search}%,barcode.ilike.%${search}%`);
             const { data } = await query;
             const list = document.getElementById('product-list');
-            list.innerHTML = data.map(p => `
+            list.innerHTML = data?.map(p => `
                 <div class="product-card" onclick='addToCart(${JSON.stringify(p)})'>
                     <h4>${p.product_name}</h4>
                     <div class="price">${p.price} <small>ج.م</small></div>
                     <small style="color:#555">المخزون: ${p.stock}</small>
                 </div>
-            `).join('');
+            `).join('') || '';
         }
 
         function addToCart(p) {
@@ -233,18 +250,21 @@
                 if(p) await _supabase.from('products').update({ stock: p.stock - item.qty }).eq('id', item.id);
             }
 
-            // ملء بيانات الفاتورة الاحترافية
+            // ملء بيانات الفاتورة
+            const now = new Date();
             document.getElementById('r-store-name').innerText = document.getElementById('display-store-name').innerText;
-            document.getElementById('r-order-id').innerText = "#" + saleData.id;
+            document.getElementById('r-order-id').innerText = saleData.id.toString().slice(-6); // تصغير رقم الفاتورة لآخر 6 أرقام
             document.getElementById('r-seller-name').innerText = currentUser;
-            document.getElementById('r-date-time').innerText = new Date().toLocaleString('ar-EG');
-            document.getElementById('r-total-amount').innerText = total.toFixed(2) + " ج.م";
+            document.getElementById('r-date').innerText = now.toLocaleDateString('ar-EG');
+            document.getElementById('r-time').innerText = now.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('r-total-amount').innerText = total.toFixed(0);
             
             document.getElementById('r-items-list').innerHTML = cart.map(i => `
                 <tr>
-                    <td>${i.product_name}</td>
+                    <td style="text-align:right;">${i.product_name}</td>
                     <td>${i.qty}</td>
-                    <td>${(i.price * i.qty).toFixed(2)}</td>
+                    <td>${i.price}</td>
+                    <td>${(i.price * i.qty).toFixed(0)}</td>
                 </tr>
             `).join('');
 
