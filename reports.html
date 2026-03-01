@@ -40,10 +40,12 @@
         .progress-bar { height: 8px; background: #000; border-radius: 10px; margin: 10px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); transition: 1s ease-in-out; }
 
-        .chart-container { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--gray); margin-top: 20px; height: 300px; }
+        .chart-container { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--gray); margin-top: 20px; height: 300px; display: none; }
         
         .floating-search { margin-top: 20px; padding: 15px; background: rgba(0, 242, 254, 0.03); border-radius: 15px; border: 1px solid var(--gray); }
         .btn-accent { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -85,17 +87,19 @@
                 <span>إلى:</span> <input type="date" id="p-end">
                 <button class="btn-accent" onclick="loadPeriodReport()">تحديث البيانات</button>
             </div>
-            <div class="grid-stats">
-                <div class="stat-box"><h4>إجمالي مبيعات الفترة</h4><p id="p-total-val">0</p></div>
-                <div class="stat-box" style="border-bottom-color:var(--orange)"><h4>العمليات</h4><p id="p-count">0</p></div>
-                <div class="stat-box" style="border-bottom-color:var(--red)"><h4>المرتجعات</h4><p id="p-return-val">0</p></div>
+            <div id="period-stats-container" style="display:none">
+                <div class="grid-stats">
+                    <div class="stat-box"><h4>إجمالي مبيعات الفترة</h4><p id="p-total-val">0</p></div>
+                    <div class="stat-box" style="border-bottom-color:var(--orange)"><h4>العمليات</h4><p id="p-count">0</p></div>
+                    <div class="stat-box" style="border-bottom-color:var(--red)"><h4>المرتجعات</h4><p id="p-return-val">0</p></div>
+                </div>
+                <div class="chart-container" id="p-chart-box"><canvas id="periodChart"></canvas></div>
+                <br>
+                <table id="period-table">
+                    <thead><tr><th>التاريخ</th><th>رقم الفاتورة</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                    <tbody id="period-body"></tbody>
+                </table>
             </div>
-            <div class="chart-container"><canvas id="periodChart"></canvas></div>
-            <br>
-            <table id="period-table">
-                <thead><tr><th>التاريخ</th><th>رقم الفاتورة</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
-                <tbody id="period-body"></tbody>
-            </table>
         </div>
 
         <div id="performance" class="report-section">
@@ -111,7 +115,7 @@
             <div class="filter-bar">
                 <h3 style="margin:0">مراقبة المخزن</h3>
                 <div style="flex:1"></div>
-                <select id="prod-select" onchange="filterByProduct(this.value)" style="padding:10px; width:250px;">
+                <select id="prod-select" onchange="filterByProduct(this.value)" style="padding:10px; width:250px; background:#000; color:#fff; border:1px solid var(--gray); border-radius:8px;">
                     <option value="all">كل المنتجات</option>
                 </select>
                 <button class="btn-accent" onclick="askExport('prod-table', 'Stock_Movement')">تصدير</button>
@@ -135,7 +139,7 @@
             <div class="floating-search">
                 <h4 style="margin:0 0 10px 0; color:var(--accent)">🔍 بحث سريع برقم الفاتورة</h4>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="quick-search-invoice" placeholder="أدخل رقم الفاتورة (مثلاً: 123456789)..." style="flex:1; background:#000; color:#fff; border:1px solid var(--gray); padding:10px; border-radius:8px;">
+                    <input type="text" id="quick-search-invoice" placeholder="أدخل رقم الفاتورة..." style="flex:1; background:#000; color:#fff; border:1px solid var(--gray); padding:10px; border-radius:8px;">
                     <button class="btn-accent" onclick="quickSearchInvoice()">عرض الفاتورة</button>
                 </div>
             </div>
@@ -188,23 +192,13 @@
         async function loadDaily() {
             const today = new Date().toISOString().split('T')[0];
             const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today+'T00:00:00').order('created_at', {ascending:false});
-            
             let total = 0, ret = 0, cash = 0, card = 0;
             const body = document.getElementById('daily-body');
             body.innerHTML = data?.map(s => {
-                if(s.type === 'sale') {
-                    total += s.total_amount;
-                    if(s.payment_method === 'نقداً') cash += s.total_amount; else card += s.total_amount;
-                } else ret += s.total_amount;
-                return `<tr class="clickable" onclick="openReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                    <td>#${s.id.toString().slice(-6)}</td>
-                    <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
-                    <td>${s.seller_name}</td>
-                    <td>${s.total_amount} ج.م</td>
-                    <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
-                </tr>`;
+                if(s.type === 'sale') { total += s.total_amount; if(s.payment_method === 'نقداً') cash += s.total_amount; else card += s.total_amount; }
+                else ret += s.total_amount;
+                return `<tr class="clickable" onclick="openReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})"><td>#${s.id.toString().slice(-6)}</td><td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td><td>${s.seller_name}</td><td>${s.total_amount} ج.م</td><td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td></tr>`;
             }).join('') || '';
-
             document.getElementById('d-total').innerText = total.toLocaleString() + " ج.م";
             document.getElementById('d-return').innerText = ret.toLocaleString() + " ج.م";
             document.getElementById('d-payment-stat').innerText = `كاش: ${cash} | فيزا: ${card}`;
@@ -213,29 +207,23 @@
         async function loadPeriodReport() {
             const start = document.getElementById('p-start').value;
             const end = document.getElementById('p-end').value;
-            if(!start || !end) return alert("يرجى اختيار تاريخ البداية والنهاية");
+            if(!start || !end) return alert("اختر التاريخ");
 
             const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
             
+            document.getElementById('period-stats-container').style.display = 'block';
+            document.getElementById('p-chart-box').style.display = 'block';
+
             let total = 0, ret = 0, cash = 0, card = 0;
             document.getElementById('period-body').innerHTML = data?.map(s => {
-                if(s.type === 'sale') {
-                    total += s.total_amount;
-                    if(s.payment_method === 'نقداً') cash += s.total_amount; else card += s.total_amount;
-                } else ret += s.total_amount;
-                return `<tr class="clickable" onclick="openReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                    <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td>${s.id}</td>
-                    <td>${s.seller_name}</td>
-                    <td>${s.total_amount}</td>
-                    <td>${s.type==='sale'?'بيع':'مرتجع'}</td>
-                </tr>`;
+                if(s.type === 'sale') { total += s.total_amount; if(s.payment_method === 'نقداً') cash += s.total_amount; else card += s.total_amount; }
+                else ret += s.total_amount;
+                return `<tr class="clickable" onclick="openReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})"><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td>${s.id}</td><td>${s.seller_name}</td><td>${s.total_amount}</td><td>${s.type==='sale'?'بيع':'مرتجع'}</td></tr>`;
             }).join('') || '';
 
             document.getElementById('p-total-val').innerText = total.toLocaleString() + " ج.م";
             document.getElementById('p-count').innerText = data?.filter(x=>x.type==='sale').length || 0;
             document.getElementById('p-return-val').innerText = ret.toLocaleString() + " ج.م";
-
             updateChart(cash, card);
         }
 
@@ -244,14 +232,7 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    labels: ['كاش', 'فيزا/أخرى'],
-                    datasets: [{
-                        data: [cash, card],
-                        backgroundColor: ['#00ff88', '#00f2fe'],
-                        borderColor: '#000', borderWidth: 2
-                    }]
-                },
+                data: { labels: ['كاش', 'فيزا'], datasets: [{ data: [cash, card], backgroundColor: ['#00ff88', '#00f2fe'], borderColor: '#000', borderWidth: 2 }] },
                 options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } } }
             });
         }
@@ -259,58 +240,41 @@
         async function loadPerformance() {
             const start = document.getElementById('perf-start').value || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
             const end = document.getElementById('perf-end').value || new Date().toISOString();
-            
             const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey);
             const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', start).lte('created_at', end);
-
-            const container = document.getElementById('perf-list');
-            container.innerHTML = users?.map(u => {
+            document.getElementById('perf-list').innerHTML = users?.map(u => {
                 const total = sales?.filter(s => s.seller_name === u.username).reduce((sum, s) => sum + s.total_amount, 0) || 0;
                 const target = u.monthly_target || 1000;
                 const percent = Math.min((total / target) * 100, 100).toFixed(1);
-                return `
-                    <div class="perf-card">
-                        <img src="${u.image_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="emp-img">
-                        <div class="progress-container">
-                            <div style="display:flex; justify-content:space-between; font-weight:bold">
-                                <span>${u.username}</span>
-                                <span>${total.toLocaleString()} / ${target.toLocaleString()} ج.م</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        </div>
-                        <div style="color:var(--accent); font-weight:bold; font-size:20px">${percent}%</div>
-                    </div>
-                `;
+                return `<div class="perf-card"><img src="${u.image_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="emp-img"><div class="progress-container"><div style="display:flex; justify-content:space-between; font-weight:bold"><span>${u.username}</span><span>${total.toLocaleString()} / ${target.toLocaleString()} ج.م</span></div><div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div></div><div style="color:var(--accent); font-weight:bold; font-size:20px">${percent}%</div></div>`;
             }).join('') || '';
         }
 
         async function loadProductStats() {
             const { data: sales } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
             const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            
             const select = document.getElementById('prod-select');
             select.innerHTML = '<option value="all">كل المنتجات</option>' + products?.map(p => `<option value="${p.id}">${p.product_name}</option>`).join('');
-
             let stats = {};
-            sales?.forEach(s => s.items.forEach(i => {
-                if(!stats[i.id]) stats[i.id] = {qty:0, cash:0};
-                stats[i.id].qty += i.qty; stats[i.id].cash += (i.qty * i.price);
-            }));
-
+            sales?.forEach(s => s.items.forEach(i => { if(!stats[i.id]) stats[i.id] = {qty:0, cash:0}; stats[i.id].qty += i.qty; stats[i.id].cash += (i.qty * i.price); }));
             renderProdTable(products, stats);
         }
 
         function renderProdTable(products, stats, filterId = 'all') {
             const body = document.getElementById('prod-body');
             const filtered = filterId === 'all' ? products : products.filter(p => p.id == filterId);
-            body.innerHTML = filtered?.map(p => `
-                <tr><td>${p.product_name}</td><td>${stats[p.id]?.qty || 0}</td><td>${p.stock}</td><td>${(stats[p.id]?.cash || 0).toLocaleString()} ج.م</td></tr>
-            `).join('') || '';
+            body.innerHTML = filtered?.map(p => `<tr><td>${p.product_name}</td><td>${stats[p.id]?.qty || 0}</td><td>${p.stock}</td><td>${(stats[p.id]?.cash || 0).toLocaleString()} ج.م</td></tr>`).join('') || '';
         }
 
         function filterByProduct(val) {
-            loadProductStats().then(() => {
-                // الفلترة بتتم جوا الـ renderProdTable
+            const body = document.getElementById('prod-body');
+            // إعادة الفلترة فورياً
+            _supabase.from('products').select('*').eq('store_key', storeKey).then(({data: products}) => {
+                _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale').then(({data: sales}) => {
+                    let stats = {};
+                    sales?.forEach(s => s.items.forEach(i => { if(!stats[i.id]) stats[i.id] = {qty:0, cash:0}; stats[i.id].qty += i.qty; stats[i.id].cash += (i.qty * i.price); }));
+                    renderProdTable(products, stats, val);
+                });
             });
         }
 
@@ -318,28 +282,18 @@
             const id = document.getElementById('quick-search-invoice').value;
             if(!id) return;
             const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('id', id).single();
-            if(data) openReceipt(data); else alert("لم يتم العثور على فاتورة بهذا الرقم");
+            if(data) openReceipt(data); else alert("لم يتم العثور على فاتورة");
         }
 
         function openReceipt(sale) {
             const details = document.getElementById('receipt-details');
-            details.innerHTML = `
-                <h3 style="text-align:center; color:var(--accent)">فاتورة #${sale.id.toString().slice(-8)}</h3>
-                <p>البائع: ${sale.seller_name}</p>
-                <p>التاريخ: ${new Date(sale.created_at).toLocaleString('ar-EG')}</p>
-                <div style="border-top:1px dashed #444; margin:10px 0; padding-top:10px">
-                    ${sale.items.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.product_name} (x${i.qty})</span><span>${i.price * i.qty} ج.م</span></div>`).join('')}
-                </div>
-                <h2 style="text-align:center; color:var(--green)">${sale.total_amount} ج.م</h2>
-            `;
+            details.innerHTML = `<h3 style="text-align:center; color:var(--accent)">فاتورة #${sale.id.toString().slice(-8)}</h3><p>البائع: ${sale.seller_name}</p><p>التاريخ: ${new Date(sale.created_at).toLocaleString('ar-EG')}</p><div style="border-top:1px dashed #444; margin:10px 0; padding-top:10px">${sale.items.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.product_name} (x${i.qty})</span><span>${i.price * i.qty} ج.م</span></div>`).join('')}</div><h2 style="text-align:center; color:var(--green)">${sale.total_amount} ج.م</h2>`;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
         async function loadVendors() {
             const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
-            document.getElementById('vendor-body').innerHTML = data?.map(v => `
-                <tr><td>${v.vendor_name}</td><td style="color:var(--red); font-weight:bold">${v.total_debt.toLocaleString()} ج.م</td><td>${new Date(v.updated_at || v.created_at).toLocaleDateString('ar-EG')}</td>
-                <td><button onclick="deleteVendor(${v.id})" style="background:none; border:none; color:var(--red); cursor:pointer">حذف</button></td></tr>`).join('') || '';
+            document.getElementById('vendor-body').innerHTML = data?.map(v => `<tr><td>${v.vendor_name}</td><td style="color:var(--red); font-weight:bold">${v.total_debt.toLocaleString()} ج.م</td><td>${new Date(v.updated_at || v.created_at).toLocaleDateString('ar-EG')}</td><td><button onclick="deleteVendor(${v.id})" style="background:none; border:none; color:var(--red); cursor:pointer">حذف</button></td></tr>`).join('') || '';
         }
 
         async function saveVendorDebt() {
@@ -353,7 +307,6 @@
 
         async function deleteVendor(id) { if(confirm("حذف المورد؟")) { await _supabase.from('vendors').delete().eq('id', id); loadVendors(); } }
 
-        let currentExpTid = '', currentExpName = '';
         function askExport(tid, name) { currentExpTid = tid; currentExpName = name; document.getElementById('exportModal').style.display='flex'; }
         function exportData(type) {
             const table = document.getElementById(currentExpTid);
@@ -361,6 +314,7 @@
             else XLSX.writeFile(XLSX.utils.table_to_book(table), currentExpName+'.xlsx');
         }
 
+        // تشغيل البداية فقط لملخص اليوم
         loadDaily();
     </script>
 </body>
