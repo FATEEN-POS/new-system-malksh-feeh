@@ -7,238 +7,169 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --bg: #050505; --card: #0f0f0f; --accent: #00f2fe; --gray: #1a1a1a; --red: #ff4d4d; --green: #00ff88; --text: #ffffff; --orange: #ffa500; }
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.2s; }
-        body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        :root { --bg: #050505; --card: #0f0f0f; --accent: #00f2fe; --gray: #1a1a1a; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: #fff; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        header { background: var(--card); padding: 10px 20px; border-bottom: 1px solid var(--gray); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px; }
+        header { background: var(--card); padding: 10px 20px; border-bottom: 1px solid var(--gray); display: flex; justify-content: space-between; align-items: center; }
         
         .main-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* تعديل النسب: المنتجات تأخذ مساحة أكبر */
-        .products-section { flex: 2.5; display: flex; flex-direction: column; padding: 15px; border-left: 1px solid var(--gray); }
+        /* قسم المنتجات - مساحة أكبر */
+        .products-section { flex: 2.8; padding: 15px; overflow-y: auto; }
         
-        /* تصغير السلة */
-        .cart-section { flex: 0.8; background: var(--card); padding: 15px; display: flex; flex-direction: column; min-width: 320px; }
+        /* قسم السلة - مساحة أصغر */
+        .cart-section { width: 320px; background: var(--card); border-right: 1px solid var(--gray); display: flex; flex-direction: column; padding: 15px; }
 
         .search-bar { background: var(--gray); border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; width: 100%; margin-bottom: 15px; outline: none; }
 
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; overflow-y: auto; padding-bottom: 20px; }
-        .product-card { background: var(--gray); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; text-align: center; }
-        .product-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-        .product-card h4 { margin: 8px 0 4px; font-size: 14px; }
-        .product-card span { color: var(--accent); font-weight: bold; font-size: 16px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .product-card { background: var(--gray); padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; border: 1px solid transparent; }
+        .product-card:hover { border-color: var(--accent); }
+        .product-card h4 { margin: 5px 0; font-size: 13px; }
+        .product-card span { color: var(--accent); font-weight: bold; }
 
-        .cart-items { flex: 1; overflow-y: auto; margin-bottom: 15px; }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 13px; }
-        
-        .cart-summary { background: #000; padding: 15px; border-radius: 12px; border: 1px solid var(--gray); }
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 18px; font-weight: 800; color: var(--accent); }
+        .cart-items { flex: 1; overflow-y: auto; border-bottom: 1px solid var(--gray); margin-bottom: 10px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid #222; }
 
-        .btn-pay { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 8px; font-size: 15px; }
-        
-        /* أزرار التحكم في الأسفل */
-        .shift-controls { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--gray); padding-top: 15px; }
-        .btn-shift { background: var(--orange); color: #000; display: flex; justify-content: center; align-items: center; gap: 8px; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-logout { background: var(--red); color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .total-box { background: #000; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .total-box div { display: flex; justify-content: space-between; font-weight: 800; font-size: 18px; color: var(--accent); }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 10px; }
+        .btn { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
+        .btn-cash { background: var(--green); color: #000; }
+        .btn-visa { background: var(--accent); color: #000; }
+        .btn-shift { background: var(--orange); color: #000; margin-top: 10px; }
+        .btn-logout { background: var(--red); color: #fff; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <header>
-        <div style="font-weight: 800; color: var(--accent); font-size: 20px;">FATEEN POS</div>
-        <div id="user-display" style="text-align: center; font-weight: 600;">جاري التحميل...</div>
-        <div id="clock" style="font-family: monospace; color: #888;">00:00:00</div>
-    </header>
+<header>
+    <div style="font-weight: 800; color: var(--accent);">FATEEN OS</div>
+    <div id="user-info">جاري التحميل...</div>
+    <div id="clock">00:00:00</div>
+</header>
 
-    <div class="main-container">
-        <div class="products-section">
-            <input type="text" class="search-bar" id="search-input" placeholder="ابحث عن منتج أو امسح باركود..." oninput="filterProducts()">
-            <div class="products-grid" id="products-grid"></div>
-        </div>
-
-        <div class="cart-section">
-            <h3 style="margin-top:0; font-size:18px;">السلة الحالية</h3>
-            <div class="cart-items" id="cart-items"></div>
-
-            <div class="cart-summary">
-                <div class="total-row">
-                    <span>الإجمالي:</span>
-                    <span id="total-price">0 ج.م</span>
-                </div>
-                <button class="btn-pay" style="background: var(--green); color: #000;" onclick="processCheckout('نقداً')">دفع كاش (F8)</button>
-                <button class="btn-pay" style="background: var(--accent); color: #000;" onclick="processCheckout('فيزا')">دفع فيزا (F9)</button>
-            </div>
-
-            <div class="shift-controls">
-                <button class="btn-shift" onclick="generateShiftReport()">
-                    📑 تقرير غلق الوردية
-                </button>
-                <button class="btn-logout" onclick="logout()">
-                    ↩ تسجيل خروج
-                </button>
-            </div>
-        </div>
+<div class="main-container">
+    <div class="products-section">
+        <input type="text" class="search-bar" id="search-in" placeholder="بحث عن منتج..." oninput="filterProducts()">
+        <div class="products-grid" id="products-grid"></div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <div class="cart-section">
+        <h4 style="margin:0 0 10px 0;">السلة</h4>
+        <div class="cart-items" id="cart-list"></div>
 
-        let products = [];
-        let cart = [];
-        const storeKey = sessionStorage.getItem('store_key');
-        const currentUser = sessionStorage.getItem('username');
-        const loginTime = new Date().toLocaleString('ar-EG');
+        <div class="total-box">
+            <div><span>الإجمالي:</span> <span id="total-val">0 ج.م</span></div>
+        </div>
 
-        if (!storeKey) window.location.replace('index.html');
-        document.getElementById('user-display').innerText = `الموظف: ${currentUser}`;
+        <button class="btn btn-cash" onclick="checkout('نقداً')">دفع كاش (F8)</button>
+        <button class="btn btn-visa" onclick="checkout('فيزا')">دفع فيزا (F9)</button>
 
-        // الساعة
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG');
-        }, 1000);
+        <div style="margin-top:auto;">
+            <button class="btn btn-shift" onclick="printShiftReport()">📑 تقرير غلق الوردية</button>
+            <button class="btn btn-logout" onclick="logout()">↩ تسجيل خروج</button>
+        </div>
+    </div>
+</div>
 
-        async function loadProducts() {
-            const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            products = data || [];
-            displayProducts(products);
-        }
+<script>
+    const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function displayProducts(list) {
-            const grid = document.getElementById('products-grid');
-            grid.innerHTML = list.map(p => `
-                <div class="product-card" onclick="addToCart(${p.id})">
-                    <h4>${p.product_name}</h4>
-                    <span>${p.price} ج.م</span>
-                    <div style="font-size:10px; color:#666">مخزون: ${p.stock}</div>
-                </div>
-            `).join('');
-        }
+    let allProducts = [], cart = [];
+    const storeKey = sessionStorage.getItem('store_key');
+    const user = sessionStorage.getItem('username');
+    const startTime = new Date().toLocaleString('ar-EG');
 
-        function addToCart(id) {
-            const product = products.find(p => p.id === id);
-            if (product.stock <= 0) return alert("نفذ المخزون!");
-            
-            const existing = cart.find(item => item.id === id);
-            if (existing) existing.qty++;
-            else cart.push({ ...product, qty: 1 });
-            
-            updateCartUI();
-        }
+    if(!storeKey) window.location.href = 'index.html';
+    document.getElementById('user-info').innerText = "الموظف: " + user;
 
-        function updateCartUI() {
-            const container = document.getElementById('cart-items');
-            container.innerHTML = cart.map((item, idx) => `
-                <div class="cart-item">
-                    <div><b>${item.product_name}</b> x${item.qty}</div>
-                    <div>
-                        <span>${item.price * item.qty} ج.م</span>
-                        <button onclick="removeFromCart(${idx})" style="background:none; border:none; color:var(--red); cursor:pointer; margin-right:10px;">✕</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('total-price').innerText = total + " ج.م";
-        }
+    setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG'), 1000);
 
-        function removeFromCart(idx) {
-            cart.splice(idx, 1);
-            updateCartUI();
-        }
+    async function loadData() {
+        const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+        allProducts = data || [];
+        renderProducts(allProducts);
+    }
 
-        async function processCheckout(method) {
-            if (cart.length === 0) return;
-            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    function renderProducts(list) {
+        document.getElementById('products-grid').innerHTML = list.map(p => `
+            <div class="product-card" onclick="addToCart(${p.id})">
+                <h4>${p.product_name}</h4>
+                <span>${p.price} ج.م</span>
+                <div style="font-size:10px; color:#555;">مخزون: ${p.stock}</div>
+            </div>
+        `).join('');
+    }
 
-            // 1. تسجيل العملية
-            const { data: sale, error } = await _supabase.from('sales').insert([{
-                store_key: storeKey,
-                seller_name: currentUser,
-                total_amount: total,
-                payment_method: method,
-                items: cart,
-                type: 'sale'
-            }]).select();
+    function addToCart(id) {
+        const p = allProducts.find(x => x.id === id);
+        const inCart = cart.find(x => x.id === id);
+        if(inCart) inCart.qty++; else cart.push({...p, qty: 1});
+        updateUI();
+    }
 
-            if (!error) {
-                // 2. تحديث المخزون
-                for (let item of cart) {
-                    await _supabase.from('products').update({ stock: item.stock - item.qty }).eq('id', item.id);
-                }
-                alert("تمت العملية بنجاح");
-                cart = [];
-                updateCartUI();
-                loadProducts();
+    function updateUI() {
+        const list = document.getElementById('cart-list');
+        list.innerHTML = cart.map((item, i) => `
+            <div class="cart-item">
+                <span>${item.product_name} x${item.qty}</span>
+                <span>${item.price * item.qty} <button onclick="cart.splice(${i},1);updateUI()" style="background:none; border:none; color:red; cursor:pointer">✕</button></span>
+            </div>
+        `).join('');
+        const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        document.getElementById('total-val').innerText = total + " ج.م";
+    }
+
+    async function checkout(method) {
+        if(cart.length === 0) return;
+        const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        const { data, error } = await _supabase.from('sales').insert([{
+            store_key: storeKey, seller_name: user, total_amount: total, payment_method: method, items: cart, type: 'sale'
+        }]);
+        if(!error) {
+            for(let item of cart) {
+                await _supabase.from('products').update({ stock: item.stock - item.qty }).eq('id', item.id);
             }
+            alert("تم الحفظ بنجاح");
+            cart = []; updateUI(); loadData();
         }
+    }
 
-        async function generateShiftReport() {
-            const endTime = new Date().toLocaleString('ar-EG');
-            const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+    async function printShiftReport() {
+        const endTime = new Date().toLocaleString('ar-EG');
+        const { data } = await _supabase.from('sales').select('*').eq('seller_name', user).eq('store_key', storeKey).gte('created_at', new Date().toISOString().split('T')[0]);
+        
+        let cash = 0, visa = 0;
+        data?.forEach(s => { if(s.payment_method === 'نقداً') cash += s.total_amount; else visa += s.total_amount; });
 
-            const { data: shiftSales } = await _supabase
-                .from('sales')
-                .select('*')
-                .eq('seller_name', currentUser)
-                .eq('store_key', storeKey)
-                .gte('created_at', startOfDay.toISOString());
+        const report = `
+            <div style="direction:rtl; padding:20px; font-family:'Cairo';">
+                <h2 style="text-align:center;">تقرير غلق الوردية</h2>
+                <p><b>الموظف:</b> ${user}</p>
+                <p><b>وقت الفتح:</b> ${startTime}</p>
+                <p><b>وقت الغلق:</b> ${endTime}</p>
+                <hr>
+                <p>مبيعات كاش: ${cash} ج.م</p>
+                <p>مبيعات فيزا: ${visa} ج.م</p>
+                <h3 style="background:#eee; padding:10px;">المجموع الكلي: ${cash + visa} ج.م</h3>
+            </div>
+        `;
+        html2pdf().from(report).set({filename: 'Shift_Report.pdf'}).save();
+    }
 
-            let cash = 0, visa = 0;
-            shiftSales?.forEach(s => {
-                if(s.payment_method === 'نقداً') cash += s.total_amount;
-                else visa += s.total_amount;
-            });
+    function filterProducts() {
+        const val = document.getElementById('search-in').value.toLowerCase();
+        renderProducts(allProducts.filter(p => p.product_name.toLowerCase().includes(val)));
+    }
 
-            const total = cash + visa;
+    function logout() { if(confirm("خروج؟")) { sessionStorage.clear(); window.location.href='index.html'; } }
 
-            const reportHTML = `
-                <div style="direction:rtl; font-family:'Cairo'; padding:30px; border:1px solid #000;">
-                    <h1 style="text-align:center;">تقرير غلق الوردية</h1>
-                    <hr>
-                    <p><b>الموظف:</b> ${currentUser}</p>
-                    <p><b>فتح الساعة:</b> ${loginTime}</p>
-                    <p><b>قفل الساعة:</b> ${endTime}</p>
-                    <hr>
-                    <h2 style="color:#222;">الملخص المالي:</h2>
-                    <p>إجمالي الكاش: ${cash} ج.م</p>
-                    <p>إجمالي الفيزا: ${visa} ج.م</p>
-                    <div style="background:#f0f0f0; padding:15px; font-size:24px; text-align:center;">
-                        المجموع الكلي: ${total} ج.م
-                    </div>
-                </div>
-            `;
-
-            const opt = { margin: 1, filename: `تقرير_${currentUser}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
-            html2pdf().from(reportHTML).set(opt).save();
-            alert("تم جاري تحميل تقرير الوردية PDF...");
-        }
-
-        function logout() {
-            if(confirm("هل تريد تسجيل الخروج؟")) {
-                sessionStorage.clear();
-                window.location.replace('index.html');
-            }
-        }
-
-        function filterProducts() {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const filtered = products.filter(p => p.product_name.toLowerCase().includes(term));
-            displayProducts(filtered);
-        }
-
-        // اختصارات الكيبورد
-        window.addEventListener('keydown', e => {
-            if(e.key === 'F8') processCheckout('نقداً');
-            if(e.key === 'F9') processCheckout('فيزا');
-        });
-
-        loadProducts();
-    </script>
+    window.onkeydown = (e) => { if(e.key==='F8') checkout('نقداً'); if(e.key==='F9') checkout('فيزا'); };
+    loadData();
+</script>
 </body>
 </html>
