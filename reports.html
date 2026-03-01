@@ -42,7 +42,6 @@
 
         .chart-container { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--gray); margin-top: 20px; height: 300px; display: none; }
         
-        .floating-search { margin-top: 20px; padding: 15px; background: rgba(0, 242, 254, 0.03); border-radius: 15px; border: 1px solid var(--gray); }
         .btn-accent { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
@@ -135,14 +134,6 @@
                 <thead><tr><th>المورد</th><th>المديونية</th><th>آخر تحديث</th><th>إجراء</th></tr></thead>
                 <tbody id="vendor-body"></tbody>
             </table>
-
-            <div class="floating-search">
-                <h4 style="margin:0 0 10px 0; color:var(--accent)">🔍 بحث سريع برقم الفاتورة</h4>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="quick-search-invoice" placeholder="أدخل رقم الفاتورة..." style="flex:1; background:#000; color:#fff; border:1px solid var(--gray); padding:10px; border-radius:8px;">
-                    <button class="btn-accent" onclick="quickSearchInvoice()">عرض الفاتورة</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -177,6 +168,16 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
         let myChart;
+
+        // الحركة الصايعة: تحديد تاريخ اليوم تلقائياً لكل الحقول
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            const dateInputs = ['p-start', 'p-end', 'perf-start', 'perf-end'];
+            dateInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = today;
+            });
+        }
 
         function showSection(id) {
             document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
@@ -238,10 +239,11 @@
         }
 
         async function loadPerformance() {
-            const start = document.getElementById('perf-start').value || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-            const end = document.getElementById('perf-end').value || new Date().toISOString();
+            const start = document.getElementById('perf-start').value;
+            const end = document.getElementById('perf-end').value;
             const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey);
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', start).lte('created_at', end);
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
+            
             document.getElementById('perf-list').innerHTML = users?.map(u => {
                 const total = sales?.filter(s => s.seller_name === u.username).reduce((sum, s) => sum + s.total_amount, 0) || 0;
                 const target = u.monthly_target || 1000;
@@ -267,8 +269,6 @@
         }
 
         function filterByProduct(val) {
-            const body = document.getElementById('prod-body');
-            // إعادة الفلترة فورياً
             _supabase.from('products').select('*').eq('store_key', storeKey).then(({data: products}) => {
                 _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale').then(({data: sales}) => {
                     let stats = {};
@@ -276,13 +276,6 @@
                     renderProdTable(products, stats, val);
                 });
             });
-        }
-
-        async function quickSearchInvoice() {
-            const id = document.getElementById('quick-search-invoice').value;
-            if(!id) return;
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('id', id).single();
-            if(data) openReceipt(data); else alert("لم يتم العثور على فاتورة");
         }
 
         function openReceipt(sale) {
@@ -314,7 +307,8 @@
             else XLSX.writeFile(XLSX.utils.table_to_book(table), currentExpName+'.xlsx');
         }
 
-        // تشغيل البداية فقط لملخص اليوم
+        // عند التحميل
+        setDefaultDates();
         loadDaily();
     </script>
 </body>
