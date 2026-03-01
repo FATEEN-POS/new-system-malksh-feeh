@@ -2,207 +2,143 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>التقارير</title>
+    <title>مركز التقارير - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
         .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-        .sidebar-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
-        #display-store-name { color: var(--accent); font-size: 18px; margin: 0; }
-        .nav-group-title { font-size: 11px; color: #555; margin: 15px 0 5px; display: block; }
-        .nav-btn { background: none; border: none; color: #888; padding: 10px; text-align: right; cursor: pointer; border-radius: 8px; font-size: 13px; width: 100%; }
-        .nav-btn:hover, .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
+        .nav-btn { background: none; border: 1px solid var(--gray); color: #888; padding: 12px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; text-align: right; width: 100%; font-size: 14px; }
+        .nav-btn:hover, .nav-btn.active { border-color: var(--accent); color: #fff; background: rgba(0, 242, 254, 0.05); }
 
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .report-section { display: none; }
+        .report-section.active { display: block; animation: fadeIn 0.3s; }
 
-        .report-card { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; padding: 20px; margin-bottom: 20px; position: relative; }
-        .download-btn { position: absolute; top: 20px; left: 20px; background: #fff; color: #000; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-box { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; }
+        .stat-box h4 { margin: 0; font-size: 13px; color: #888; }
+        .stat-box p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: var(--accent); }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #000; padding: 12px; border-radius: 10px; border-right: 3px solid var(--accent); }
-        .stat-box span { font-size: 11px; color: #777; display: block; }
-        .stat-box strong { font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; margin-top: 15px; }
+        th { background: #1a1a1a; color: var(--accent); padding: 12px; text-align: right; font-size: 13px; border-bottom: 1px solid var(--gray); }
+        td { padding: 12px; border-bottom: 1px solid var(--gray); font-size: 13px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: right; font-size: 12px; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--gray); }
-        td { padding: 10px; font-size: 13px; border-bottom: 1px solid #1a1a1a; }
+        .export-btn { background: var(--accent); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; float: left; font-size: 12px; margin-bottom: 10px; }
+        
+        /* Modal الاختيار */
+        #exportModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
+        .modal-box { background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--accent); text-align:center; }
+        .opt-btn { background:var(--gray); color:#fff; padding:15px 30px; border-radius:10px; margin:10px; cursor:pointer; border:1px solid transparent; display:inline-block; }
+        .opt-btn:hover { border-color:var(--accent); color:var(--accent); }
 
-        .btn-pay { background: var(--green); color: #000; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .btn-del { background: var(--red); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; margin-right: 5px; }
-
-        .search-bar { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; outline: none; }
-        .search-bar:focus { border-color: var(--accent); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid var(--accent); width: 380px; }
-        .modal-content input, .modal-content select { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
-
-        .filter-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; flex-wrap: wrap; }
-        .filter-box label { font-size: 12px; color: #888; }
-        .filter-box input[type="date"] { background: #000; border: 1px solid var(--gray); color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">
-            <h2 id="display-store-name">تحميل...</h2>
-            <span id="display-sys-v" style="font-size: 10px; color: #444;">V 1.0.0</span>
-        </div>
+        <h2 style="color:var(--accent); text-align:center; font-size:18px;"> Fateen OS 📊</h2>
+        <p style="color:#555; font-size:11px; text-align:center; margin-bottom:30px;">مركز تحليل البيانات</p>
         
-        <span class="nav-group-title">📊 المبيعات</span>
-        <button class="nav-btn active" onclick="showTab('sales-tab', this)">ملخص يومي وفترات</button>
-        <button class="nav-btn" onclick="showTab('top-items-tab', this)">الأصناف الأكثر مبيعاً</button>
-        <button class="nav-btn" onclick="showTab('returns-tab', this)">تقارير المرتجعات</button>
-
-        <span class="nav-group-title">📦 المخزن</span>
-        <button class="nav-btn" onclick="showTab('inv-status-tab', this)">القيمة والجرد الحالي</button>
-        <button class="nav-btn" onclick="showTab('inv-move-tab', this)">حركة الصنف والهاك</button>
-
-        <span class="nav-group-title">👥 الموظفين</span>
-        <button class="nav-btn" onclick="showTab('staff-tab', this)">أداء الموظف والوردية</button>
-
-        <span class="nav-group-title">💰 المالية</span>
-        <button class="nav-btn" onclick="showTab('profit-tab', this)">الأرباح والذروة</button>
-        <button class="nav-btn" onclick="showTab('vendors-tab', this)">ديون الموردين</button>
-
-        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩ خروج</button>
+        <button class="nav-btn active" onclick="showSection('daily')">📅 ملخص اليوم</button>
+        <button class="nav-btn" onclick="showSection('periods')">⏳ فترات المبيعات</button>
+        <button class="nav-btn" onclick="showSection('products')">📦 حركة الأصناف</button>
+        <button class="nav-btn" onclick="showSection('vendors')">🤝 مديونيات الموردين</button>
+        
+        <div style="flex:1"></div>
+        <button class="nav-btn" style="border-color:var(--red); color:var(--red);" onclick="location.href='manager.html'">العودة للوحة الإدارة</button>
     </div>
 
     <div class="main-content">
-        <div id="sales-tab" class="tab-content active">
-            <div class="report-card" id="pdf-sales">
-                <button class="download-btn" onclick="downloadPDF('pdf-sales', 'Daily_Sales')">📥 PDF</button>
-                <h3>ملخص المبيعات</h3>
-                <input type="date" id="sale-date" onchange="loadSalesData()">
-                <div class="stats-grid">
-                    <div class="stat-box"><span>إجمالي البيع</span><strong id="day-sales">0.00</strong></div>
-                    <div class="stat-box"><span>عدد الفواتير</span><strong id="day-orders">0</strong></div>
-                </div>
-                <table>
-                    <thead><tr><th>الوقت</th><th>رقم الفاتورة</th><th>المبلغ</th><th>الوسيلة</th></tr></thead>
-                    <tbody id="sales-list"></tbody>
-                </table>
+        <div id="daily" class="report-section active">
+            <button class="export-btn" onclick="askExport('daily-table', 'Daily_Report')">تحميل التقرير</button>
+            <h3 style="margin-top:0">ملخص العمليات اليومية</h3>
+            <div class="grid-stats">
+                <div class="stat-box"><h4>إجمالي مبيعات اليوم</h4><p id="d-total">0</p></div>
+                <div class="stat-box"><h4>عدد العمليات</h4><p id="d-count">0</p></div>
+                <div class="stat-box"><h4>إجمالي المرتجعات</h4><p id="d-return" style="color:var(--red)">0</p></div>
             </div>
+            <table id="daily-table">
+                <thead>
+                    <tr>
+                        <th>رقم العملية</th>
+                        <th>الوقت</th>
+                        <th>البائع</th>
+                        <th>القيمة</th>
+                        <th>طريقة الدفع</th>
+                        <th>النوع</th>
+                    </tr>
+                </thead>
+                <tbody id="daily-body"></tbody>
+            </table>
         </div>
 
-        <div id="top-items-tab" class="tab-content">
-            <div class="report-card" id="pdf-top-items">
-                <button class="download-btn" onclick="downloadPDF('pdf-top-items', 'Top_Selling_Items')">📥 PDF</button>
-                <h3>الأصناف الأكثر مبيعاً (توب 10)</h3>
-                <table>
-                    <thead><tr><th>الصنف</th><th>الكمية المباعة</th></tr></thead>
-                    <tbody id="top-items-list"></tbody>
-                </table>
+        <div id="periods" class="report-section">
+            <div style="background:var(--card); padding:20px; border-radius:15px; margin-bottom:20px;">
+                <label>من: </label><input type="date" id="p-start" style="background:#000; color:#fff; border:1px solid var(--gray); padding:5px; border-radius:5px;">
+                <label> إلى: </label><input type="date" id="p-end" style="background:#000; color:#fff; border:1px solid var(--gray); padding:5px; border-radius:5px;">
+                <button class="btn" style="background:var(--accent); border:none; padding:6px 15px; border-radius:5px; cursor:pointer;" onclick="loadPeriodReport()">استخراج</button>
+                <button class="export-btn" onclick="askExport('period-table', 'Period_Report')">تحميل</button>
             </div>
+            <table id="period-table">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>رقم العملية</th>
+                        <th>البائع</th>
+                        <th>المبلغ</th>
+                        <th>النوع</th>
+                    </tr>
+                </thead>
+                <tbody id="period-body"></tbody>
+            </table>
         </div>
 
-        <div id="returns-tab" class="tab-content">
-            <div class="report-card" id="pdf-returns">
-                <button class="download-btn" onclick="downloadPDF('pdf-returns', 'Returns_Report')">📥 PDF</button>
-                <h3>سجل المرتجعات</h3>
-                <table>
-                    <thead><tr><th>الوقت</th><th>رقم الفاتورة</th><th>الأصناف المرتجعة</th><th>القيمة المستردة</th><th>الموظف</th></tr></thead>
-                    <tbody id="returns-list"></tbody>
-                </table>
-            </div>
+        <div id="products" class="report-section">
+            <button class="export-btn" onclick="askExport('prod-table', 'Product_Performance')">تحميل</button>
+            <h3>الأكثر مبيعاً وحركة المخزن</h3>
+            <table id="prod-table">
+                <thead>
+                    <tr>
+                        <th>اسم الصنف</th>
+                        <th>الكمية المباعة</th>
+                        <th>المخزون الحالي</th>
+                        <th>إجمالي الدخل</th>
+                    </tr>
+                </thead>
+                <tbody id="prod-body"></tbody>
+            </table>
         </div>
 
-        <div id="inv-status-tab" class="tab-content">
-            <div class="report-card" id="pdf-inventory">
-                <button class="download-btn" onclick="downloadPDF('pdf-inventory', 'Inventory_Status')">📥 PDF</button>
-                <h3>جرد وقيمة المخزن</h3>
-                <div class="stats-grid">
-                    <div class="stat-box"><span>قيمة المخزن (بيع)</span><strong id="inv-val-sale">0.00</strong></div>
-                    <div class="stat-box"><span>قيمة المخزن (تكلفة)</span><strong id="inv-val-cost">0.00</strong></div>
-                    <div class="stat-box" style="border-color:var(--red)"><span>نواقص</span><strong id="short-count">0</strong></div>
-                </div>
-                <table>
-                    <thead><tr><th>الصنف</th><th>رصيد</th><th>تكلفة</th><th>الحالة</th></tr></thead>
-                    <tbody id="inventory-list"></tbody>
-                </table>
-            </div>
+        <div id="vendors" class="report-section">
+            <button class="export-btn" onclick="askExport('vendor-table', 'Vendors_Debts')">تحميل</button>
+            <h3>حسابات الموردين والمديونيات</h3>
+            <table id="vendor-table">
+                <thead>
+                    <tr>
+                        <th>المورد</th>
+                        <th>إجمالي المديونية</th>
+                        <th>آخر عملية دفع</th>
+                    </tr>
+                </thead>
+                <tbody id="vendor-body"></tbody>
+            </table>
         </div>
-
-        <div id="inv-move-tab" class="tab-content">
-            <div class="report-card">
-                <h3>بحث حركة صنف معين</h3>
-                <select id="product-selector" onchange="loadProductHistory()" style="width:100%; background:#000; color:#fff; padding:10px; border:1px solid var(--gray); border-radius:8px; margin-bottom:15px;">
-                    <option value="">اختر الصنف لمعاينة حركته...</option>
-                </select>
-                <div id="product-history-content">
-                    <table>
-                        <thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>الكمية</th></tr></thead>
-                        <tbody id="product-history-list"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="profit-tab" class="tab-content">
-            <div class="report-card" id="pdf-profit">
-                <button class="download-btn" onclick="downloadPDF('pdf-profit', 'Profit_Report')">📥 PDF</button>
-                <h3>صافي الأرباح والذروة</h3>
-                <div class="stats-grid">
-                    <div class="stat-box" style="border-color:var(--green)"><span>صافي الربح التقديري</span><strong id="net-profit-val">0.00</strong></div>
-                    <div class="stat-box"><span>إجمالي المبيعات</span><strong id="total-sales-val">0.00</strong></div>
-                </div>
-                <div style="height: 250px; margin-top: 20px;">
-                    <canvas id="peakChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div id="vendors-tab" class="tab-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h2>ديون الموردين</h2>
-                <button onclick="document.getElementById('vendorModal').style.display='flex'" style="background:var(--accent); border:none; padding:8px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ فاتورة آجلة</button>
-            </div>
-            <div class="report-card" id="pdf-vendors">
-                <button class="download-btn" onclick="downloadPDF('pdf-vendors', 'Vendors_Debt')">📥 PDF</button>
-                <input type="text" id="vendor-search" class="search-bar" placeholder="ابحث عن مورد..." oninput="filterVendors()">
-                <table>
-                    <thead><tr><th>المورد</th><th>المديونية</th><th>آخر حركة</th><th>إجراءات الدفع والحذف</th></tr></thead>
-                    <tbody id="vendors-list-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="staff-tab" class="tab-content">
-            <div class="report-card" id="pdf-staff">
-                <button class="download-btn" onclick="downloadPDF('pdf-staff', 'Staff_Performance')">📥 PDF</button>
-                <h3>إحصائيات الموظفين</h3>
-                <div class="filter-box">
-                    <label>من:</label> <input type="date" id="staff-from" onchange="loadStaffPerformance()">
-                    <label>إلى:</label> <input type="date" id="staff-to" onchange="loadStaffPerformance()">
-                    <input type="text" id="staff-search" class="search-bar" style="margin: 10px 0 0 0;" placeholder="ابحث عن اسم موظف..." oninput="filterStaff()">
-                </div>
-                <table>
-                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
-                    <tbody id="staff-performance-list"></tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
-    <div id="vendorModal" class="modal">
-        <div class="modal-content">
-            <h3>تسجيل مشتريات آجلة</h3>
-            <input type="text" id="v-name-in" placeholder="اسم المورد">
-            <input type="number" id="v-amount-in" placeholder="قيمة الفاتورة">
-            <button onclick="saveVendorInv()" style="width:100%; background:var(--accent); border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">حفظ</button>
-            <button onclick="document.getElementById('vendorModal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">إلغاء</button>
+    <div id="exportModal" onclick="this.style.display='none'">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h3 style="color:var(--accent)">اختر صيغة الملف</h3>
+            <div class="opt-btn" onclick="exportData('pdf')">📄 ملف PDF</div>
+            <div class="opt-btn" onclick="exportData('excel')">📊 ملف Excel</div>
         </div>
     </div>
 
@@ -212,232 +148,118 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
 
-        let allVendors = [];
-        let allStaffData = [];
+        let currentExportId = '';
+        let currentExportName = '';
 
-        async function init() {
-            if(!storeKey) return location.href='index.html';
-            const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
-            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
-            document.getElementById('display-store-name').innerText = "متجر " + (store?.store_name || "");
-            document.getElementById('display-sys-v').innerText = "V " + (vData?.value || "1.0.0");
-            
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('sale-date').value = today;
-            document.getElementById('staff-from').value = today;
-            document.getElementById('staff-to').value = today;
-
-            loadAllReports();
-        }
-
-        function showTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        function showSection(id) {
+            document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+            if(id === 'daily') loadDaily();
+            if(id === 'products') loadProductStats();
+            if(id === 'vendors') loadVendors();
         }
 
-        async function loadAllReports() {
-            loadSalesData();
-            loadInventoryData();
-            loadTopItems();
-            loadReturns();
-            loadStaffPerformance();
-            loadVendors();
-            loadProfitData();
-            initPeakChart();
-        }
-
-        async function loadSalesData() {
-            const date = document.getElementById('sale-date').value;
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', date).lte('created_at', date + 'T23:59:59');
-            const list = document.getElementById('sales-list'); list.innerHTML = '';
-            let total = 0;
-            data?.forEach(s => {
-                if(s.type === 'sale') total += s.total_amount;
-                list.innerHTML += `<tr><td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td><td>#${s.id.slice(0,5)}</td><td>${s.total_amount}</td><td>${s.payment_method}</td></tr>`;
-            });
-            document.getElementById('day-sales').innerText = total.toFixed(2);
-            document.getElementById('day-orders').innerText = data?.length || 0;
-        }
-
-        async function loadTopItems() {
-            const { data } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
-            let counts = {};
-            data?.forEach(s => {
-                if(s.items && Array.isArray(s.items)){
-                    s.items.forEach(item => {
-                        let name = item.name || item.product_name || "صنف غير معرف";
-                        counts[name] = (counts[name] || 0) + item.qty;
-                    });
-                }
-            });
-            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
-            const list = document.getElementById('top-items-list');
-            list.innerHTML = sorted.map(i => `<tr><td>${i[0]}</td><td>${i[1]}</td></tr>`).join('');
-        }
-
-        async function loadReturns() {
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'return');
-            const list = document.getElementById('returns-list');
-            list.innerHTML = data?.map(r => {
-                const itemNames = r.items?.map(i => i.name || i.product_name).join(' + ') || 'غير محدد';
-                // تم تعديل سحب اسم الموظف هنا أيضاً
-                const seller = r.seller_name || r.cashier_name || r.username || 'مدير';
-                return `<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>#${r.id.slice(0,5)}</td><td>${itemNames}</td><td>${r.total_amount}</td><td>${seller}</td></tr>`;
+        async function loadDaily() {
+            const today = new Date().toISOString().split('T')[0];
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today+'T00:00:00');
+            
+            let total = 0, count = 0, ret = 0;
+            const body = document.getElementById('daily-body');
+            body.innerHTML = sales?.map(s => {
+                if(s.type === 'sale') { total += s.total_amount; count++; } else { ret += s.total_amount; }
+                return `<tr>
+                    <td>#${s.id.toString().slice(-6)}</td>
+                    <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
+                    <td>${s.seller_name}</td>
+                    <td>${s.total_amount}</td>
+                    <td>${s.payment_method || 'كاش'}</td>
+                    <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
+                </tr>`;
             }).join('') || '';
+            document.getElementById('d-total').innerText = total + " ج.م";
+            document.getElementById('d-count').innerText = count;
+            document.getElementById('d-return').innerText = ret + " ج.م";
         }
 
-        async function loadInventoryData() {
-            const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            const list = document.getElementById('inventory-list');
-            const selector = document.getElementById('product-selector');
-            list.innerHTML = ''; selector.innerHTML = '<option value="">اختر الصنف...</option>';
-            let saleVal = 0, costVal = 0, shorts = 0;
-            data?.forEach(p => {
-                let pName = p.name || p.product_name || "غير مسمى";
-                saleVal += (p.stock * p.price);
-                costVal += (p.stock * (p.cost_price || 0));
-                if(p.stock <= 5) shorts++;
-                list.innerHTML += `<tr><td>${pName}</td><td>${p.stock}</td><td>${p.cost_price || 0}</td><td>${p.stock <= 5 ? '🔴 ناقص' : '✅ متوفر'}</td></tr>`;
-                selector.innerHTML += `<option value="${p.id}">${pName}</option>`;
-            });
-            document.getElementById('inv-val-sale').innerText = saleVal.toFixed(2);
-            document.getElementById('inv-val-cost').innerText = costVal.toFixed(2);
-            document.getElementById('short-count').innerText = shorts;
+        async function loadPeriodReport() {
+            const start = document.getElementById('p-start').value;
+            const end = document.getElementById('p-end').value;
+            if(!start || !end) return alert("اختر الفترة");
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
+            
+            document.getElementById('period-body').innerHTML = sales?.map(s => `
+                <tr>
+                    <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td>#${s.id.toString().slice(-6)}</td>
+                    <td>${s.seller_name}</td>
+                    <td>${s.total_amount}</td>
+                    <td>${s.type==='sale'?'بيع':'مرتجع'}</td>
+                </tr>
+            `).join('') || '';
         }
 
-        async function loadProductHistory() {
-            const pid = document.getElementById('product-selector').value;
-            if(!pid) return;
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey);
-            const list = document.getElementById('product-history-list'); list.innerHTML = '';
-            data?.forEach(s => {
-                const item = s.items.find(i => i.id == pid);
-                if(item) {
-                    list.innerHTML += `<tr><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${s.type === 'sale' ? 'مبيعات' : 'مرتجع'}</td><td>${item.qty}</td></tr>`;
-                }
-            });
-        }
-
-        async function loadProfitData() {
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
-            let totalSales = 0, totalProfit = 0;
-            data?.forEach(s => {
-                totalSales += s.total_amount;
+        async function loadProductStats() {
+            const { data: sales } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
+            const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            
+            let stats = {};
+            sales?.forEach(s => {
                 s.items.forEach(item => {
-                    let cost = item.cost_price || 0;
-                    totalProfit += (item.price - cost) * item.qty;
+                    if(!stats[item.id]) stats[item.id] = { name: item.product_name, qty: 0, cash: 0 };
+                    stats[item.id].qty += item.qty;
+                    stats[item.id].cash += (item.qty * item.price);
                 });
             });
-            document.getElementById('net-profit-val').innerText = totalProfit.toFixed(2) + " ج.م";
-            document.getElementById('total-sales-val').innerText = totalSales.toFixed(2) + " ج.م";
+
+            document.getElementById('prod-body').innerHTML = products?.map(p => `
+                <tr>
+                    <td>${p.product_name}</td>
+                    <td>${stats[p.id]?.qty || 0}</td>
+                    <td>${p.stock}</td>
+                    <td>${stats[p.id]?.cash || 0} ج.م</td>
+                </tr>
+            `).join('') || '';
         }
 
-        // الموردين: تحميل وتصفية وحذف
         async function loadVendors() {
             const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
-            allVendors = data || [];
-            renderVendors(allVendors);
-        }
-
-        function renderVendors(listData) {
-            const list = document.getElementById('vendors-list-body');
-            list.innerHTML = listData.map(v => `
+            document.getElementById('vendor-body').innerHTML = data?.map(v => `
                 <tr>
                     <td>${v.vendor_name}</td>
-                    <td><strong style="color:var(--red)">${v.total_debt} ج.م</strong></td>
-                    <td>${new Date(v.last_payment_date || v.created_at).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn-pay" onclick="payVendor('${v.id}', ${v.total_debt}, '${v.vendor_name}')">💰 دفع</button>
-                        <button class="btn-del" onclick="deleteVendorDebt('${v.id}', '${v.vendor_name}')">🗑️ حذف المديونية</button>
-                    </td>
-                </tr>`).join('');
+                    <td style="color:var(--red)">${v.total_debt} ج.م</td>
+                    <td>${v.last_payment_date ? new Date(v.last_payment_date).toLocaleDateString('ar-EG') : 'لا يوجد'}</td>
+                </tr>
+            `).join('') || '';
         }
 
-        function filterVendors() {
-            const query = document.getElementById('vendor-search').value.toLowerCase();
-            const filtered = allVendors.filter(v => v.vendor_name.toLowerCase().includes(query));
-            renderVendors(filtered);
+        // منطق التصدير
+        function askExport(tableId, fileName) {
+            currentExportId = tableId;
+            currentExportName = fileName;
+            document.getElementById('exportModal').style.display = 'flex';
         }
 
-        async function deleteVendorDebt(id, name) {
-            if(confirm(`هل أنت متأكد من حذف مديونية المورد "${name}" تماماً من السجلات؟`)) {
-                await _supabase.from('vendors').delete().eq('id', id);
-                alert("تم الحذف بنجاح");
-                loadVendors();
+        function exportData(type) {
+            const table = document.getElementById(currentExportId);
+            if (type === 'pdf') {
+                const opt = {
+                    margin: 0.5,
+                    filename: currentExportName + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, backgroundColor: '#111' },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+                html2pdf().from(table).set(opt).save();
+            } else {
+                const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+                XLSX.writeFile(wb, currentExportName + ".xlsx");
             }
+            document.getElementById('exportModal').style.display = 'none';
         }
 
-        async function payVendor(id, currentDebt, name) {
-            const amt = prompt(`دفع للمورد: ${name}\nالمديونية الحالية: ${currentDebt}\nأدخل المبلغ المدفوع الآن:`, currentDebt);
-            if(amt === null || amt === "" || isNaN(amt)) return;
-            const paid = parseFloat(amt);
-            const remaining = currentDebt - paid;
-            if(confirm(`تأكيد عملية الدفع:\n- المورد: ${name}\n- المديونية السابقة: ${currentDebt}\n- المدفوع الآن: ${paid}\n- المديونية المتبقية: ${remaining}`)) {
-                await _supabase.from('vendors').update({ total_debt: remaining, last_payment_date: new Date() }).eq('id', id);
-                alert("تم تحديث حساب المورد بنجاح"); 
-                loadVendors();
-            }
-        }
-
-        // الموظفين: تحميل وتصفية
-        async function loadStaffPerformance() {
-            const from = document.getElementById('staff-from').value;
-            const to = document.getElementById('staff-to').value;
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', from).lte('created_at', to + 'T23:59:59');
-
-            let staff = {};
-            data?.forEach(s => {
-                // الحل: البحث عن الاسم في جميع الأعمدة الممكنة (seller_name, cashier_name, username)
-                let name = s.seller_name || s.cashier_name || s.username || 'المدير';
-                if(!staff[name]) staff[name] = { count: 0, total: 0 };
-                staff[name].count++; 
-                staff[name].total += s.total_amount;
-            });
-            allStaffData = Object.entries(staff);
-            renderStaff(allStaffData);
-        }
-
-        function renderStaff(listData) {
-            const list = document.getElementById('staff-performance-list');
-            list.innerHTML = listData.map(([name, stats]) => `<tr><td>${name}</td><td>${stats.count}</td><td>${stats.total.toFixed(2)}</td></tr>`).join('');
-        }
-
-        function filterStaff() {
-            const query = document.getElementById('staff-search').value.toLowerCase();
-            const filtered = allStaffData.filter(([name]) => name.toLowerCase().includes(query));
-            renderStaff(filtered);
-        }
-
-        async function saveVendorInv() {
-            const name = document.getElementById('v-name-in').value;
-            const amt = parseFloat(document.getElementById('v-amount-in').value);
-            if(!name || !amt) return;
-            const { data: ext } = await _supabase.from('vendors').select('*').eq('vendor_name', name).eq('store_key', storeKey).single();
-            if(ext) await _supabase.from('vendors').update({ total_debt: ext.total_debt + amt, last_payment_date: new Date() }).eq('id', ext.id);
-            else await _supabase.from('vendors').insert([{ store_key: storeKey, vendor_name: name, total_debt: amt }]);
-            document.getElementById('vendorModal').style.display='none';
-            loadVendors();
-        }
-
-        function downloadPDF(divId, name) {
-            const el = document.getElementById(divId);
-            const btn = el.querySelector('.download-btn');
-            btn.style.display = 'none';
-            html2pdf().from(el).set({ margin: 0.5, filename: name+'.pdf', html2canvas: {scale:2, backgroundColor:'#111'} }).save().then(()=> btn.style.display='block');
-        }
-
-        function initPeakChart() {
-            const ctx = document.getElementById('peakChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: { labels: ['9am','12pm','3pm','6pm','9pm','12am'], datasets: [{ label: 'النشاط', data: [10,30,50,90,70,20], backgroundColor: '#00f2fe' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        init();
+        loadDaily();
     </script>
 </body>
 </html>
