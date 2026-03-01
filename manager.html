@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تمام</title>
+    <title>إدارة النظام - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -37,12 +37,14 @@
         .btn-del { background: var(--red); color: #fff; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 450px; max-height: 80vh; overflow-y: auto; }
         .modal-content input, .modal-content select { width: 100%; padding: 10px; margin-bottom: 10px; background: #000; border: 1px solid var(--gray); color: #fff; border-radius: 8px; }
 
         .emp-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-left: 10px; border: 1px solid var(--accent); cursor: pointer; }
-        .emp-img:hover { filter: brightness(1.2); border-width: 2px; }
         .target-input { width: 80px; background: #000; border: 1px solid var(--gray); color: var(--green); padding: 4px; border-radius: 5px; text-align: center; }
+        
+        tr.clickable:hover { background: rgba(0, 242, 254, 0.05); cursor: pointer; }
+        .receipt-detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -75,12 +77,13 @@
         <div class="nav-item" onclick="location.href='reports.html'"> مركز التقارير</div>
     </div>
 
-    <div class="section-title"> مبيعات اليوم بالتفصيل</div>
+    <div class="section-title"> مبيعات اليوم بالتفصيل <small style="font-size: 10px; color: #666;">(اضغط على الصف لعرض التفاصيل)</small></div>
     <table>
         <thead>
             <tr>
                 <th>رقم العملية</th>
                 <th>الوقت</th>
+                <th>البائع</th>
                 <th>الإجمالي</th>
                 <th>الحالة</th>
                 <th>إجراءات</th>
@@ -98,6 +101,7 @@
             <tr>
                 <th>الموظف</th>
                 <th>الصلاحية</th>
+                <th>مبيعات الشهر</th>
                 <th>التارجت الشهري</th>
                 <th>الهاتف</th>
                 <th>إجراءات</th>
@@ -105,6 +109,14 @@
         </thead>
         <tbody id="users-list"></tbody>
     </table>
+
+    <div id="receiptModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--accent); text-align: center; border-bottom: 1px solid var(--gray); padding-bottom: 10px;">تفاصيل الفاتورة</h3>
+            <div id="receipt-details-content"></div>
+            <button class="btn" style="width:100%; background:var(--gray); color:#fff; margin-top:20px" onclick="closeReceiptModal()">إغلاق</button>
+        </div>
+    </div>
 
     <div id="userModal" class="modal">
         <div class="modal-content">
@@ -127,7 +139,7 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const storeKey = sessionStorage.getItem('store_key');
-        let currentTargetUser = ""; // لحفظ اسم المستخدم الذي نعدل صورته حالياً
+        let currentTargetUser = "";
 
         async function checkAuth() {
             if(!storeKey) { window.location.replace('index.html'); return; }
@@ -140,7 +152,6 @@
             if(store) document.getElementById('display-store-name').innerText = "متجر " + store.store_name;
             if(vData) document.getElementById('display-sys-v').innerText = "إصدار " + vData.value;
             loadSalesData();
-            loadUsers();
         }
 
         async function loadSalesData() {
@@ -149,25 +160,45 @@
             let total = 0;
             allSales?.forEach(s => total += s.total_amount);
             document.getElementById('total-sales').innerText = total.toLocaleString() + " ج.م";
+            
             const { data: todaySales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today + 'T00:00:00').order('created_at', { ascending: false });
             document.getElementById('today-count').innerText = todaySales?.length || 0;
+            
             const tableBody = document.getElementById('today-sales-table');
             tableBody.innerHTML = todaySales?.map(sale => `
-                <tr>
+                <tr class="clickable" onclick='showReceiptDetails(${JSON.stringify(sale)})'>
                     <td>#${sale.id.toString().slice(-6)}</td>
                     <td>${new Date(sale.created_at).toLocaleTimeString('ar-EG')}</td>
+                    <td>${sale.seller_name || '---'}</td>
                     <td style="font-weight:bold; color:var(--green)">${sale.total_amount} ج.م</td>
                     <td>${sale.type === 'sale' ? 'مكتملة' : 'مرتجع'}</td>
-                    <td><button class="btn btn-del" onclick="returnSale('${sale.id}')">إرجاع</button></td>
+                    <td><button class="btn btn-del" onclick="event.stopPropagation(); returnSale('${sale.id}')">إرجاع</button></td>
                 </tr>
             `).join('') || '';
+            
+            loadUsers(); // تحميل المستخدمين بعد المبيعات لحساب مبيعاتهم الشهرية
         }
 
         async function loadUsers() {
             const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey);
+            
+            // حساب مبيعات الشهر الحالي لكل موظف
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+            
+            const { data: monthSales } = await _supabase.from('sales')
+                .select('total_amount, seller_name')
+                .eq('store_key', storeKey)
+                .eq('type', 'sale')
+                .gte('created_at', startOfMonth.toISOString());
+
             const list = document.getElementById('users-list');
             list.innerHTML = users?.map(u => {
                 const userImg = u.image_url || 'https://via.placeholder.com/40';
+                // تجميع مبيعات الموظف المحددة
+                const empMonthTotal = monthSales?.filter(s => s.seller_name === u.username)
+                    .reduce((sum, s) => sum + s.total_amount, 0) || 0;
+
                 return `
                     <tr>
                         <td>
@@ -175,6 +206,7 @@
                             ${u.username}
                         </td>
                         <td>${u.role === 'manager' ? 'مدير' : 'موظف'}</td>
+                        <td style="color:var(--green); font-weight:bold;">${empMonthTotal.toLocaleString()} ج.م</td>
                         <td><input type="number" class="target-input" value="${u.monthly_target || 0}" onchange="updateTarget('${u.username}', this.value)"> ج.م</td>
                         <td>${u.phone || '---'}</td>
                         <td>
@@ -186,8 +218,35 @@
             }).join('') || '';
         }
 
-        // --- دوال تعديل الصورة الجديدة للمدير ---
+        // دالة عرض تفاصيل الفاتورة
+        function showReceiptDetails(sale) {
+            const content = document.getElementById('receipt-details-content');
+            let itemsHtml = sale.items.map(item => `
+                <div class="receipt-detail-row">
+                    <span>${item.product_name} (x${item.qty})</span>
+                    <span>${(item.price * item.qty).toFixed(2)} ج.م</span>
+                </div>
+            `).join('');
+            
+            content.innerHTML = `
+                <div style="margin-bottom:15px; font-size:13px; color:#aaa;">
+                    <p>رقم الفاتورة: #${sale.id}</p>
+                    <p>التاريخ: ${new Date(sale.created_at).toLocaleString('ar-EG')}</p>
+                    <p>طريقة الدفع: ${sale.payment_method || 'كاش'}</p>
+                </div>
+                <div style="border-top: 1px dashed #444; padding-top:10px;">
+                    ${itemsHtml}
+                </div>
+                <div style="margin-top:15px; text-align:center; font-size:20px; font-weight:bold; color:var(--green);">
+                    الإجمالي: ${sale.total_amount} ج.م
+                </div>
+            `;
+            document.getElementById('receiptModal').style.display = 'flex';
+        }
 
+        function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
+
+        // باقي الدوال (رفع الصور، حفظ المستخدمين، إلخ) كما هي في الكود الأصلي
         function triggerImageUpload(username) {
             currentTargetUser = username;
             document.getElementById('admin-file-input').click();
@@ -196,7 +255,6 @@
         document.getElementById('admin-file-input').onchange = async function(e) {
             const file = e.target.files[0];
             if (!file || !currentTargetUser) return;
-
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = function(event) {
@@ -205,38 +263,27 @@
                 img.onload = async function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    const size = 300; 
-                    canvas.width = size; canvas.height = size;
-
-                    // القص الذكي في المنتصف
+                    const size = 300; canvas.width = size; canvas.height = size;
                     let sX, sY, sW, sH;
                     if (img.width > img.height) { sH = img.height; sW = img.height; sX = (img.width - img.height) / 2; sY = 0; }
                     else { sW = img.width; sH = img.width; sX = 0; sY = (img.height - img.width) / 2; }
-
                     ctx.drawImage(img, sX, sY, sW, sH, 0, 0, size, size);
-
                     canvas.toBlob(async (blob) => {
                         const fileName = `admin-mod-${currentTargetUser}-${Date.now()}.jpg`;
                         const { data, error } = await _supabase.storage.from('avatars').upload(fileName, blob);
-
-                        if (error) return alert("خطأ في الرفع: تأكد من وجود Bucket باسم avatars");
-
+                        if (error) return alert("خطأ في الرفع");
                         const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(fileName);
-                        const publicUrl = urlData.publicUrl;
-
-                        await _supabase.from('users').update({ image_url: publicUrl }).eq('username', currentTargetUser).eq('store_key', storeKey);
-                        
-                        alert("تم تحديث صورة " + currentTargetUser + " بنجاح ✅");
+                        await _supabase.from('users').update({ image_url: urlData.publicUrl }).eq('username', currentTargetUser).eq('store_key', storeKey);
+                        alert("تم تحديث الصورة بنجاح ✅");
                         loadUsers();
                     }, 'image/jpeg', 0.8);
                 };
             };
         };
 
-        // --- باقي الدوال الأصلية ---
-
         async function updateTarget(username, val) {
             await _supabase.from('users').update({ monthly_target: parseFloat(val) }).eq('username', username).eq('store_key', storeKey);
+            loadUsers();
         }
 
         function openUserModal() { document.getElementById('userModal').style.display = 'flex'; }
