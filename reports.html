@@ -5,7 +5,6 @@
     <title>مركز التقارير - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
@@ -23,21 +22,31 @@
         .report-section.active { display: block; animation: fadeIn 0.3s; }
 
         .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-box { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; }
+        .stat-box { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; border-bottom: 3px solid transparent; }
+        .stat-box.blue { border-bottom-color: var(--accent); }
+        .stat-box.green { border-bottom-color: var(--green); }
+        .stat-box.red { border-bottom-color: var(--red); }
         .stat-box h4 { margin: 0; font-size: 13px; color: #888; }
-        .stat-box p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: var(--accent); }
+        .stat-box p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: #fff; }
 
         table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; margin-top: 15px; }
-        th { background: #1a1a1a; color: var(--accent); padding: 12px; text-align: right; font-size: 13px; border-bottom: 1px solid var(--gray); }
+        th { background: #1a1a1a; color: var(--accent); padding: 12px; text-align: right; font-size: 13px; }
         td { padding: 12px; border-bottom: 1px solid var(--gray); font-size: 13px; }
 
-        .export-btn { background: var(--accent); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; float: left; font-size: 12px; margin-bottom: 10px; }
-        
-        /* Modal الاختيار */
-        #exportModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
-        .modal-box { background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--accent); text-align:center; }
-        .opt-btn { background:var(--gray); color:#fff; padding:15px 30px; border-radius:10px; margin:10px; cursor:pointer; border:1px solid transparent; display:inline-block; }
-        .opt-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-action { background: var(--accent); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .export-btn { background: var(--gray); color: #fff; border: 1px solid var(--gray); padding: 8px 15px; border-radius: 8px; cursor: pointer; float: left; margin-left: 5px; }
+
+        /* أداء الموظفين - التصميم الجديد */
+        .emp-performance-card { background: #161616; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--gray); }
+        .emp-info { display: flex; align-items: center; gap: 15px; }
+        .emp-progress-bar { height: 8px; background: #000; border-radius: 10px; width: 200px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 1s; }
+
+        /* مودال الموردين */
+        #vendorModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
+        #exportModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; justify-content:center; align-items:center; }
+        .modal-box { background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--accent); width: 400px; }
+        .modal-box input { width: 100%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid var(--gray); color: #fff; border-radius: 8px; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -45,100 +54,95 @@
 <body>
 
     <div class="sidebar">
-        <h2 style="color:var(--accent); text-align:center; font-size:18px;"> Fateen OS 📊</h2>
-        <p style="color:#555; font-size:11px; text-align:center; margin-bottom:30px;">مركز تحليل البيانات</p>
-        
+        <h2 style="color:var(--accent); text-align:center; font-size:22px; font-weight: 800;"> FATEEN </h2>
         <button class="nav-btn active" onclick="showSection('daily')">📅 ملخص اليوم</button>
         <button class="nav-btn" onclick="showSection('periods')">⏳ فترات المبيعات</button>
+        <button class="nav-btn" onclick="showSection('performance')">🏆 أداء الموظفين</button>
         <button class="nav-btn" onclick="showSection('products')">📦 حركة الأصناف</button>
-        <button class="nav-btn" onclick="showSection('vendors')">🤝 مديونيات الموردين</button>
-        
+        <button class="nav-btn" onclick="showSection('vendors')">🤝 الموردين</button>
         <div style="flex:1"></div>
-        <button class="nav-btn" style="border-color:var(--red); color:var(--red);" onclick="location.href='manager.html'">العودة للوحة الإدارة</button>
+        <button class="nav-btn" style="border-color:var(--red); color:var(--red);" onclick="location.href='manager.html'">العودة</button>
     </div>
 
     <div class="main-content">
         <div id="daily" class="report-section active">
-            <button class="export-btn" onclick="askExport('daily-table', 'Daily_Report')">تحميل التقرير</button>
-            <h3 style="margin-top:0">ملخص العمليات اليومية</h3>
+            <button class="export-btn" onclick="askExport('daily-table', 'Daily_Report')">تحميل ⬇️</button>
+            <h3>ملخص العمليات اليومية</h3>
             <div class="grid-stats">
-                <div class="stat-box"><h4>إجمالي مبيعات اليوم</h4><p id="d-total">0</p></div>
+                <div class="stat-box blue"><h4>مبيعات اليوم</h4><p id="d-total">0</p></div>
                 <div class="stat-box"><h4>عدد العمليات</h4><p id="d-count">0</p></div>
-                <div class="stat-box"><h4>إجمالي المرتجعات</h4><p id="d-return" style="color:var(--red)">0</p></div>
+                <div class="stat-box red"><h4>المرتجعات</h4><p id="d-return">0</p></div>
             </div>
             <table id="daily-table">
                 <thead>
-                    <tr>
-                        <th>رقم العملية</th>
-                        <th>الوقت</th>
-                        <th>البائع</th>
-                        <th>القيمة</th>
-                        <th>طريقة الدفع</th>
-                        <th>النوع</th>
-                    </tr>
+                    <tr><th>رقم العملية</th><th>الوقت</th><th>البائع</th><th>القيمة</th><th>الدفع</th><th>النوع</th></tr>
                 </thead>
                 <tbody id="daily-body"></tbody>
             </table>
         </div>
 
         <div id="periods" class="report-section">
-            <div style="background:var(--card); padding:20px; border-radius:15px; margin-bottom:20px;">
-                <label>من: </label><input type="date" id="p-start" style="background:#000; color:#fff; border:1px solid var(--gray); padding:5px; border-radius:5px;">
-                <label> إلى: </label><input type="date" id="p-end" style="background:#000; color:#fff; border:1px solid var(--gray); padding:5px; border-radius:5px;">
-                <button class="btn" style="background:var(--accent); border:none; padding:6px 15px; border-radius:5px; cursor:pointer;" onclick="loadPeriodReport()">استخراج</button>
+            <div style="background:var(--card); padding:20px; border-radius:15px; margin-bottom:20px; display: flex; gap: 10px; align-items: center;">
+                <input type="date" id="p-start"> إلى <input type="date" id="p-end">
+                <button class="btn-action" onclick="loadPeriodReport()">استخراج البيانات</button>
                 <button class="export-btn" onclick="askExport('period-table', 'Period_Report')">تحميل</button>
+            </div>
+            <div class="grid-stats">
+                <div class="stat-box blue"><h4>إجمالي مبيعات الفترة</h4><p id="p-total-val">0</p></div>
+                <div class="stat-box green"><h4>صافي الربح التقديري</h4><p id="p-profit-val">0</p></div>
+                <div class="stat-box red"><h4>إجمالي المرتجعات</h4><p id="p-return-val">0</p></div>
             </div>
             <table id="period-table">
                 <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>رقم العملية</th>
-                        <th>البائع</th>
-                        <th>المبلغ</th>
-                        <th>النوع</th>
-                    </tr>
+                    <tr><th>التاريخ</th><th>رقم العملية</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr>
                 </thead>
                 <tbody id="period-body"></tbody>
             </table>
         </div>
 
+        <div id="performance" class="report-section">
+            <h3>تحليل كفاءة الموظفين (الشهر الحالي)</h3>
+            <div id="perf-list"></div>
+        </div>
+
         <div id="products" class="report-section">
-            <button class="export-btn" onclick="askExport('prod-table', 'Product_Performance')">تحميل</button>
-            <h3>الأكثر مبيعاً وحركة المخزن</h3>
+            <button class="export-btn" onclick="askExport('prod-table', 'Products')">تحميل</button>
+            <h3>الأكثر مبيعاً</h3>
             <table id="prod-table">
                 <thead>
-                    <tr>
-                        <th>اسم الصنف</th>
-                        <th>الكمية المباعة</th>
-                        <th>المخزون الحالي</th>
-                        <th>إجمالي الدخل</th>
-                    </tr>
+                    <tr><th>الصنف</th><th>الكمية المباعة</th><th>المخزون</th><th>الدخل</th></tr>
                 </thead>
                 <tbody id="prod-body"></tbody>
             </table>
         </div>
 
         <div id="vendors" class="report-section">
-            <button class="export-btn" onclick="askExport('vendor-table', 'Vendors_Debts')">تحميل</button>
-            <h3>حسابات الموردين والمديونيات</h3>
+            <button class="btn-action" style="float:left" onclick="document.getElementById('vendorModal').style.display='flex'">+ مديونية جديدة</button>
+            <h3>مديونيات الموردين</h3>
             <table id="vendor-table">
                 <thead>
-                    <tr>
-                        <th>المورد</th>
-                        <th>إجمالي المديونية</th>
-                        <th>آخر عملية دفع</th>
-                    </tr>
+                    <tr><th>المورد</th><th>المديونية</th><th>آخر تحديث</th><th>إجراء</th></tr>
                 </thead>
                 <tbody id="vendor-body"></tbody>
             </table>
         </div>
     </div>
 
+    <div id="vendorModal">
+        <div class="modal-box">
+            <h3 style="margin-top:0">إضافة مديونية لمورد</h3>
+            <input type="text" id="v-name" placeholder="اسم المورد">
+            <input type="number" id="v-amt" placeholder="المبلغ (ج.م)">
+            <button class="btn-action" style="width:100%" onclick="saveVendorDebt()">حفظ البيانات</button>
+            <button class="nav-btn" style="width:100%; margin-top:10px" onclick="document.getElementById('vendorModal').style.display='none'">إلغاء</button>
+        </div>
+    </div>
+
     <div id="exportModal" onclick="this.style.display='none'">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <h3 style="color:var(--accent)">اختر صيغة الملف</h3>
-            <div class="opt-btn" onclick="exportData('pdf')">📄 ملف PDF</div>
-            <div class="opt-btn" onclick="exportData('excel')">📊 ملف Excel</div>
+        <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center">
+            <h3>اختر نوع الملف</h3>
+            <button class="btn-action" onclick="exportData('pdf')">PDF 📄</button>
+            <button class="btn-action" style="background:var(--green)" onclick="exportData('excel')">Excel 📊</button>
         </div>
     </div>
 
@@ -148,35 +152,27 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
 
-        let currentExportId = '';
-        let currentExportName = '';
+        let currentExportId = '', currentExportName = '';
 
         function showSection(id) {
             document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            event.target.classList.add('active');
+            if(event) event.target.classList.add('active');
+            
             if(id === 'daily') loadDaily();
+            if(id === 'performance') loadPerformance();
             if(id === 'products') loadProductStats();
             if(id === 'vendors') loadVendors();
         }
 
         async function loadDaily() {
             const today = new Date().toISOString().split('T')[0];
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today+'T00:00:00');
-            
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today+'T00:00:00');
             let total = 0, count = 0, ret = 0;
-            const body = document.getElementById('daily-body');
-            body.innerHTML = sales?.map(s => {
+            document.getElementById('daily-body').innerHTML = data?.map(s => {
                 if(s.type === 'sale') { total += s.total_amount; count++; } else { ret += s.total_amount; }
-                return `<tr>
-                    <td>#${s.id.toString().slice(-6)}</td>
-                    <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
-                    <td>${s.seller_name}</td>
-                    <td>${s.total_amount}</td>
-                    <td>${s.payment_method || 'كاش'}</td>
-                    <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
-                </tr>`;
+                return `<tr><td>#${s.id.toString().slice(-6)}</td><td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td><td>${s.seller_name}</td><td>${s.total_amount}</td><td>${s.payment_method||'كاش'}</td><td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td></tr>`;
             }).join('') || '';
             document.getElementById('d-total').innerText = total + " ج.م";
             document.getElementById('d-count').innerText = count;
@@ -187,40 +183,42 @@
             const start = document.getElementById('p-start').value;
             const end = document.getElementById('p-end').value;
             if(!start || !end) return alert("اختر الفترة");
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
+            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
             
-            document.getElementById('period-body').innerHTML = sales?.map(s => `
-                <tr>
-                    <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td>#${s.id.toString().slice(-6)}</td>
-                    <td>${s.seller_name}</td>
-                    <td>${s.total_amount}</td>
-                    <td>${s.type==='sale'?'بيع':'مرتجع'}</td>
-                </tr>
-            `).join('') || '';
+            let total = 0, ret = 0;
+            document.getElementById('period-body').innerHTML = data?.map(s => {
+                if(s.type === 'sale') total += s.total_amount; else ret += s.total_amount;
+                return `<tr><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td>#${s.id.toString().slice(-6)}</td><td>${s.seller_name}</td><td>${s.total_amount}</td><td>${s.type==='sale'?'بيع':'مرتجع'}</td></tr>`;
+            }).join('') || '';
+            document.getElementById('p-total-val').innerText = total + " ج.م";
+            document.getElementById('p-return-val').innerText = ret + " ج.م";
+            document.getElementById('p-profit-val').innerText = (total * 0.2).toFixed(0) + " ج.م (تقريبي)"; // مثال لربح 20%
         }
 
-        async function loadProductStats() {
-            const { data: sales } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
-            const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            
-            let stats = {};
-            sales?.forEach(s => {
-                s.items.forEach(item => {
-                    if(!stats[item.id]) stats[item.id] = { name: item.product_name, qty: 0, cash: 0 };
-                    stats[item.id].qty += item.qty;
-                    stats[item.id].cash += (item.qty * item.price);
-                });
-            });
+        async function loadPerformance() {
+            const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
+            const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey);
+            const { data: sales } = await _supabase.from('sales').select('total_amount, seller_name').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', start.toISOString());
 
-            document.getElementById('prod-body').innerHTML = products?.map(p => `
-                <tr>
-                    <td>${p.product_name}</td>
-                    <td>${stats[p.id]?.qty || 0}</td>
-                    <td>${p.stock}</td>
-                    <td>${stats[p.id]?.cash || 0} ج.م</td>
-                </tr>
-            `).join('') || '';
+            const container = document.getElementById('perf-list');
+            container.innerHTML = users?.map(u => {
+                const total = sales?.filter(s => s.seller_name === u.username).reduce((sum, s) => sum + s.total_amount, 0) || 0;
+                const target = u.monthly_target || 1;
+                const percent = Math.min((total / target) * 100, 100).toFixed(1);
+                return `
+                    <div class="emp-performance-card">
+                        <div class="emp-info">
+                            <div style="font-weight:bold">${u.username}</div>
+                            <div class="emp-progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+                            <div style="font-size:12px; color:var(--accent)">${percent}%</div>
+                        </div>
+                        <div style="text-align:left">
+                            <div style="font-size:14px; color:var(--green)">${total.toLocaleString()} ج.م</div>
+                            <div style="font-size:10px; color:#555">المستهدف: ${target.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '';
         }
 
         async function loadVendors() {
@@ -229,34 +227,51 @@
                 <tr>
                     <td>${v.vendor_name}</td>
                     <td style="color:var(--red)">${v.total_debt} ج.م</td>
-                    <td>${v.last_payment_date ? new Date(v.last_payment_date).toLocaleDateString('ar-EG') : 'لا يوجد'}</td>
+                    <td>${new Date(v.updated_at || v.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td><button class="btn-action" style="background:var(--gray); color:#fff" onclick="deleteVendor(${v.id})">حذف</button></td>
                 </tr>
             `).join('') || '';
         }
 
-        // منطق التصدير
-        function askExport(tableId, fileName) {
-            currentExportId = tableId;
-            currentExportName = fileName;
-            document.getElementById('exportModal').style.display = 'flex';
+        async function saveVendorDebt() {
+            const name = document.getElementById('v-name').value;
+            const amt = parseFloat(document.getElementById('v-amt').value);
+            if(!name || !amt) return;
+            await _supabase.from('vendors').insert([{ store_key: storeKey, vendor_name: name, total_debt: amt }]);
+            document.getElementById('vendorModal').style.display='none';
+            loadVendors();
         }
 
+        async function deleteVendor(id) {
+            if(confirm("حذف مديونية المورد؟")) {
+                await _supabase.from('vendors').delete().eq('id', id);
+                loadVendors();
+            }
+        }
+
+        function askExport(tid, name) { currentExportId = tid; currentExportName = name; document.getElementById('exportModal').style.display='flex'; }
+        
         function exportData(type) {
             const table = document.getElementById(currentExportId);
-            if (type === 'pdf') {
-                const opt = {
-                    margin: 0.5,
-                    filename: currentExportName + '.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, backgroundColor: '#111' },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-                };
-                html2pdf().from(table).set(opt).save();
+            if(type === 'pdf') {
+                html2pdf().from(table).set({ margin: 0.5, filename: currentExportName+'.pdf', html2canvas: {scale:2, backgroundColor:'#111'} }).save();
             } else {
-                const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+                const wb = XLSX.utils.table_to_book(table);
                 XLSX.writeFile(wb, currentExportName + ".xlsx");
             }
-            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        async function loadProductStats() {
+            const { data: sales } = await _supabase.from('sales').select('items').eq('store_key', storeKey).eq('type', 'sale');
+            const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            let stats = {};
+            sales?.forEach(s => s.items.forEach(i => {
+                if(!stats[i.id]) stats[i.id] = {qty:0, cash:0};
+                stats[i.id].qty += i.qty; stats[i.id].cash += (i.qty * i.price);
+            }));
+            document.getElementById('prod-body').innerHTML = products?.map(p => `
+                <tr><td>${p.product_name}</td><td>${stats[p.id]?.qty||0}</td><td>${p.stock}</td><td>${stats[p.id]?.cash||0} ج.م</td></tr>
+            `).join('') || '';
         }
 
         loadDaily();
