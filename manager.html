@@ -2,233 +2,201 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>إدارة النظام - Fateen OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --white: #ffffff; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
+        :root {
+            --primary: #004643; /* الأخضر الغامق */
+            --bg-cream: #f0ede5; /* الكريمي */
+            --white: #ffffff;
+            --text-dark: #001e1d;
+        }
+
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
-        body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; overflow-x: hidden; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-radius: 15px; border: 1px solid var(--gray); margin-bottom: 20px; }
-        .store-info { display: flex; align-items: center; gap: 15px; }
-        .version-tag { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--accent); font-weight: bold; }
+        body { 
+            background-color: var(--bg-cream); 
+            color: var(--text-dark); 
+            margin: 0; 
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); border: 1px solid var(--gray); padding: 25px; border-radius: 20px; text-align: center; }
-        .stat-card h3 { font-size: 14px; color: #888; margin: 0; }
-        .stat-card p { font-size: 32px; font-weight: bold; margin: 10px 0 0 0; color: var(--accent); }
+        .container { width: 100%; max-width: 1100px; }
 
-        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .nav-item { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; text-decoration: none; color: #fff; border: 1px solid transparent; }
-        .nav-item:hover { border-color: var(--accent); transform: translateY(-5px); }
+        /* الهيدر العلوي */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
 
-        /* تنسيق شريط البحث الجديد */
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 15px; border-bottom: 1px solid var(--gray); padding-bottom: 10px; }
-        .section-title { font-size: 18px; color: var(--accent); margin: 0; }
-        .search-wrapper { position: relative; width: 300px; }
-        .search-wrapper input { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 8px 15px; border-radius: 10px; font-size: 13px; }
-        .search-wrapper input:focus { border-color: var(--accent); outline: none; }
+        .store-title { display: flex; align-items: center; gap: 10px; }
+        .store-title h1 { font-size: 28px; margin: 0; color: var(--primary); font-weight: 800; }
+        .icon-settings { font-size: 24px; color: var(--primary); cursor: pointer; }
 
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid var(--gray); margin-bottom: 20px; }
-        th { background: #1a1a1a; padding: 12px; text-align: right; color: var(--accent); font-size: 13px; }
-        td { padding: 12px; border-bottom: 1px solid var(--gray); font-size: 13px; }
+        /* شريط البحث */
+        .search-container { width: 100%; margin-bottom: 20px; text-align: left; }
+        .search-bar {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px 40px 10px 15px;
+            border-radius: 25px;
+            border: 2px solid var(--primary);
+            background: var(--white) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23004643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 95% center;
+            outline: none;
+        }
 
-        .btn { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .btn-add { background: var(--accent); color: #000; }
-        .btn-del { background: var(--red); color: #fff; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 450px; max-height: 80vh; overflow-y: auto; }
+        /* كروت الإحصائيات */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
 
-        .emp-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-left: 10px; border: 1px solid var(--accent); }
-        tr.clickable:hover { background: rgba(0, 242, 254, 0.05); cursor: pointer; }
-        .receipt-detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 12px; }
+        .stat-card {
+            background: var(--primary);
+            color: var(--white);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-card span { font-size: 13px; opacity: 0.9; display: block; margin-bottom: 5px; }
+        .stat-card b { font-size: 18px; font-weight: 800; }
+
+        /* شبكة التحكم (الأزرار الكبيرة) */
+        .nav-section {
+            background: var(--primary);
+            padding: 30px 20px;
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .nav-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .nav-card i { font-size: 30px; }
+        .nav-card span { font-size: 14px; font-weight: 700; line-height: 1.2; }
+
+        /* تذييل الصفحة */
+        footer {
+            width: 100%;
+            background: var(--white);
+            padding: 5px 20px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* الموبايل */
+        @media (max-width: 600px) {
+            .nav-section { grid-template-columns: repeat(3, 1fr); padding: 15px 10px; }
+            .nav-card { padding: 15px 5px; }
+            .nav-card span { font-size: 11px; }
+            .nav-card i { font-size: 24px; }
+            .stat-card b { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="store-info">
-            <div style="cursor: pointer; font-size: 24px; color: var(--accent);" onclick="location.href='3dadat.html'">⚙️</div>
-            <h2 id="display-store-name" style="margin:0">لوحة التحكم</h2>
-            <div class="version-tag" id="display-sys-v">V 1.0</div>
+<div class="container">
+    <header>
+        <div class="store-title">
+            <span class="icon-settings" onclick="location.href='settings.html'">⚙️</span>
+            <h1 id="display-store-name">اسم المتجر</h1>
         </div>
-        <button class="btn btn-del" onclick="logout()">تسجيل خروج</button>
+        <button onclick="logout()" style="background:none; border:1px solid var(--primary); border-radius:15px; padding:5px 15px; cursor:pointer; font-weight:bold;">خروج</button>
+    </header>
+
+    <div class="search-container">
+        <input type="text" class="search-bar" placeholder="بحث او ارجاع فاتوره" id="sales-search" oninput="filterSales()">
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>إجمالي المبيعات</h3>
-            <p id="total-sales">0.00</p>
-        </div>
-        <div class="stat-card">
-            <h3>فواتير اليوم</h3>
-            <p id="today-count">0</p>
-        </div>
+    <div class="stats-row">
+        <div class="stat-card"><span>مبيعات :</span><b id="total-sales">0 ج.م</b></div>
+        <div class="stat-card"><span>الفواتير:</span><b id="today-count">0</b></div>
+        <div class="stat-card"><span>مرتجع :</span><b id="total-returns">0 ج.م</b></div>
     </div>
 
-    <div class="nav-grid">
-        <div class="nav-item" onclick="location.href='inventory.html'">📦 المخزن</div>
-        <div class="nav-item" onclick="location.href='pos.html'">🖥️ الكاشير</div>
-        <div class="nav-item" onclick="location.href='reports.html'">📊 التقارير</div>
+    <div class="nav-section">
+        <a href="users.html" class="nav-card"><i>👥</i><span>اداره الموظفين</span></a>
+        <a href="inventory.html" class="nav-card"><i>🏪</i><span>اداره المخزن</span></a>
+        <a href="reports.html" class="nav-card"><i>📄</i><span>اداره التقارير</span></a>
+        <a href="chat.html" class="nav-card"><i>📞</i><span>تحدث معنا</span></a>
+        <a href="pos.html" class="nav-card"><i>📠</i><span>صفحه الكاشير</span></a>
+        <a href="daily-sales.html" class="nav-card"><i>💰</i><span>مبيعات اليوم</span></a>
     </div>
 
-    <div class="section-header">
-        <h3 class="section-title">🕒 مبيعات اليوم بالتفصيل</h3>
-        <div class="search-wrapper">
-            <input type="text" id="sales-search" placeholder="🔍 ابحث برقم الفاتورة أو البائع..." oninput="filterSales()">
-        </div>
-    </div>
+    <footer>
+        <span>Fateen OS</span>
+        <span>V0.5</span>
+    </footer>
+</div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>رقم العملية</th>
-                <th>الوقت</th>
-                <th>البائع</th>
-                <th>الإجمالي</th>
-                <th>الحالة</th>
-                <th>إجراءات</th>
-            </tr>
-        </thead>
-        <tbody id="today-sales-table"></tbody>
-    </table>
+<script>
+    // إعدادات Supabase من ملفك الأصلي
+    const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const storeKey = sessionStorage.getItem('store_key');
 
-    <div class="section-header">
-        <h3 class="section-title">👥 إدارة الفريق</h3>
-        <button class="btn btn-add" onclick="openUserModal()">+ إضافة موظف</button>
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>الموظف</th>
-                <th>الصلاحية</th>
-                <th>مبيعات الشهر</th>
-                <th>التارجت</th>
-                <th>الهاتف</th>
-                <th>إجراءات</th>
-            </tr>
-        </thead>
-        <tbody id="users-list"></tbody>
-    </table>
+    async function init() {
+        if(!storeKey) return location.href='index.html';
+        const { data: store } = await _supabase.from('stores').select('*').eq('store_key', storeKey).single();
+        if(store) document.getElementById('display-store-name').innerText = store.store_name;
+        loadDashboardData();
+    }
 
-    <div id="receiptModal" class="modal">
-        <div class="modal-content">
-            <h3 style="color: var(--accent); text-align: center;">تفاصيل العملية</h3>
-            <div id="receipt-details-content"></div>
-            <button class="btn" style="width:100%; background:var(--gray); color:#fff; margin-top:20px" onclick="closeReceiptModal()">إغلاق</button>
-        </div>
-    </div>
+    async function loadDashboardData() {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: sales } = await _supabase.from('sales')
+            .select('*')
+            .eq('store_key', storeKey)
+            .gte('created_at', today + 'T00:00:00');
 
-    <script>
-        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const storeKey = sessionStorage.getItem('store_key');
-        let allTodaySales = []; // لتخزين البيانات وعمل فلترة سريعة
+        let totalSale = 0, totalReturn = 0, count = 0;
+        sales?.forEach(s => {
+            if(s.type === 'sale') totalSale += s.total_amount;
+            else if(s.type === 'return') totalReturn += s.total_amount;
+            count++;
+        });
 
-        async function init() {
-            if(!storeKey) return location.href='index.html';
-            const { data: store } = await _supabase.from('stores').select('*').eq('store_key', storeKey).single();
-            if(store) document.getElementById('display-store-name').innerText = "متجر " + store.store_name;
-            loadSalesData();
-        }
+        document.getElementById('total-sales').innerText = totalSale.toLocaleString() + " ج.م";
+        document.getElementById('total-returns').innerText = totalReturn.toLocaleString() + " ج.م";
+        document.getElementById('today-count').innerText = count;
+    }
 
-        async function loadSalesData() {
-            const today = new Date().toISOString().split('T')[0];
-            const { data: sales } = await _supabase.from('sales')
-                .select('*')
-                .eq('store_key', storeKey)
-                .gte('created_at', today + 'T00:00:00')
-                .order('created_at', { ascending: false });
-            
-            allTodaySales = sales || [];
-            renderSalesTable(allTodaySales);
+    function logout() { sessionStorage.clear(); location.replace('index.html'); }
+    init();
+</script>
 
-            // تحديث الإحصائيات
-            let total = 0;
-            allTodaySales.forEach(s => { if(s.type === 'sale') total += s.total_amount; });
-            document.getElementById('total-sales').innerText = total.toLocaleString() + " ج.م";
-            document.getElementById('today-count').innerText = allTodaySales.length;
-            
-            loadUsers();
-        }
-
-        // دالة الفلترة (البحث)
-        function filterSales() {
-            const term = document.getElementById('sales-search').value.toLowerCase();
-            const filtered = allTodaySales.filter(s => 
-                s.id.toString().includes(term) || 
-                (s.seller_name && s.seller_name.toLowerCase().includes(term))
-            );
-            renderSalesTable(filtered);
-        }
-
-        function renderSalesTable(data) {
-            const tableBody = document.getElementById('today-sales-table');
-            tableBody.innerHTML = data.map(sale => `
-                <tr class="clickable" onclick='showReceiptDetails(${JSON.stringify(sale)})'>
-                    <td>#${sale.id.toString().slice(-6)}</td>
-                    <td>${new Date(sale.created_at).toLocaleTimeString('ar-EG')}</td>
-                    <td>${sale.seller_name || '---'}</td>
-                    <td style="font-weight:bold; color:var(--green)">${sale.total_amount} ج.م</td>
-                    <td>${sale.type === 'sale' ? 'بيع' : 'مرتجع'}</td>
-                    <td><button class="btn btn-del" onclick="event.stopPropagation(); returnSale('${sale.id}')">إرجاع</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function showReceiptDetails(sale) {
-            const content = document.getElementById('receipt-details-content');
-            let itemsHtml = sale.items.map(item => `
-                <div class="receipt-detail-row">
-                    <span>${item.product_name} (x${item.qty})</span>
-                    <span>${(item.price * item.qty).toFixed(2)} ج.م</span>
-                </div>
-            `).join('');
-            
-            content.innerHTML = `
-                <div style="margin-bottom:15px; font-size:13px; background: rgba(0,242,254,0.05); padding: 10px; border-radius: 10px; border: 1px solid var(--gray);">
-                    <p>📦 رقم الفاتورة: #${sale.id}</p>
-                    <p>👤 اسم البائع: <strong>${sale.seller_name || 'غير معروف'}</strong></p>
-                    <p>📅 التاريخ: ${new Date(sale.created_at).toLocaleString('ar-EG')}</p>
-                    <p>💳 الدفع: ${sale.payment_method || 'كاش'}</p>
-                </div>
-                <div style="border-top: 1px dashed #444; padding-top:10px;">
-                    ${itemsHtml}
-                </div>
-                <div style="margin-top:15px; text-align:center; font-size:22px; font-weight:bold; color:var(--green);">
-                    الإجمالي: ${sale.total_amount} ج.م
-                </div>
-            `;
-            document.getElementById('receiptModal').style.display = 'flex';
-        }
-
-        async function loadUsers() {
-            const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey);
-            const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
-            const { data: monthSales } = await _supabase.from('sales').select('total_amount, seller_name').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', startOfMonth.toISOString());
-
-            const list = document.getElementById('users-list');
-            list.innerHTML = users?.map(u => {
-                const empMonthTotal = monthSales?.filter(s => s.seller_name === u.username).reduce((sum, s) => sum + s.total_amount, 0) || 0;
-                return `
-                    <tr>
-                        <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
-                        <td>${u.role === 'manager' ? 'مدير' : 'موظف'}</td>
-                        <td style="color:var(--green); font-weight:bold;">${empMonthTotal.toLocaleString()} ج.م</td>
-                        <td>${u.monthly_target || 0} ج.م</td>
-                        <td>${u.phone || '---'}</td>
-                        <td><button class="btn btn-del" onclick="deleteUser('${u.username}')">حذف</button></td>
-                    </tr>
-                `;
-            }).join('') || '';
-        }
-
-        function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
-        function logout() { sessionStorage.clear(); location.replace('index.html'); }
-        init();
-    </script>
 </body>
 </html>
