@@ -5,152 +5,70 @@
     <title>مركز التقارير الذكي - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        .sidebar { width: 280px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-        .nav-btn { background: none; border: 1px solid var(--gray); color: #888; padding: 12px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; text-align: right; width: 100%; font-size: 14px; }
-        .nav-btn:hover, .nav-btn.active { border-color: var(--accent); color: #fff; background: rgba(0, 242, 254, 0.05); }
-
+        .sidebar { width: 280px; background: var(--card); border-left: 1px solid var(--gray); display: flex; flex-direction: column; padding: 20px; }
+        .nav-btn { background: none; border: none; color: #888; padding: 15px; text-align: right; cursor: pointer; border-radius: 12px; margin-bottom: 5px; font-weight: bold; }
+        .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
+        
         .main-content { flex: 1; padding: 30px; overflow-y: auto; }
-        .report-section { display: none; }
-        .report-section.active { display: block; animation: fadeIn 0.3s; }
-
-        .filter-bar { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; border: 1px solid var(--gray); }
-        input[type="date"], select { background: #000; color: var(--accent); border: 1px solid var(--gray); padding: 8px; border-radius: 8px; outline: none; cursor: pointer; font-weight: bold; }
-
-        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-box { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; text-align: center; border-bottom: 3px solid var(--gray); }
-        .stat-box p { margin: 10px 0 0; font-size: 22px; font-weight: bold; }
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--gray); text-align: center; }
+        .stat-card h3 { margin: 0; font-size: 14px; color: #888; }
+        .stat-card p { margin: 10px 0 0; font-size: 24px; font-weight: 800; color: var(--accent); }
 
         table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; }
-        th { background: #1a1a1a; color: var(--accent); padding: 12px; text-align: right; font-size: 13px; }
-        td { padding: 12px; border-bottom: 1px solid var(--gray); font-size: 13px; }
-        tr:hover { background: rgba(255, 255, 255, 0.02); }
-
-        .badge { padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .badge-low { background: rgba(255, 77, 77, 0.1); color: var(--red); }
-        .badge-ok { background: rgba(0, 255, 136, 0.1); color: var(--green); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .btn-accent { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--gray); }
+        th { background: rgba(255,255,255,0.05); color: var(--accent); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2 style="color:var(--accent); text-align:center; letter-spacing: 1px; font-weight: 800;">FATEEN REPORTS</h2>
-        <button class="nav-btn active" onclick="showSection('daily')">📅 ملخص المبيعات</button>
-        <button class="nav-btn" onclick="showSection('periods')">⏳ فترات المبيعات</button>
-        <button class="nav-btn" onclick="showSection('performance')">🏆 أداء الموظفين</button>
-        <button class="nav-btn" onclick="showSection('products')">📦 مراقبة المخزن</button>
-        <button class="nav-btn" onclick="showSection('vendors')">🤝 الموردين والديون</button>
-        <div style="flex:1"></div>
-        <button class="nav-btn" style="border-color:var(--red); color:var(--red);" onclick="location.href='manager.html'">الرجوع للإدارة</button>
+        <h2 style="color:var(--accent)">التقارير</h2>
+        <button class="nav-btn active" onclick="showSection('sales', this)">📊 مبيعات ومرتجعات</button>
+        <button class="nav-btn" onclick="showSection('performance', this)">👤 أداء الموظفين</button>
+        <button class="nav-btn" onclick="showSection('suppliers', this)">🚚 الموردين والديون</button>
+        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩️ خروج</button>
     </div>
 
     <div class="main-content">
-        
-        <div id="daily" class="report-section active">
-            <div class="filter-bar">
-                <h3 style="margin:0; flex:1">العمليات</h3>
-                <span>من:</span> <input type="date" id="d-start">
-                <span>إلى:</span> <input type="date" id="d-end">
-                <button class="btn-accent" onclick="loadDaily()">تحديث</button>
-                <button class="btn-accent" style="background:#fff; color:#000" onclick="askExport('daily-table', 'Sales_Report')">تصدير</button>
+        <div id="sales-section" class="section">
+            <div class="report-header">
+                <h2>تقرير العمليات (بيع/مرتجع)</h2>
+                <button onclick="exportToExcel('sales-table', 'تقرير_المبيعات')" style="background:var(--green); border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">تحميل Excel</button>
             </div>
-            <div class="grid-stats">
-                <div class="stat-box" style="border-bottom-color:var(--accent)"><h4>إجمالي البيع</h4><p id="d-total">0</p></div>
-                <div class="stat-box" style="border-bottom-color:var(--green)"><h4>طرق الدفع</h4><p id="d-payment-stat" style="font-size:14px; color:#aaa">جاري التحميل...</p></div>
-                <div class="stat-box" style="border-bottom-color:var(--red)"><h4>المرتجعات</h4><p id="d-return">0</p></div>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>إجمالي المبيعات</h3><p id="total-sales">0 ج.م</p></div>
+                <div class="stat-card"><h3>إجمالي المرتجعات</h3><p id="total-returns" style="color:var(--red)">0 ج.م</p></div>
+                <div class="stat-card"><h3>صافي الربح التقديري</h3><p id="net-profit" style="color:var(--green)">0 ج.م</p></div>
             </div>
-            <table id="daily-table">
-                <thead><tr><th>رقم العملية</th><th>التاريخ والوقت</th><th>البائع</th><th>القيمة</th><th>الحالة</th></tr></thead>
-                <tbody id="daily-body"></tbody>
+            <table id="sales-table">
+                <thead><tr><th>التاريخ</th><th>النوع</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                <tbody id="sales-body"></tbody>
             </table>
         </div>
 
-        <div id="periods" class="report-section">
-            <div class="filter-bar">
-                <span>من:</span> <input type="date" id="p-start">
-                <span>إلى:</span> <input type="date" id="p-end">
-                <button class="btn-accent" onclick="loadPeriodReport()">تحليل بياني</button>
-            </div>
-            <div id="period-stats-container" style="display:none">
-                <div class="grid-stats">
-                    <div class="stat-box"><h4>إجمالي مبيعات الفترة</h4><p id="p-total-val">0</p></div>
-                    <div class="stat-box" style="border-bottom-color:var(--orange)"><h4>العمليات</h4><p id="p-count">0</p></div>
-                    <div class="stat-box" style="border-bottom-color:var(--red)"><h4>المرتجعات</h4><p id="p-return-val">0</p></div>
-                </div>
-                <div class="chart-container" id="p-chart-box" style="height: 400px; background: var(--card); border-radius: 15px; border: 1px solid var(--gray); padding: 20px;"><canvas id="periodChart"></canvas></div>
-            </div>
-        </div>
-
-        <div id="performance" class="report-section">
-            <div class="filter-bar">
-                <h3 style="margin:0; flex:1">تحليل كفاءة الفريق</h3>
-                <input type="date" id="perf-start"> <span>إلى</span> <input type="date" id="perf-end">
-                <button class="btn-accent" onclick="loadPerformance()">تطبيق</button>
-            </div>
-            <div id="perf-list"></div>
-        </div>
-
-        <div id="products" class="report-section">
-            <div class="filter-bar">
-                <h3 style="margin:0">حركة المخزن</h3>
-                <div style="flex:1"></div>
-                <span>من:</span> <input type="date" id="prod-start">
-                <span>إلى:</span> <input type="date" id="prod-end">
-                <button class="btn-accent" onclick="loadProductStats()">تحديث</button>
-                <button class="btn-accent" style="background:#fff; color:#000" onclick="askExport('prod-table', 'Stock_Analysis')">تصدير</button>
-            </div>
-            <table id="prod-table">
-                <thead>
-                    <tr>
-                        <th>اسم الصنف</th>
-                        <th>المخزون الحالي</th>
-                        <th>تاريخ الدخول</th>
-                        <th>المباع في الفترة</th>
-                        <th>الدخل المحقق</th>
-                        <th>آخر عملية بيع</th>
-                    </tr>
-                </thead>
-                <tbody id="prod-body"></tbody>
+        <div id="performance-section" class="section" style="display:none">
+            <h2>أداء الموظفين (الشهر الحالي)</h2>
+            <table id="performance-table">
+                <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th><th>العمولة التقديرية</th></tr></thead>
+                <tbody id="performance-body"></tbody>
             </table>
         </div>
 
-        <div id="vendors" class="report-section">
-            <div class="filter-bar">
-                <h3 style="margin:0; flex:1">المديونيات</h3>
-                <button class="btn-accent" onclick="document.getElementById('vendorModal').style.display='flex'">+ إضافة مديونية</button>
-            </div>
-            <table id="vendor-table">
-                <thead><tr><th>المورد</th><th>المديونية</th><th>آخر تحديث</th><th>إجراء</th></tr></thead>
-                <tbody id="vendor-body"></tbody>
+        <div id="suppliers-section" class="section" style="display:none">
+            <h2>الموردين والديون المستحقة</h2>
+            <table id="suppliers-table">
+                <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th></tr></thead>
+                <tbody id="suppliers-body"></tbody>
             </table>
-        </div>
-    </div>
-
-    <div id="receiptModal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" style="background:var(--card); padding:25px; border-radius:20px; border:1px solid var(--accent); width:400px;" onclick="event.stopPropagation()">
-            <div id="receipt-details"></div>
-            <button class="nav-btn" style="width:100%; margin-top:15px" onclick="document.getElementById('receiptModal').style.display='none'">إغلاق</button>
-        </div>
-    </div>
-
-    <div id="exportModal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" style="background:var(--card); padding:25px; border-radius:20px; border:1px solid var(--accent); width:300px; text-align:center;">
-            <h3>تصدير كـ</h3>
-            <button class="btn-accent" onclick="exportData('pdf')" style="margin:5px; width:100px;">PDF</button>
-            <button class="btn-accent" onclick="exportData('excel')" style="background:var(--green); margin:5px; width:100px;">Excel</button>
         </div>
     </div>
 
@@ -159,170 +77,94 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
-        let myChart;
-        let currentExpTid, currentExpName;
 
-        function setDefaultDates() {
-            const today = new Date().toISOString().split('T')[0];
-            ['d-start', 'd-end', 'p-start', 'p-end', 'perf-start', 'perf-end', 'prod-start', 'prod-end'].forEach(id => {
-                if(document.getElementById(id)) document.getElementById(id).value = today;
-            });
+        async function init() {
+            if(!storeKey) return location.href='index.html';
+            loadSalesReport();
+            loadPerformanceReport();
+            loadSuppliersReport();
         }
 
-        function showSection(id) {
-            document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(event) event.target.classList.add('active');
-            if(id === 'daily') loadDaily();
-            if(id === 'products') loadProductStats();
-            if(id === 'vendors') loadVendors();
-        }
+        // 1. معالجة المبيعات والمرتجعات
+        async function loadSalesReport() {
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).order('created_at', {ascending: false});
+            let tSales = 0, tReturns = 0;
+            const body = document.getElementById('sales-body');
+            body.innerHTML = '';
 
-        async function loadDaily() {
-            const start = document.getElementById('d-start').value;
-            const end = document.getElementById('d-end').value;
-            
-            const { data } = await _supabase.from('sales').select('*')
-                .eq('store_key', storeKey)
-                .gte('created_at', start+'T00:00:00')
-                .lte('created_at', end+'T23:59:59')
-                .order('created_at', {ascending:false});
-                
-            let total = 0, ret = 0, cash = 0, card = 0;
-            const body = document.getElementById('daily-body');
-            body.innerHTML = data?.map(s => {
-                if(s.type === 'sale') { 
-                    total += s.total_amount; 
-                    if(s.payment_method === 'نقداً') cash += s.total_amount; 
-                    else card += s.total_amount; 
-                }
-                else ret += s.total_amount;
-                return `
-                    <tr class="clickable" onclick="openReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                        <td>#${s.id.toString().slice(-6)}</td>
-                        <td>${new Date(s.created_at).toLocaleString('ar-EG')}</td>
-                        <td>${s.seller_name}</td>
-                        <td class="amount-cell">${s.total_amount}</td>
-                        <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
-                    </tr>`;
-            }).join('') || '';
-            
-            document.getElementById('d-total').innerText = total.toLocaleString() + " ج.م";
-            document.getElementById('d-return').innerText = ret.toLocaleString() + " ج.م";
-            document.getElementById('d-payment-stat').innerText = `كاش: ${cash} | فيزا: ${card}`;
-        }
-
-        async function loadPeriodReport() {
-            const start = document.getElementById('p-start').value;
-            const end = document.getElementById('p-end').value;
-            const { data } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
-            document.getElementById('period-stats-container').style.display = 'block';
-            let total = 0, ret = 0, cash = 0, card = 0;
-            data?.forEach(s => {
-                if(s.type === 'sale') { 
-                    total += s.total_amount; 
-                    if(s.payment_method === 'نقداً') cash += s.total_amount; 
-                    else card += s.total_amount; 
-                }
-                else ret += s.total_amount;
-            });
-            document.getElementById('p-total-val').innerText = total.toLocaleString() + " ج.م";
-            document.getElementById('p-count').innerText = data?.filter(x=>x.type==='sale').length || 0;
-            document.getElementById('p-return-val').innerText = ret.toLocaleString() + " ج.م";
-            updateChart(cash, card);
-        }
-
-        function updateChart(cash, card) {
-            const ctx = document.getElementById('periodChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: ['كاش', 'فيزا'], datasets: [{ data: [cash, card], backgroundColor: ['#00ff88', '#00f2fe'], borderColor: '#000', borderWidth: 2 }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: {size: 16} } } } }
-            });
-        }
-
-        async function loadProductStats() {
-            const start = document.getElementById('prod-start').value;
-            const end = document.getElementById('prod-end').value;
-            const { data: products } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            const { data: sales } = await _supabase.from('sales').select('items, created_at').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', start+'T00:00:00').lte('created_at', end+'T23:59:59');
-            
-            let stats = {};
             sales?.forEach(s => {
-                s.items.forEach(i => {
-                    if(!stats[i.id]) stats[i.id] = { qty: 0, cash: 0, lastSale: s.created_at };
-                    stats[i.id].qty += i.qty;
-                    stats[i.id].cash += (i.qty * i.price);
-                    if(new Date(s.created_at) > new Date(stats[i.id].lastSale)) stats[i.id].lastSale = s.created_at;
-                });
-            });
+                if(s.type === 'sale') tSales += s.total_amount;
+                else if(s.type === 'return') tReturns += s.total_amount;
 
-            const body = document.getElementById('prod-body');
-            body.innerHTML = products?.map(p => {
-                const s = stats[p.id] || { qty: 0, cash: 0, lastSale: '---' };
-                return `
+                body.innerHTML += `
                     <tr>
-                        <td>${p.product_name}</td>
-                        <td><span class="badge ${p.stock<=5?'badge-low':'badge-ok'}">${p.stock} قطعة</span></td>
-                        <td>${new Date(p.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>${s.qty}</td>
-                        <td class="amount-cell">${s.cash}</td>
-                        <td>${s.lastSale !== '---' ? new Date(s.lastSale).toLocaleString('ar-EG') : 'لا يوجد'}</td>
-                    </tr>`;
-            }).join('') || '';
+                        <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
+                        <td>${s.type === 'sale' ? 'بيع' : 'مرتجع'}</td>
+                        <td>${s.seller_name}</td>
+                        <td style="color:${s.type === 'sale' ? 'var(--green)' : 'var(--red)'}">${s.total_amount} ج.م</td>
+                        <td>تمت</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('total-sales').innerText = tSales.toLocaleString() + " ج.م";
+            document.getElementById('total-returns').innerText = tReturns.toLocaleString() + " ج.م";
+            document.getElementById('net-profit').innerText = (tSales - tReturns).toLocaleString() + " ج.م";
         }
 
-        async function loadVendors() {
-            const { data } = await _supabase.from('vendors').select('*').eq('store_key', storeKey);
-            document.getElementById('vendor-body').innerHTML = data?.map(v => `<tr><td>${v.vendor_name}</td><td class="amount-cell">${v.total_debt}</td><td>${new Date(v.updated_at || v.created_at).toLocaleDateString('ar-EG')}</td><td><button onclick="deleteVendor(${v.id})" style="color:var(--red); background:none; border:none; cursor:pointer">حذف</button></td></tr>`).join('') || '';
+        // 2. معالجة أداء الموظفين
+        async function loadPerformanceReport() {
+            const { data: users } = await _supabase.from('users').select('username').eq('store_key', storeKey);
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
+            
+            const body = document.getElementById('performance-body');
+            body.innerHTML = '';
+
+            users?.forEach(u => {
+                const userSales = sales?.filter(s => s.seller_name === u.username) || [];
+                const total = userSales.reduce((sum, s) => sum + s.total_amount, 0);
+                body.innerHTML += `
+                    <tr>
+                        <td>${u.username}</td>
+                        <td>${userSales.length}</td>
+                        <td>${total.toLocaleString()} ج.م</td>
+                        <td>${(total * 0.01).toFixed(2)} ج.م</td> </tr>
+                `;
+            });
         }
 
-        function askExport(tid, name) { currentExpTid = tid; currentExpName = name; document.getElementById('exportModal').style.display='flex'; }
+        // 3. معالجة الموردين والديون
+        async function loadSuppliersReport() {
+            const { data: suppliers } = await _supabase.from('suppliers').select('*').eq('store_key', storeKey);
+            const body = document.getElementById('suppliers-body');
+            body.innerHTML = '';
 
-        function exportData(type) {
-            const table = document.getElementById(currentExpTid);
-            if(type === 'pdf') {
-                html2pdf().from(table).set({margin:0.5, filename:currentExpName+'.pdf', html2canvas:{scale:2, backgroundColor:'#111'}}).save();
-            } else {
-                // تحويل الجدول إلى بيانات JSON لمعالجتها
-                const rows = Array.from(table.querySelectorAll('tr'));
-                const data = rows.map(tr => Array.from(tr.querySelectorAll('th, td')).map(td => td.innerText));
-                
-                // البحث عن عمود المبالغ (الذي يحتوي على class amount-cell)
-                const headerCells = Array.from(table.querySelectorAll('thead th'));
-                let amountColIndex = headerCells.findIndex(th => th.innerText.includes('القيمة') || th.innerText.includes('الدخل') || th.innerText.includes('المديونية') || th.innerText.includes('المبلغ'));
-
-                if (amountColIndex !== -1) {
-                    let total = 0;
-                    // جمع القيم من الصفوف (تخطي الهيدر)
-                    for (let i = 1; i < data.length; i++) {
-                        const val = parseFloat(data[i][amountColIndex]) || 0;
-                        total += val;
-                    }
-                    // إضافة سطر الإجمالي في النهاية
-                    const totalRow = new Array(data[0].length).fill('');
-                    totalRow[amountColIndex - 1] = "الإجمالي:";
-                    totalRow[amountColIndex] = total;
-                    data.push(totalRow);
-                }
-
-                const ws = XLSX.utils.aoa_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Report");
-                XLSX.writeFile(wb, currentExpName + ".xlsx");
-            }
+            suppliers?.forEach(sup => {
+                const debt = sup.total_amount - sup.paid_amount;
+                body.innerHTML += `
+                    <tr>
+                        <td>${sup.supplier_name}</td>
+                        <td>${sup.total_amount.toLocaleString()} ج.م</td>
+                        <td>${sup.paid_amount.toLocaleString()} ج.م</td>
+                        <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}">${debt.toLocaleString()} ج.م</td>
+                    </tr>
+                `;
+            });
         }
 
-        function openReceipt(sale) {
-            const details = document.getElementById('receipt-details');
-            details.innerHTML = `<h3 style="text-align:center; color:var(--accent)">تفاصيل العملية</h3><p>البائع: ${sale.seller_name}</p><p>التاريخ: ${new Date(sale.created_at).toLocaleString('ar-EG')}</p><div style="border-top:1px dashed #444; margin:10px 0; padding-top:10px">${sale.items.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.product_name} (x${i.qty})</span><span>${i.price * i.qty} ج.م</span></div>`).join('')}</div><h2 style="text-align:center; color:var(--green)">${sale.total_amount} ج.م</h2>`;
-            document.getElementById('receiptModal').style.display = 'flex';
+        function showSection(sec, btn) {
+            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+            document.getElementById(sec + '-section').style.display = 'block';
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        setDefaultDates();
-        loadDaily();
+        function exportToExcel(tableId, fileName) {
+            const table = document.getElementById(tableId);
+            const wb = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(wb, fileName + ".xlsx");
+        }
+
+        init();
     </script>
 </body>
 </html>
