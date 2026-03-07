@@ -2,75 +2,93 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مركز التقارير - Fateen OS</title>
+    <title>مركز التقارير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); padding: 20px; display: flex; flex-direction: column; }
-        .nav-btn { background: none; border: none; color: #888; padding: 15px; text-align: right; cursor: pointer; border-radius: 10px; margin-bottom: 5px; font-weight: bold; }
-        .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .filter-bar { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        input, select { background: #1a1a1a; border: 1px solid var(--gray); color: #fff; padding: 8px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
-        th, td { padding: 12px; text-align: right; border-bottom: 1px solid var(--gray); font-size: 14px; }
-        th { background: rgba(255,255,255,0.05); color: var(--accent); }
-        .btn-return { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .export-btn { background: var(--accent); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .nav-btn { background: none; border: none; color: #888; padding: 15px; text-align: right; cursor: pointer; border-radius: 10px; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); border-right: 3px solid var(--accent); }
+        
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .filter-bar { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border: 1px solid var(--gray); }
+        input, select { background: #1a1a1a; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 8px; outline: none; }
+        
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid var(--gray); overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--gray); }
+        th { background: rgba(255,255,255,0.05); color: var(--accent); font-weight: 700; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .btn-action { background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .export-btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer; }
+        
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
+            .nav-btn { white-space: nowrap; padding: 10px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2 style="color:var(--accent)">التقارير</h2>
-        <button class="nav-btn active" onclick="showSection('sales', this)">📊 العمليات</button>
+        <h2 style="color:var(--accent); margin-bottom: 20px;">التقارير</h2>
+        <button class="nav-btn active" onclick="showSection('sales', this)">📊 تقرير العمليات</button>
         <button class="nav-btn" onclick="showSection('performance', this)">👤 أداء الموظفين</button>
         <button class="nav-btn" onclick="showSection('suppliers', this)">🚚 الموردين والديون</button>
-        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩️ رجوع</button>
+        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩️ رجوع للمدير</button>
     </div>
 
     <div class="main-content">
         <div id="sales-section" class="section">
             <div class="filter-bar">
                 <input type="date" id="sale-from"> <span>إلى</span> <input type="date" id="sale-to">
-                <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة...">
-                <button class="export-btn" style="background:var(--green)" onclick="loadSalesReport()">تحديث الجرد</button>
-                <button class="export-btn" onclick="askExport('sales-table')">تحميل التقرير</button>
+                <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة..." oninput="loadSalesReport()">
+                <button class="export-btn" onclick="askExport('sales-table', 'تقرير_العمليات')">تحميل التقرير</button>
             </div>
-            <table id="sales-table">
-                <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>البائع</th><th>المبلغ</th><th>إجراء</th></tr></thead>
-                <tbody id="sales-body"></tbody>
-            </table>
+            <div class="table-container" id="capture-sales">
+                <table id="sales-table">
+                    <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>البائع</th><th>المبلغ</th><th>إجراء</th></tr></thead>
+                    <tbody id="sales-body"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="performance-section" class="section" style="display:none">
             <div class="filter-bar">
                 <input type="date" id="perf-from"> <span>إلى</span> <input type="date" id="perf-to">
                 <select id="user-select"><option value="all">كل الموظفين</option></select>
-                <button class="export-btn" onclick="loadPerformanceReport()">عرض الأداء</button>
-                <button class="export-btn" onclick="askExport('performance-table')">تحميل التقرير</button>
+                <button class="export-btn" onclick="loadPerformanceReport()">عرض النتائج</button>
+                <button class="export-btn" onclick="askExport('performance-table', 'أداء_الموظفين')">تحميل التقرير</button>
             </div>
-            <table id="performance-table">
-                <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
-                <tbody id="performance-body"></tbody>
-            </table>
+            <div class="table-container">
+                <table id="performance-table">
+                    <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
+                    <tbody id="performance-body"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="suppliers-section" class="section" style="display:none">
             <div class="filter-bar">
                 <button class="export-btn" onclick="loadSuppliersReport()">تحديث البيانات</button>
-                <button class="export-btn" onclick="askExport('suppliers-table')">تحميل التقرير</button>
+                <button class="export-btn" onclick="askExport('suppliers-table', 'تقرير_الموردين')">تحميل التقرير</button>
             </div>
-            <table id="suppliers-table">
-                <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th></tr></thead>
-                <tbody id="suppliers-body"></tbody>
-            </table>
+            <div class="table-container">
+                <table id="suppliers-table">
+                    <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th></tr></thead>
+                    <tbody id="suppliers-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -92,7 +110,6 @@
             data?.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
         }
 
-        // 1. تقرير العمليات
         async function loadSalesReport() {
             const from = document.getElementById('sale-from').value;
             const to = document.getElementById('sale-to').value;
@@ -111,16 +128,15 @@
                     <tr>
                         <td>#${s.id.toString().slice(-6)}</td>
                         <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>${s.type === 'sale' ? 'بيع' : 'مرتجع'}</td>
+                        <td style="color:${s.type === 'sale' ? 'var(--green)' : 'var(--red)'}">${s.type === 'sale' ? 'بيع' : 'مرتجع'}</td>
                         <td>${s.seller_name}</td>
-                        <td style="color:${s.type === 'sale' ? 'var(--green)' : 'var(--red)'}">${s.total_amount} ج.م</td>
-                        <td><button class="btn-return" onclick="window.location.href='pos.html?returnId=${s.id}'">إرجاع</button></td>
+                        <td style="font-weight:bold">${s.total_amount.toLocaleString()} ج.م</td>
+                        <td><button class="btn-action" onclick="window.location.href='pos.html?returnId=${s.id}'">إرجاع</button></td>
                     </tr>
                 `;
             });
         }
 
-        // 2. تقرير أداء الموظفين
         async function loadPerformanceReport() {
             const from = document.getElementById('perf-from').value;
             const to = document.getElementById('perf-to').value;
@@ -139,13 +155,10 @@
             usersToTrack.forEach(uname => {
                 const uSales = sales?.filter(s => s.seller_name === uname) || [];
                 const total = uSales.reduce((sum, s) => sum + s.total_amount, 0);
-                if(uSales.length > 0 || user !== 'all') {
-                    body.innerHTML += `<tr><td>${uname}</td><td>${uSales.length}</td><td>${total.toLocaleString()} ج.م</td></tr>`;
-                }
+                body.innerHTML += `<tr><td>${uname}</td><td>${uSales.length}</td><td style="color:var(--accent); font-weight:bold">${total.toLocaleString()} ج.م</td></tr>`;
             });
         }
 
-        // 3. تقرير الموردين (تم الإصلاح)
         async function loadSuppliersReport() {
             const { data: suppliers } = await _supabase.from('suppliers').select('*').eq('store_key', storeKey);
             const body = document.getElementById('suppliers-body');
@@ -157,229 +170,29 @@
                         <td>${sup.supplier_name}</td>
                         <td>${(sup.total_amount || 0).toLocaleString()} ج.م</td>
                         <td>${(sup.paid_amount || 0).toLocaleString()} ج.م</td>
-                        <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}">${debt.toLocaleString()} ج.م</td>
+                        <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${debt.toLocaleString()} ج.م</td>
                     </tr>
                 `;
             });
         }
 
-        // نظام سؤال التحميل
-        function askExport(tableId) {
-            const choice = confirm("هل تريد التحميل بصيغة Excel؟ (إلغاء للتحميل بصيغة PDF)");
-            if(choice) exportToExcel(tableId);
-            else exportToPDF(tableId);
-        }
-
-        function exportToExcel(tableId) {
-            const table = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `FateenOS_Report_${new Date().getTime()}.xlsx`);
-        }
-
-        function exportToPDF(tableId) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'pt', 'a4');
-            doc.addFont('https://fonts.gstatic.com/s/cairo/v20/SLXQ1nq96p2S1W6A9p2S.ttf', 'Cairo', 'normal');
-            doc.setFont('Cairo');
-            doc.autoTable({ html: '#' + tableId, styles: { font: 'Cairo', halign: 'right' } });
-            doc.save(`FateenOS_Report_${new Date().getTime()}.pdf`);
-        }
-
-        function showSection(sec, btn) {
-            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-            document.getElementById(sec + '-section').style.display = 'block';
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
-        init();
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>مركز التقارير - Fateen OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <style>
-        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
-        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
-        body { background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background: var(--card); border-left: 1px solid var(--gray); padding: 20px; display: flex; flex-direction: column; }
-        .nav-btn { background: none; border: none; color: #888; padding: 15px; text-align: right; cursor: pointer; border-radius: 10px; margin-bottom: 5px; font-weight: bold; }
-        .nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .filter-bar { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        input, select { background: #1a1a1a; border: 1px solid var(--gray); color: #fff; padding: 8px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
-        th, td { padding: 12px; text-align: right; border-bottom: 1px solid var(--gray); font-size: 14px; }
-        th { background: rgba(255,255,255,0.05); color: var(--accent); }
-        .btn-return { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .export-btn { background: var(--accent); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-    <div class="sidebar">
-        <h2 style="color:var(--accent)">التقارير</h2>
-        <button class="nav-btn active" onclick="showSection('sales', this)">📊 العمليات</button>
-        <button class="nav-btn" onclick="showSection('performance', this)">👤 أداء الموظفين</button>
-        <button class="nav-btn" onclick="showSection('suppliers', this)">🚚 الموردين والديون</button>
-        <button class="nav-btn" onclick="location.href='manager.html'" style="margin-top:auto; color:var(--red)">↩️ رجوع</button>
-    </div>
-
-    <div class="main-content">
-        <div id="sales-section" class="section">
-            <div class="filter-bar">
-                <input type="date" id="sale-from"> <span>إلى</span> <input type="date" id="sale-to">
-                <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة...">
-                <button class="export-btn" style="background:var(--green)" onclick="loadSalesReport()">تحديث الجرد</button>
-                <button class="export-btn" onclick="askExport('sales-table')">تحميل التقرير</button>
-            </div>
-            <table id="sales-table">
-                <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>البائع</th><th>المبلغ</th><th>إجراء</th></tr></thead>
-                <tbody id="sales-body"></tbody>
-            </table>
-        </div>
-
-        <div id="performance-section" class="section" style="display:none">
-            <div class="filter-bar">
-                <input type="date" id="perf-from"> <span>إلى</span> <input type="date" id="perf-to">
-                <select id="user-select"><option value="all">كل الموظفين</option></select>
-                <button class="export-btn" onclick="loadPerformanceReport()">عرض الأداء</button>
-                <button class="export-btn" onclick="askExport('performance-table')">تحميل التقرير</button>
-            </div>
-            <table id="performance-table">
-                <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
-                <tbody id="performance-body"></tbody>
-            </table>
-        </div>
-
-        <div id="suppliers-section" class="section" style="display:none">
-            <div class="filter-bar">
-                <button class="export-btn" onclick="loadSuppliersReport()">تحديث البيانات</button>
-                <button class="export-btn" onclick="askExport('suppliers-table')">تحميل التقرير</button>
-            </div>
-            <table id="suppliers-table">
-                <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th></tr></thead>
-                <tbody id="suppliers-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const storeKey = sessionStorage.getItem('store_key');
-
-        async function init() {
-            if(!storeKey) return location.href='index.html';
-            loadUsersList();
-            loadSalesReport();
-        }
-
-        async function loadUsersList() {
-            const { data } = await _supabase.from('users').select('username').eq('store_key', storeKey);
-            const select = document.getElementById('user-select');
-            data?.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
-        }
-
-        // 1. تقرير العمليات
-        async function loadSalesReport() {
-            const from = document.getElementById('sale-from').value;
-            const to = document.getElementById('sale-to').value;
-            const search = document.getElementById('search-invoice').value;
-
-            let query = _supabase.from('sales').select('*').eq('store_key', storeKey).order('created_at', {ascending: false});
-            if(from) query = query.gte('created_at', from);
-            if(to) query = query.lte('created_at', to + 'T23:59:59');
-
-            const { data: sales } = await query;
-            const body = document.getElementById('sales-body');
-            body.innerHTML = '';
-
-            sales?.filter(s => s.id.toString().includes(search)).forEach(s => {
-                body.innerHTML += `
-                    <tr>
-                        <td>#${s.id.toString().slice(-6)}</td>
-                        <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>${s.type === 'sale' ? 'بيع' : 'مرتجع'}</td>
-                        <td>${s.seller_name}</td>
-                        <td style="color:${s.type === 'sale' ? 'var(--green)' : 'var(--red)'}">${s.total_amount} ج.م</td>
-                        <td><button class="btn-return" onclick="window.location.href='pos.html?returnId=${s.id}'">إرجاع</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        // 2. تقرير أداء الموظفين
-        async function loadPerformanceReport() {
-            const from = document.getElementById('perf-from').value;
-            const to = document.getElementById('perf-to').value;
-            const user = document.getElementById('user-select').value;
-
-            let query = _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
-            if(from) query = query.gte('created_at', from);
-            if(to) query = query.lte('created_at', to + 'T23:59:59');
-
-            const { data: sales } = await query;
-            const body = document.getElementById('performance-body');
-            body.innerHTML = '';
-
-            const usersToTrack = user === 'all' ? Array.from(document.getElementById('user-select').options).map(o => o.value).filter(v => v !== 'all') : [user];
-
-            usersToTrack.forEach(uname => {
-                const uSales = sales?.filter(s => s.seller_name === uname) || [];
-                const total = uSales.reduce((sum, s) => sum + s.total_amount, 0);
-                if(uSales.length > 0 || user !== 'all') {
-                    body.innerHTML += `<tr><td>${uname}</td><td>${uSales.length}</td><td>${total.toLocaleString()} ج.م</td></tr>`;
-                }
-            });
-        }
-
-        // 3. تقرير الموردين (تم الإصلاح)
-        async function loadSuppliersReport() {
-            const { data: suppliers } = await _supabase.from('suppliers').select('*').eq('store_key', storeKey);
-            const body = document.getElementById('suppliers-body');
-            body.innerHTML = '';
-            suppliers?.forEach(sup => {
-                const debt = (sup.total_amount || 0) - (sup.paid_amount || 0);
-                body.innerHTML += `
-                    <tr>
-                        <td>${sup.supplier_name}</td>
-                        <td>${(sup.total_amount || 0).toLocaleString()} ج.م</td>
-                        <td>${(sup.paid_amount || 0).toLocaleString()} ج.م</td>
-                        <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}">${debt.toLocaleString()} ج.م</td>
-                    </tr>
-                `;
-            });
-        }
-
-        // نظام سؤال التحميل
-        function askExport(tableId) {
-            const choice = confirm("هل تريد التحميل بصيغة Excel؟ (إلغاء للتحميل بصيغة PDF)");
-            if(choice) exportToExcel(tableId);
-            else exportToPDF(tableId);
-        }
-
-        function exportToExcel(tableId) {
-            const table = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `FateenOS_Report_${new Date().getTime()}.xlsx`);
-        }
-
-        function exportToPDF(tableId) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'pt', 'a4');
-            doc.addFont('https://fonts.gstatic.com/s/cairo/v20/SLXQ1nq96p2S1W6A9p2S.ttf', 'Cairo', 'normal');
-            doc.setFont('Cairo');
-            doc.autoTable({ html: '#' + tableId, styles: { font: 'Cairo', halign: 'right' } });
-            doc.save(`FateenOS_Report_${new Date().getTime()}.pdf`);
+        function askExport(tableId, name) {
+            const choice = confirm("هل تريد التحميل بصيغة Excel؟\n(موافق لـ Excel - إلغاء لـ PDF)");
+            if(choice) {
+                const table = document.getElementById(tableId);
+                const wb = XLSX.utils.table_to_book(table);
+                XLSX.writeFile(wb, `${name}_${new Date().toLocaleDateString()}.xlsx`);
+            } else {
+                const element = document.getElementById(tableId);
+                const opt = {
+                    margin:       10,
+                    filename:     `${name}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, backgroundColor: '#111' },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(element).save();
+            }
         }
 
         function showSection(sec, btn) {
