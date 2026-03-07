@@ -45,6 +45,51 @@
         tr.clickable:hover { background: rgba(0, 242, 254, 0.05); cursor: pointer; }
         .receipt-detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 12px; }
     </style>
+    <style>
+    /* تعريف المتغيرات للوضعين */
+    :root {
+        --primary: #004643;
+        --bg: #f0ede5; /* فاتح */
+        --card-bg: #ffffff;
+        --text: #001e1d;
+    }
+
+    [data-theme="dark"] {
+        --primary: #00f2fe; /* لون الأكسنت في الدارك */
+        --bg: #050505;
+        --card-bg: #111111;
+        --text: #ffffff;
+    }
+
+    body { background-color: var(--bg); color: var(--text); transition: 0.5s; }
+    .stat-card { background: var(--primary); color: white; }
+    .nav-card { background: var(--card-bg); color: var(--text); border: 1px solid rgba(0,0,0,0.1); }
+    
+    /* زر التبديل */
+    .theme-switch {
+        cursor: pointer; font-size: 24px; background: none; border: none; padding: 10px;
+    }
+</style>
+
+<header>
+    <div class="store-title">
+        <button class="theme-switch" onclick="toggleTheme()">🌓</button>
+        <h1 id="display-store-name">فطين OS</h1>
+    </div>
+</header>
+
+<script>
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', targetTheme);
+        localStorage.setItem('theme', targetTheme);
+    }
+
+    // تشغيل الثيم المحفوظ عند الفتح
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+</script>
 </head>
 <body>
 
