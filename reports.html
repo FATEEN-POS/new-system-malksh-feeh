@@ -30,7 +30,7 @@
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--gray); }
         th { background: rgba(255,255,255,0.05); color: var(--accent); font-weight: 700; }
-        tr.sale-row:hover { background: rgba(255,255,255,0.02); cursor: pointer; }
+        tr.sale-row:hover { background: rgba(255,255,255,0.02); }
         
         .btn-action { background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 2px; }
         .export-btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer; }
@@ -47,13 +47,22 @@
 </head>
 <body>
 
+    <div id="export-modal" class="modal">
+        <div class="modal-content" style="width: 350px; text-align: center;">
+            <h3 style="color:var(--accent); margin-bottom: 20px;">اختر صيغة التحميل</h3>
+            <button class="export-btn" style="width: 100%; margin-bottom: 10px; background: var(--green);" onclick="processExport('excel')">تحميل ملف Excel 📊</button>
+            <button class="export-btn" style="width: 100%; margin-bottom: 10px; background: var(--red); color: white;" onclick="processExport('pdf')">تحميل ملف PDF 📄</button>
+            <button class="btn-action" style="width: 100%; background: #444;" onclick="closeModal('export-modal')">إلغاء</button>
+        </div>
+    </div>
+
     <div id="details-modal" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--accent); text-align:center;">تفاصيل الفاتورة</h3>
             <div id="invoice-info" style="margin-bottom: 20px; border-bottom: 1px solid var(--accent); padding-bottom: 10px;"></div>
             <div id="items-list"></div>
             <div id="invoice-total" style="margin-top: 20px; text-align: center; font-size: 20px; font-weight: bold;"></div>
-            <button class="export-btn" onclick="closeModal('details-modal')" style="width:100%; margin-top:20px; background: #333; color: white;">إغلاق</button>
+            <button class="btn-action" onclick="closeModal('details-modal')" style="width:100%; margin-top:20px; background: #333;">إغلاق</button>
         </div>
     </div>
 
@@ -89,12 +98,14 @@
             </div>
 
             <div class="filter-bar">
-                <input type="date" id="sale-from" onchange="loadSalesReport()"> 
+                <input type="date" id="sale-from"> 
                 <span>إلى</span> 
-                <input type="date" id="sale-to" onchange="loadSalesReport()">
-                <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة..." oninput="loadSalesReport()">
+                <input type="date" id="sale-to">
+                <button class="export-btn" onclick="loadSalesReport()" style="background: var(--green);">تحديث البيانات</button>
+                <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة..." oninput="loadSalesReport()" style="margin-right: auto;">
                 <button class="export-btn" onclick="askExport('sales-table', 'تقرير_العمليات')">تحميل التقرير</button>
             </div>
+            
             <div class="table-container">
                 <table id="sales-table">
                     <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>الوسيلة</th><th>البائع</th><th>المبلغ</th><th>إجراء</th></tr></thead>
@@ -137,7 +148,9 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
-        let currentSalesData = []; // لتخزين البيانات محلياً لسهولة عرض التفاصيل
+        let currentSalesData = []; 
+        let currentExportTable = '';
+        let currentExportName = '';
 
         async function init() {
             if(!storeKey) return location.href='index.html';
@@ -170,9 +183,12 @@
             let stats = { total: 0, cash: 0, visa: 0, returns: 0 };
 
             sales?.filter(s => s.id.toString().includes(search)).forEach(s => {
-                const isRet = s.type === 'return';
-                if(isRet) stats.returns += s.total_amount;
-                else {
+                // إصلاح مشكلة المرتجعات بقراءة صحيحة
+                const isRet = (s.type || '').trim().toLowerCase() === 'return';
+                
+                if(isRet) {
+                    stats.returns += s.total_amount;
+                } else {
                     stats.total += s.total_amount;
                     if(s.payment_method === 'visa') stats.visa += s.total_amount;
                     else stats.cash += s.total_amount;
@@ -181,7 +197,7 @@
                 const row = document.createElement('tr');
                 row.className = 'sale-row';
                 row.innerHTML = `
-                    <td onclick="showInvoiceDetails(${s.id})" style="color:var(--accent); font-weight:bold;">#${s.id.toString().slice(-6)}</td>
+                    <td onclick="showInvoiceDetails(${s.id})" style="color:var(--accent); font-weight:bold; cursor:pointer;">#${s.id.toString().slice(-6)}</td>
                     <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
                     <td><span class="badge ${isRet ? 'badge-return' : 'badge-sale'}">${isRet ? 'مرتجع' : 'بيع'}</span></td>
                     <td>${s.payment_method === 'visa' ? 'فيزا 💳' : 'كاش 💵'}</td>
@@ -198,10 +214,15 @@
             document.getElementById('total-returns').innerText = stats.returns.toLocaleString() + " ج.م";
         }
 
-        // --- ميزة عرض تفاصيل الفاتورة ---
+        // تفاصيل الفاتورة - حل مشكلة القراءة
         function showInvoiceDetails(saleId) {
             const sale = currentSalesData.find(s => s.id === saleId);
             if(!sale) return;
+
+            let items = [];
+            try {
+                items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+            } catch(e) { items = []; }
 
             const info = document.getElementById('invoice-info');
             info.innerHTML = `
@@ -211,10 +232,10 @@
             `;
 
             const list = document.getElementById('items-list');
-            list.innerHTML = sale.items.map(item => `
+            list.innerHTML = items.map(item => `
                 <div class="details-item">
-                    <span>${item.product_name} (x${item.qty})</span>
-                    <span>${(item.price * item.qty).toLocaleString()} ج.م</span>
+                    <span>${item.product_name || 'منتج'} (x${item.qty || 1})</span>
+                    <span>${((item.price || 0) * (item.qty || 1)).toLocaleString()} ج.م</span>
                 </div>
             `).join('');
 
@@ -222,38 +243,62 @@
             document.getElementById('details-modal').style.display = 'flex';
         }
 
-        // --- ميزة الإرجاع الكامل للفاتورة ---
+        // إرجاع الفاتورة للمخزن 
         async function processReturn(saleId) {
-            if(!confirm("هل أنت متأكد من تحويل هذه الفاتورة إلى مرتجع؟ سيتم إعادة الكميات للمخزن.")) return;
+            if(!confirm("هل أنت متأكد من الإرجاع؟ سيتم إعادة المنتجات للمخزن وتحديث التقارير.")) return;
 
             const sale = currentSalesData.find(s => s.id === saleId);
             if(!sale) return;
+
+            let items = [];
+            try {
+                items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+            } catch(e) { items = []; }
 
             try {
                 // 1. تحديث حالة الفاتورة
                 await _supabase.from('sales').update({ type: 'return' }).eq('id', saleId);
 
-                // 2. إعادة الكميات للمخزن لكل منتج في الفاتورة
-                for (let item of sale.items) {
+                // 2. إعادة المنتجات للمخزن
+                for (let item of items) {
+                    if(!item.id) continue;
                     const { data: product } = await _supabase.from('products').select('stock').eq('id', item.id).single();
                     if(product) {
-                        const newStock = (product.stock || 0) + item.qty;
+                        const newStock = (parseFloat(product.stock) || 0) + parseFloat(item.qty || 0);
                         await _supabase.from('products').update({ stock: newStock }).eq('id', item.id);
                     }
                 }
 
                 alert("✅ تم الإرجاع بنجاح وإعادة المنتجات للمخزن");
-                loadSalesReport(); // تحديث التقرير
+                loadSalesReport();
             } catch (err) {
                 console.error(err);
-                alert("حدث خطأ أثناء عملية الإرجاع");
+                alert("حدث خطأ أثناء الإرجاع، يرجى المحاولة مرة أخرى.");
             }
         }
 
-        // دالة المودال العامة
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // --- بقية وظائف التقارير الأخرى (الأداء والموردين) تبقى بدون تغيير ---
+        // نظام بوب-أب التحميل
+        function askExport(tableId, name) {
+            currentExportTable = tableId;
+            currentExportName = name;
+            document.getElementById('export-modal').style.display = 'flex';
+        }
+
+        function processExport(type) {
+            closeModal('export-modal');
+            const table = document.getElementById(currentExportTable);
+            if(type === 'excel') {
+                const wb = XLSX.utils.table_to_book(table);
+                XLSX.writeFile(wb, `${currentExportName}_${new Date().toLocaleDateString()}.xlsx`);
+            } else {
+                const opt = { margin: 10, filename: `${currentExportName}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, backgroundColor: '#111' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+                html2pdf().set(opt).from(table).save();
+            }
+        }
+
+        // --- بقية الأكواد بدون تغيير ---
         async function loadPerformanceReport() {
             const from = document.getElementById('perf-from').value;
             const to = document.getElementById('perf-to').value;
@@ -288,7 +333,7 @@
                         <td>${(sup.paid_amount || 0).toLocaleString()} ج.م</td>
                         <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${debt.toLocaleString()} ج.م</td>
                         <td>
-                            <button class="btn-edit" onclick='editSupplier(${JSON.stringify(sup)})'>تعديل</button>
+                            <button class="btn-action" style="background:var(--orange);" onclick='editSupplier(${JSON.stringify(sup)})'>تعديل</button>
                             <button class="btn-action" onclick="deleteSupplier(${sup.id})">حذف</button>
                         </td>
                     </tr>
@@ -313,10 +358,23 @@
                 paid_amount: parseFloat(document.getElementById('sup-paid').value) || 0,
                 store_key: storeKey
             };
-            if(id) await _supabase.from('suppliers').update(data).eq('id', id);
-            else await _supabase.from('suppliers').insert([data]);
-            closeModal('supplier-modal');
-            loadSuppliersReport();
+            
+            try {
+                if(id) {
+                    await _supabase.from('suppliers').update(data).eq('id', id);
+                } else {
+                    const { error } = await _supabase.from('suppliers').insert([data]);
+                    if (error) {
+                        alert("حدث خطأ أثناء الإضافة. تأكد من إعدادات قاعدة البيانات.");
+                        console.error(error);
+                        return;
+                    }
+                }
+                closeModal('supplier-modal');
+                loadSuppliersReport();
+            } catch(e) {
+                console.error(e);
+            }
         }
 
         function editSupplier(sup) {
@@ -332,19 +390,6 @@
             if(confirm("هل أنت متأكد من حذف هذا المورد؟")) {
                 await _supabase.from('suppliers').delete().eq('id', id);
                 loadSuppliersReport();
-            }
-        }
-
-        function askExport(tableId, name) {
-            const choice = confirm("هل تريد التحميل بصيغة Excel؟\n(موافق لـ Excel - إلغاء لـ PDF)");
-            if(choice) {
-                const table = document.getElementById(tableId);
-                const wb = XLSX.utils.table_to_book(table);
-                XLSX.writeFile(wb, `${name}_${new Date().toLocaleDateString()}.xlsx`);
-            } else {
-                const element = document.getElementById(tableId);
-                const opt = { margin: 10, filename: `${name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, backgroundColor: '#111' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-                html2pdf().set(opt).from(element).save();
             }
         }
 
