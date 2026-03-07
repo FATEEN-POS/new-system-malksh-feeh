@@ -46,29 +46,59 @@
         .receipt-detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 12px; }
     </style>
     <style>
-    /* تعريف المتغيرات للوضعين */
+    <style>
     :root {
-        --primary: #004643;
-        --bg: #f0ede5; /* فاتح */
-        --card-bg: #ffffff;
+        --primary: #004643; /* الأخضر الغامق من صورتك */
+        --bg: #f0ede5;     /* الكريمي من صورتك */
+        --card: #ffffff;
         --text: #001e1d;
+        --accent: #f9bc60;
     }
 
+    /* لما يكون الثيم دارك */
     [data-theme="dark"] {
-        --primary: #00f2fe; /* لون الأكسنت في الدارك */
+        --primary: #00f2fe;
         --bg: #050505;
-        --card-bg: #111111;
+        --card: #111111;
         --text: #ffffff;
     }
 
-    body { background-color: var(--bg); color: var(--text); transition: 0.5s; }
-    .stat-card { background: var(--primary); color: white; }
-    .nav-card { background: var(--card-bg); color: var(--text); border: 1px solid rgba(0,0,0,0.1); }
-    
-    /* زر التبديل */
-    .theme-switch {
-        cursor: pointer; font-size: 24px; background: none; border: none; padding: 10px;
+    * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+
+    /* الهيدر المتجاوب */
+    .header { 
+        display: flex; justify-content: space-between; align-items: center; 
+        background: var(--card); padding: 15px; border-radius: 15px;
+        border: 1px solid rgba(0,0,0,0.1); margin-bottom: 20px;
     }
+
+    /* شبكة الأزرار للموبايل واللاب توب */
+    .nav-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* لابتوب */
+        gap: 15px;
+    }
+
+    @media (max-width: 600px) {
+        .nav-section {
+            grid-template-columns: repeat(2, 1fr); /* موبايل: زرارين في الصف */
+        }
+        .stat-card b { font-size: 14px; }
+    }
+
+    .nav-card {
+        background: var(--card); color: var(--text);
+        padding: 20px; border-radius: 15px; text-align: center;
+        text-decoration: none; border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .theme-toggle-btn {
+        background: var(--primary); color: white; border: none;
+        padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold;
+    }
+</style>
 </style>
 
 <header>
