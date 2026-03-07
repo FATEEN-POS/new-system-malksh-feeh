@@ -19,38 +19,47 @@
         
         .main-content { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; }
         
-        /* كروت الإحصائيات */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--gray); text-align: center; }
         .stat-card h3 { margin: 0; font-size: 14px; color: #888; }
-        .stat-card p { margin: 10px 0 0; font-size: 22px; font-weight: 800; color: var(--accent); }
+        .stat-card p { margin: 10px 0 0; font-size: 20px; font-weight: 800; color: var(--accent); }
 
         .filter-bar { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border: 1px solid var(--gray); }
         input, select { background: #1a1a1a; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 8px; outline: none; }
         
-        .table-container { background: var(--card); border-radius: 12px; border: 1px solid var(--gray); overflow-x: auto; width: 100%; }
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid var(--gray); overflow-x: auto; width: 100%; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--gray); }
         th { background: rgba(255,255,255,0.05); color: var(--accent); font-weight: 700; }
-        tr:hover { background: rgba(255,255,255,0.02); }
-
-        .btn-action { background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-action:disabled { background: #444; cursor: not-allowed; opacity: 0.5; }
         
+        .btn-action { background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 2px; }
+        .btn-edit { background: var(--orange); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .export-btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer; }
         
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--accent); width: 400px; }
+        .modal-content input { width: 100%; margin-bottom: 15px; }
+
         .badge { padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
         .badge-sale { background: rgba(0, 255, 136, 0.1); color: var(--green); }
         .badge-return { background: rgba(255, 77, 77, 0.1); color: var(--red); }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
-            .nav-btn { white-space: nowrap; padding: 10px; }
-        }
     </style>
 </head>
 <body>
+
+    <div id="supplier-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="color:var(--accent)">إضافة مورد جديد</h3>
+            <input type="hidden" id="sup-id">
+            <input type="text" id="sup-name" placeholder="اسم المورد">
+            <input type="number" id="sup-total" placeholder="إجمالي المسحوبات (القيمة)">
+            <input type="number" id="sup-paid" placeholder="المبلغ المدفوع">
+            <div style="display:flex; gap:10px">
+                <button class="export-btn" onclick="saveSupplier()" style="flex:1">حفظ</button>
+                <button class="btn-action" onclick="closeSupModal()" style="flex:1">إلغاء</button>
+            </div>
+        </div>
+    </div>
 
     <div class="sidebar">
         <h2 style="color:var(--accent); margin-bottom: 20px;">التقارير</h2>
@@ -63,19 +72,18 @@
     <div class="main-content">
         <div id="sales-section" class="section">
             <div class="stats-grid">
-                <div class="stat-card"><h3>إجمالي المبيعات (صافي)</h3><p id="total-amount">0 ج.م</p></div>
-                <div class="stat-card"><h3>كاش 💵</h3><p id="total-cash" style="color: #fff;">0 ج.م</p></div>
-                <div class="stat-card"><h3>فيزا 💳</h3><p id="total-visa" style="color: var(--visa);">0 ج.م</p></div>
+                <div class="stat-card"><h3>إجمالي المبيعات</h3><p id="total-amount">0 ج.م</p></div>
+                <div class="stat-card"><h3>كاش 💵</h3><p id="total-cash">0 ج.م</p></div>
+                <div class="stat-card"><h3>فيزا 💳</h3><p id="total-visa">0 ج.م</p></div>
+                <div class="stat-card" style="border-color: var(--red);"><h3>المرتجعات ↩️</h3><p id="total-returns" style="color:var(--red)">0 ج.م</p></div>
             </div>
 
             <div class="filter-bar">
                 <input type="date" id="sale-from"> <span>إلى</span> <input type="date" id="sale-to">
                 <input type="text" id="search-invoice" placeholder="بحث برقم الفاتورة..." oninput="loadSalesReport()">
-                <button class="export-btn" onclick="loadSalesReport()" style="background: var(--green);">تحديث</button>
                 <button class="export-btn" onclick="askExport('sales-table', 'تقرير_العمليات')">تحميل التقرير</button>
             </div>
-
-            <div class="table-container" id="capture-sales">
+            <div class="table-container">
                 <table id="sales-table">
                     <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>النوع</th><th>الوسيلة</th><th>البائع</th><th>المبلغ</th><th>إجراء</th></tr></thead>
                     <tbody id="sales-body"></tbody>
@@ -88,24 +96,24 @@
                 <input type="date" id="perf-from"> <span>إلى</span> <input type="date" id="perf-to">
                 <select id="user-select"><option value="all">كل الموظفين</option></select>
                 <button class="export-btn" onclick="loadPerformanceReport()">عرض النتائج</button>
-                <button class="export-btn" onclick="askExport('performance-table', 'أداء_الموظفين')">تحميل التقرير</button>
             </div>
             <div class="table-container">
                 <table id="performance-table">
                     <thead><tr><th>الموظف</th><th>عدد العمليات</th><th>إجمالي المبيعات</th></tr></thead>
                     <tbody id="performance-body"></tbody>
+                    <tfoot id="perf-footer" style="background: rgba(0,242,254,0.1); font-weight: bold; color: var(--accent);"></tfoot>
                 </table>
             </div>
         </div>
 
         <div id="suppliers-section" class="section" style="display:none">
             <div class="filter-bar">
+                <button class="export-btn" onclick="openSupModal()" style="background: var(--green);">+ إضافة فاتورة مورد</button>
                 <button class="export-btn" onclick="loadSuppliersReport()">تحديث البيانات</button>
-                <button class="export-btn" onclick="askExport('suppliers-table', 'تقرير_الموردين')">تحميل التقرير</button>
             </div>
             <div class="table-container">
                 <table id="suppliers-table">
-                    <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th></tr></thead>
+                    <thead><tr><th>المورد</th><th>إجمالي المسحوبات</th><th>المبلغ المدفوع</th><th>الديون المتبقية</th><th>إجراءات</th></tr></thead>
                     <tbody id="suppliers-body"></tbody>
                 </table>
             </div>
@@ -143,72 +151,126 @@
             const body = document.getElementById('sales-body');
             body.innerHTML = '';
 
-            let total = 0, cash = 0, visa = 0;
+            let stats = { total: 0, cash: 0, visa: 0, returns: 0 };
 
             sales?.filter(s => s.id.toString().includes(search)).forEach(s => {
-                const isReturn = s.type === 'return';
-                
-                // حساب الإحصائيات (نطرح المرتجع من الإجمالي)
-                if(!isReturn) {
-                    total += s.total_amount;
-                    if(s.payment_method === 'visa') visa += s.total_amount;
-                    else cash += s.total_amount;
-                } else {
-                    total -= s.total_amount; // خصم المرتجع من الإجمالي العام
+                const isRet = s.type === 'return';
+                if(isRet) stats.returns += s.total_amount;
+                else {
+                    stats.total += s.total_amount;
+                    if(s.payment_method === 'visa') stats.visa += s.total_amount;
+                    else stats.cash += s.total_amount;
                 }
 
                 body.innerHTML += `
-                    <tr style="${isReturn ? 'background: rgba(255, 77, 77, 0.05);' : ''}">
+                    <tr>
                         <td>#${s.id.toString().slice(-6)}</td>
                         <td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td><span class="badge ${isReturn ? 'badge-return' : 'badge-sale'}">${isReturn ? 'مرتجع' : 'بيع'}</span></td>
+                        <td><span class="badge ${isRet ? 'badge-return' : 'badge-sale'}">${isRet ? 'مرتجع' : 'بيع'}</span></td>
                         <td>${s.payment_method === 'visa' ? 'فيزا 💳' : 'كاش 💵'}</td>
                         <td>${s.seller_name}</td>
-                        <td style="font-weight:bold; color:${isReturn ? 'var(--red)' : 'var(--green)'}">${s.total_amount.toLocaleString()} ج.م</td>
-                        <td>
-                            <button class="btn-action" 
-                                    ${isReturn ? 'disabled' : ''} 
-                                    onclick="window.location.href='pos.html?returnId=${s.id}'">
-                                ${isReturn ? 'تم الإرجاع' : 'إرجاع'}
-                            </button>
-                        </td>
+                        <td style="font-weight:bold">${s.total_amount.toLocaleString()} ج.م</td>
+                        <td><button class="btn-action" ${isRet ? 'disabled' : ''} onclick="window.location.href='pos.html?returnId=${s.id}'">إرجاع</button></td>
                     </tr>
                 `;
             });
 
-            // تحديث كروت الأرقام
-            document.getElementById('total-amount').innerText = total.toLocaleString() + " ج.م";
-            document.getElementById('total-cash').innerText = cash.toLocaleString() + " ج.م";
-            document.getElementById('total-visa').innerText = visa.toLocaleString() + " ج.م";
+            document.getElementById('total-amount').innerText = stats.total.toLocaleString() + " ج.م";
+            document.getElementById('total-cash').innerText = stats.cash.toLocaleString() + " ج.م";
+            document.getElementById('total-visa').innerText = stats.visa.toLocaleString() + " ج.م";
+            document.getElementById('total-returns').innerText = stats.returns.toLocaleString() + " ج.م";
         }
 
-        // باقي الدوال (Performance, Suppliers, Export)
         async function loadPerformanceReport() {
             const from = document.getElementById('perf-from').value;
             const to = document.getElementById('perf-to').value;
             const user = document.getElementById('user-select').value;
+
             let query = _supabase.from('sales').select('*').eq('store_key', storeKey).eq('type', 'sale');
             if(from) query = query.gte('created_at', from);
             if(to) query = query.lte('created_at', to + 'T23:59:59');
+
             const { data: sales } = await query;
             const body = document.getElementById('performance-body');
             body.innerHTML = '';
+            
+            let grandTotalSales = 0, grandTotalOps = 0;
             const usersToTrack = user === 'all' ? Array.from(document.getElementById('user-select').options).map(o => o.value).filter(v => v !== 'all') : [user];
+
             usersToTrack.forEach(uname => {
                 const uSales = sales?.filter(s => s.seller_name === uname) || [];
                 const total = uSales.reduce((sum, s) => sum + s.total_amount, 0);
+                grandTotalSales += total;
+                grandTotalOps += uSales.length;
                 body.innerHTML += `<tr><td>${uname}</td><td>${uSales.length}</td><td style="color:var(--accent); font-weight:bold">${total.toLocaleString()} ج.م</td></tr>`;
             });
+
+            document.getElementById('perf-footer').innerHTML = `<tr><td>الإجمالي العام</td><td>${grandTotalOps} عملية</td><td>${grandTotalSales.toLocaleString()} ج.م</td></tr>`;
         }
 
+        // --- نظام الموردين المحسن ---
         async function loadSuppliersReport() {
             const { data: suppliers } = await _supabase.from('suppliers').select('*').eq('store_key', storeKey);
             const body = document.getElementById('suppliers-body');
             body.innerHTML = '';
             suppliers?.forEach(sup => {
                 const debt = (sup.total_amount || 0) - (sup.paid_amount || 0);
-                body.innerHTML += `<tr><td>${sup.supplier_name}</td><td>${(sup.total_amount || 0).toLocaleString()} ج.م</td><td>${(sup.paid_amount || 0).toLocaleString()} ج.م</td><td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${debt.toLocaleString()} ج.م</td></tr>`;
+                body.innerHTML += `
+                    <tr>
+                        <td>${sup.supplier_name}</td>
+                        <td>${(sup.total_amount || 0).toLocaleString()} ج.م</td>
+                        <td>${(sup.paid_amount || 0).toLocaleString()} ج.م</td>
+                        <td style="color:${debt > 0 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${debt.toLocaleString()} ج.م</td>
+                        <td>
+                            <button class="btn-edit" onclick='editSupplier(${JSON.stringify(sup)})'>تعديل</button>
+                            <button class="btn-action" onclick="deleteSupplier(${sup.id})">حذف</button>
+                        </td>
+                    </tr>
+                `;
             });
+        }
+
+        function openSupModal() {
+            document.getElementById('modal-title').innerText = "إضافة مورد جديد";
+            document.getElementById('sup-id').value = "";
+            document.getElementById('sup-name').value = "";
+            document.getElementById('sup-total').value = "";
+            document.getElementById('sup-paid').value = "";
+            document.getElementById('supplier-modal').style.display = 'flex';
+        }
+
+        function closeSupModal() { document.getElementById('supplier-modal').style.display = 'none'; }
+
+        async function saveSupplier() {
+            const id = document.getElementById('sup-id').value;
+            const data = {
+                supplier_name: document.getElementById('sup-name').value,
+                total_amount: parseFloat(document.getElementById('sup-total').value) || 0,
+                paid_amount: parseFloat(document.getElementById('sup-paid').value) || 0,
+                store_key: storeKey
+            };
+
+            if(id) await _supabase.from('suppliers').update(data).eq('id', id);
+            else await _supabase.from('suppliers').insert([data]);
+
+            closeSupModal();
+            loadSuppliersReport();
+        }
+
+        function editSupplier(sup) {
+            openSupModal();
+            document.getElementById('modal-title').innerText = "تعديل بيانات المورد";
+            document.getElementById('sup-id').value = sup.id;
+            document.getElementById('sup-name').value = sup.supplier_name;
+            document.getElementById('sup-total').value = sup.total_amount;
+            document.getElementById('sup-paid').value = sup.paid_amount;
+        }
+
+        async function deleteSupplier(id) {
+            if(confirm("هل أنت متأكد من حذف هذا المورد؟")) {
+                await _supabase.from('suppliers').delete().eq('id', id);
+                loadSuppliersReport();
+            }
         }
 
         function askExport(tableId, name) {
@@ -229,6 +291,7 @@
             document.getElementById(sec + '-section').style.display = 'block';
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            if(sec === 'suppliers') loadSuppliersReport();
         }
 
         init();
