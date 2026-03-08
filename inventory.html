@@ -11,24 +11,43 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root { --bg: #050505; --card: #111; --accent: #00f2fe; --white: #fff; --gray: #1a1a1a; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; --purple: #8a2be2; }
-        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
         body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
         
-        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .store-title { color: var(--accent); font-weight: 800; font-size: 24px; }
+        /* تصميم الهيدر والأزرار الجديد */
+        .header-section { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .store-title { color: var(--accent); font-weight: 800; font-size: 28px; margin: 0; }
+        
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-main { border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,242,254,0.2); }
+        
+        /* ألوان الأزرار */
+        .btn-add { background: var(--accent); color: #000; }
+        .btn-order { background: var(--green); color: #000; }
+        .btn-export { background: var(--orange); color: #000; }
+        .btn-backup { background: var(--purple); color: #fff; }
+        .btn-import { background: #fff; color: #000; }
 
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-action { background: var(--accent); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
-        
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 15px; }
-        th { background: #1a1a1a; padding: 12px; text-align: right; color: var(--accent); border-bottom: 2px solid var(--accent); }
-        td { padding: 12px; border-bottom: 1px solid #222; }
+        /* الجدول */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        th { background: transparent; padding: 15px; text-align: right; color: var(--accent); font-size: 14px; }
+        tr { background: var(--card); border-radius: 15px; }
+        td { padding: 15px; border-top: 1px solid #222; border-bottom: 1px solid #222; }
+        td:first-child { border-right: 1px solid #222; border-radius: 0 15px 15px 0; }
+        td:last-child { border-left: 1px solid #222; border-radius: 15px 0 0 15px; }
+        tr:hover { background: #1a1a1a; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #0a0a0a; padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; }
+        /* المودالات */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #0a0a0a; padding: 30px; border-radius: 25px; border: 1px solid var(--accent); width: 450px; position: relative; }
         
-        input { background: #111; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; margin-top: 5px; margin-bottom: 10px; }
-        
+        input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; width: 100%; margin-top: 8px; margin-bottom: 15px; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(0,242,254,0.2); }
+
+        .action-icon { cursor: pointer; font-size: 18px; margin-left: 10px; opacity: 0.7; }
+        .action-icon:hover { opacity: 1; transform: scale(1.2); }
+
         #print-area { display: none; }
         @media print {
             body * { visibility: hidden; }
@@ -41,43 +60,66 @@
 
     <div class="header-section">
         <div>
-            <div id="store-name-display" class="store-title">جاري التحميل...</div>
-            <p style="margin:5px 0 0; color:#666">مركز التحكم في المخزون</p>
+            <h1 id="store-name-display" class="store-title">Fateen OS</h1>
+            <p style="color:#666; margin: 5px 0 0 0;">إدارة المخزون والتوريدات</p>
         </div>
         <div class="btn-group">
-            <button class="btn-action" style="background:var(--purple)" onclick="exportBackup()">💾 Back-Up (Excel)</button>
-            <button class="btn-action" style="background:var(--orange)" onclick="document.getElementById('importFile').click()">📥 Back-In (Excel)</button>
-            <input type="file" id="importFile" hidden accept=".xlsx, .xls" onchange="importFromExcel(event)">
-            <button class="btn-action" style="background:var(--green)" onclick="askExportFormat()">📊 جرد المخزن</button>
-            <button class="btn-action" onclick="openAddModal()">+ صنف جديد</button>
-            <button class="btn-action" style="background:#fff" onclick="location.href='manager.html'">↩</button>
+            <button class="btn-main btn-add" onclick="openAddModal()">✨ صنف جديد</button>
+            <button class="btn-main btn-order" onclick="openOrderModal()">📦 توريد كمية</button>
+            <button class="btn-main btn-export" onclick="openExportChoice()">📊 جرد المخزن</button>
+            <button class="btn-main btn-backup" onclick="exportBackup()">💾 Back-Up</button>
+            <button class="btn-main btn-import" onclick="openImportChoice()">📥 Back-In</button>
+            <button class="btn-main" style="background:#333; color:#fff" onclick="location.href='manager.html'">↩</button>
         </div>
     </div>
 
-    <input type="text" id="main-search" placeholder="بحث بالاسم أو الباركود..." oninput="loadInventory()">
+    <input type="text" id="main-search" placeholder="🔍 ابحث بالاسم أو الباركود..." oninput="loadInventory()" style="margin-bottom: 20px; font-size: 16px;">
 
     <table>
         <thead>
             <tr>
                 <th>الباركود</th>
-                <th>المنتج</th>
+                <th>اسم المنتج</th>
                 <th>المخزون</th>
                 <th>التكلفة</th>
-                <th>البيع</th>
-                <th>تحكم</th>
+                <th>سعر البيع</th>
+                <th>الإجراءات</th>
             </tr>
         </thead>
         <tbody id="inventory-table"></tbody>
     </table>
 
+    <div id="exportChoiceModal" class="modal">
+        <div class="modal-content" style="text-align: center; width: 350px;">
+            <h3>اختر صيغة الملف</h3>
+            <p style="color:#888">كيف تريد تصدير بيانات الجرد؟</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-main btn-order" style="flex:1; justify-content:center" onclick="exportToExcel()">Excel</button>
+                <button class="btn-main btn-export" style="flex:1; justify-content:center" onclick="exportToPDF()">PDF</button>
+            </div>
+            <button onclick="closeModal('exportChoiceModal')" style="margin-top:15px; background:none; border:none; color:#555; cursor:pointer">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="importChoiceModal" class="modal">
+        <div class="modal-content" style="text-align: center; width: 400px;">
+            <h3>نظام الاستيراد (Back-In)</h3>
+            <p style="color:#888">يمكنك تحميل النموذج وملئه ثم رفعه</p>
+            <button class="btn-main btn-backup" style="width:100%; justify-content:center; margin-bottom:10px" onclick="downloadTemplate()">1. تحميل النموذج الفارغ</button>
+            <button class="btn-main btn-import" style="width:100%; justify-content:center; border:1px solid #ddd" onclick="document.getElementById('importFile').click()">2. رفع ملف البيانات</button>
+            <input type="file" id="importFile" hidden accept=".xlsx, .xls" onchange="importFromExcel(event)">
+            <button onclick="closeModal('importChoiceModal')" style="margin-top:15px; background:none; border:none; color:#555; cursor:pointer">إغلاق</button>
+        </div>
+    </div>
+
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <h2 id="modal-title" style="margin-top:0">بيانات الصنف</h2>
+            <h2 id="modal-title">بيانات الصنف</h2>
             <input type="hidden" id="edit-id">
-            <label>الباركود (أرقام فقط)</label>
+            <label>الباركود (13 رقم)</label>
             <div style="display:flex; gap:5px">
-                <input type="text" id="p-barcode" placeholder="622xxxx...">
-                <button onclick="generateNumericBarcode()" style="height:40px; background:var(--gray); color:white; border-radius:8px; cursor:pointer; border:1px solid #333; padding:0 10px;">🎲</button>
+                <input type="text" id="p-barcode" placeholder="622000...">
+                <button onclick="generateNumericBarcode()" style="height:48px; background:var(--gray); color:white; border-radius:10px; cursor:pointer; border:1px solid #333; padding:0 15px;">🎲</button>
             </div>
             <label>اسم الصنف</label>
             <input type="text" id="p-name">
@@ -86,8 +128,20 @@
                 <div style="flex:1"><label>الشراء</label><input type="number" id="p-cost"></div>
                 <div style="flex:1"><label>البيع</label><input type="number" id="p-price"></div>
             </div>
-            <button class="btn-action" style="width:100%; justify-content:center" onclick="saveProduct()">حفظ</button>
-            <button onclick="closeModal('productModal')" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">إلغاء</button>
+            <button class="btn-main btn-add" style="width:100%; justify-content:center" onclick="saveProduct()">حفظ البيانات</button>
+            <button onclick="closeModal('productModal')" style="margin-top:10px; width:100%; background:none; border:none; color:#555; cursor:pointer">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:var(--green)">📦 توريد كمية جديدة</h2>
+            <label>اختر المنتج</label>
+            <select id="order-product-select"></select>
+            <label>الكمية المضافة</label>
+            <input type="number" id="order-qty" value="1">
+            <button class="btn-main btn-order" style="width:100%; justify-content:center" onclick="submitOrder()">تأكيد التوريد</button>
+            <button onclick="closeModal('orderModal')" style="margin-top:10px; width:100%; background:none; border:none; color:#555; cursor:pointer">إلغاء</button>
         </div>
     </div>
 
@@ -114,31 +168,49 @@
 
         async function loadInventory() {
             const search = document.getElementById('main-search').value;
-            let { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
+            let { data } = await _supabase.from('products').select('*').eq('store_key', storeKey).order('created_at', {ascending: false});
             if(search) data = data.filter(p => p.product_name.includes(search) || (p.barcode && p.barcode.includes(search)));
             allProducts = data || [];
+            
             const tbody = document.getElementById('inventory-table');
-            tbody.innerHTML = allProducts.map(p => `
-                <tr>
-                    <td><span style="font-family:monospace; color:var(--accent)">${p.barcode || ''}</span></td>
-                    <td>${p.product_name}</td>
-                    <td style="color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${p.stock}</td>
-                    <td>${p.cost_price || 0}</td>
-                    <td>${p.price}</td>
-                    <td><button onclick="printLabel('${p.barcode}','${p.product_name}','${p.price}')" style="background:none; border:none; cursor:pointer;">🖨️</button></td>
-                </tr>
-            `).join('');
+            const select = document.getElementById('order-product-select');
+            tbody.innerHTML = '';
+            select.innerHTML = '<option value="">-- اختر صنف --</option>';
+
+            allProducts.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.product_name}</option>`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span style="font-family:monospace; color:var(--accent)">${p.barcode || '---'}</span></td>
+                        <td style="font-weight:700">${p.product_name}</td>
+                        <td style="color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}; font-weight:800">${p.stock}</td>
+                        <td>${p.cost_price || 0}</td>
+                        <td style="color:var(--accent); font-weight:800">${p.price}</td>
+                        <td>
+                            <span class="action-icon" title="طباعة باركود" onclick="printLabel('${p.barcode}','${p.product_name}','${p.price}')">🖨️</span>
+                            <span class="action-icon" title="تعديل" onclick="openEditModal('${p.id}')">⚙️</span>
+                            <span class="action-icon" title="حذف" style="color:var(--red)" onclick="deleteProduct('${p.id}')">🗑️</span>
+                        </td>
+                    </tr>`;
+            });
         }
 
-        // باركود أرقام فقط 13 رقم
         function generateNumericBarcode() {
-            let code = "622" + Math.floor(1000000000 + Math.random() * 9000000000);
-            document.getElementById('p-barcode').value = code;
+            document.getElementById('p-barcode').value = "622" + Math.floor(1000000000 + Math.random() * 9000000000);
         }
 
-        function askExportFormat() {
-            const choice = confirm("موافق لتنزيل الجرد Excel\nإلغاء لتنزيل الجرد PDF");
-            if (choice) exportToExcel(); else exportToPDF();
+        // دالات فتح المودالات
+        function openExportChoice() { document.getElementById('exportChoiceModal').style.display='flex'; }
+        function openImportChoice() { document.getElementById('importChoiceModal').style.display='flex'; }
+        function openOrderModal() { document.getElementById('orderModal').style.display='flex'; }
+
+        // تحميل نموذج الإكسيل الفارغ
+        function downloadTemplate() {
+            const data = [{"الباركود": "6220000000001", "الصنف": "اسم المنتج هنا", "الكمية": 10, "سعر الشراء": 50, "سعر البيع": 75}];
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Fateen_Import_Template.xlsx");
         }
 
         async function exportToExcel() {
@@ -147,27 +219,27 @@
                 totalVal += (p.stock * p.price);
                 return { "الباركود": p.barcode, "الصنف": p.product_name, "الكمية": p.stock, "سعر الشراء": p.cost_price, "سعر البيع": p.price, "إجمالي القيمة": p.stock * p.price };
             });
-            data.push({}, { "الصنف": "المجموع الكلي", "إجمالي القيمة": totalVal });
+            data.push({}, { "الصنف": "المجموع الكلي للمخزن", "إجمالي القيمة": totalVal });
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Inventory");
             XLSX.writeFile(wb, `جرد_${storeName}.xlsx`);
+            closeModal('exportChoiceModal');
         }
 
-        async function exportToPDF() {
+        function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.text(`Inventory Report - ${storeName}`, 10, 10);
-            const body = allProducts.map(p => [p.barcode, p.product_name, p.stock, p.price]);
-            doc.autoTable({ head: [['Barcode', 'Product', 'Stock', 'Price']], body: body });
+            doc.text(`Inventory Report: ${storeName}`, 105, 10, { align: 'center' });
+            const body = allProducts.map(p => [p.price, p.stock, p.product_name, p.barcode]);
+            doc.autoTable({
+                head: [['Price', 'Stock', 'Product Name', 'Barcode']],
+                body: body,
+                styles: { font: 'Cairo', halign: 'right' },
+                theme: 'striped'
+            });
             doc.save(`جرد_${storeName}.pdf`);
-        }
-
-        async function exportBackup() {
-            const ws = XLSX.utils.json_to_sheet(allProducts);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Backup");
-            XLSX.writeFile(wb, `Backup_${storeName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            closeModal('exportChoiceModal');
         }
 
         function importFromExcel(event) {
@@ -176,14 +248,14 @@
             reader.onload = async (e) => {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 
-                alert(`جاري رفع ${jsonData.length} صنف...`);
+                if(!confirm(`هل أنت متأكد من رفع ${jsonData.length} صنف جديد؟`)) return;
+
                 for (let item of jsonData) {
                     const row = {
                         store_key: storeKey,
-                        barcode: item["الباركود"] || item["barcode"] || String(Date.now()),
+                        barcode: String(item["الباركود"] || item["barcode"] || Date.now()),
                         product_name: item["الصنف"] || item["product_name"] || "بدون اسم",
                         stock: parseInt(item["الكمية"] || item["stock"] || 0),
                         cost_price: parseFloat(item["سعر الشراء"] || item["cost_price"] || 0),
@@ -191,10 +263,63 @@
                     };
                     await _supabase.from('products').insert([row]);
                 }
-                alert("✅ تم تحديث البيانات بنجاح");
+                alert("✅ تم استيراد البيانات بنجاح");
+                closeModal('importChoiceModal');
                 loadInventory();
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        async function submitOrder() {
+            const id = document.getElementById('order-product-select').value;
+            const qty = parseInt(document.getElementById('order-qty').value);
+            if(!id || isNaN(qty)) return alert("يرجى اختيار صنف");
+            const p = allProducts.find(x => x.id == id);
+            await _supabase.from('products').update({ stock: p.stock + qty }).eq('id', id);
+            alert("✅ تم التوريد"); closeModal('orderModal'); loadInventory();
+        }
+
+        async function deleteProduct(id) {
+            if(confirm("هل أنت متأكد من حذف هذا الصنف نهائياً؟")) {
+                await _supabase.from('products').delete().eq('id', id);
+                loadInventory();
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('edit-id').value = "";
+            document.getElementById('p-name').value = "";
+            document.getElementById('p-stock').value = "0";
+            document.getElementById('p-cost').value = "0";
+            document.getElementById('p-price').value = "0";
+            generateNumericBarcode();
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function openEditModal(id) {
+            const p = allProducts.find(x => x.id == id);
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('p-barcode').value = p.barcode;
+            document.getElementById('p-name').value = p.product_name;
+            document.getElementById('p-stock').value = p.stock;
+            document.getElementById('p-cost').value = p.cost_price;
+            document.getElementById('p-price').value = p.price;
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                store_key: storeKey,
+                barcode: document.getElementById('p-barcode').value,
+                product_name: document.getElementById('p-name').value,
+                stock: parseInt(document.getElementById('p-stock').value),
+                cost_price: parseFloat(document.getElementById('p-cost').value),
+                price: parseFloat(document.getElementById('p-price').value)
+            };
+            if(id) await _supabase.from('products').update(data).eq('id', id);
+            else await _supabase.from('products').insert([data]);
+            closeModal('productModal'); loadInventory();
         }
 
         function printLabel(code, name, price) {
@@ -205,24 +330,11 @@
             window.print();
         }
 
-        function openAddModal() {
-            document.getElementById('edit-id').value = "";
-            document.getElementById('p-name').value = "";
-            generateNumericBarcode();
-            document.getElementById('productModal').style.display = 'flex';
-        }
-
-        async function saveProduct() {
-            const data = {
-                store_key: storeKey,
-                barcode: document.getElementById('p-barcode').value,
-                product_name: document.getElementById('p-name').value,
-                stock: parseInt(document.getElementById('p-stock').value),
-                cost_price: parseFloat(document.getElementById('p-cost').value),
-                price: parseFloat(document.getElementById('p-price').value)
-            };
-            await _supabase.from('products').insert([data]);
-            closeModal('productModal'); loadInventory();
+        function exportBackup() {
+            const ws = XLSX.utils.json_to_sheet(allProducts);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Backup");
+            XLSX.writeFile(wb, `Backup_${storeName}_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
