@@ -2,46 +2,38 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>المخزن - Fateen OS</title>
+    <title>إدارة المخزن الاحترافية - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --white: #fff; --gray: #1a1a1a; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --white: #fff; --gray: #1a1a1a; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; --purple: #8a2be2; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
         
-        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .store-title { color: var(--accent); font-weight: 800; font-size: 24px; }
 
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
-        th { background: #1a1a1a; padding: 15px; text-align: right; color: var(--accent); border-bottom: 2px solid var(--accent); }
-        td { padding: 15px; border-bottom: 1px solid #222; }
-        tr:hover { background: rgba(0, 242, 254, 0.02); }
-
-        .btn-action { background: var(--accent); color: #000; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .barcode-pill { background: #000; color: var(--accent); padding: 4px 10px; border-radius: 6px; border: 1px solid #333; font-family: monospace; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-action { background: var(--accent); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
         
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 15px; }
+        th { background: #1a1a1a; padding: 12px; text-align: right; color: var(--accent); border-bottom: 2px solid var(--accent); }
+        td { padding: 12px; border-bottom: 1px solid #222; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: #0a0a0a; padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; }
         
-        input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; width: 100%; outline: none; margin-top: 5px; margin-bottom: 15px; }
-        label { font-size: 13px; color: #888; }
-
-        /* منطقة الطباعة */
+        input { background: #111; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; margin-top: 5px; margin-bottom: 10px; }
+        
         #print-area { display: none; }
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { 
-                position: absolute; left: 0; top: 0; 
-                width: 40mm; height: 30mm; border: 2px solid #000;
-                display: flex !important; flex-direction: column;
-                align-items: center; justify-content: center;
-                background: white; color: black; padding: 2mm;
-            }
-            #pr-barcode { width: 90%; height: auto; }
+            #print-area { position: absolute; left: 0; top: 0; width: 40mm; height: 30mm; display: flex !important; flex-direction: column; align-items: center; justify-content: center; background: white; color: black; border: 1px solid #000; }
         }
     </style>
 </head>
@@ -49,18 +41,20 @@
 
     <div class="header-section">
         <div>
-            <div id="store-name-display" class="store-title">محلي الرقمي</div>
-            <p style="margin:5px 0 0; color:#666">نظام الجرد والباركود الذكي</p>
+            <div id="store-name-display" class="store-title">جاري التحميل...</div>
+            <p style="margin:5px 0 0; color:#666">مركز التحكم في المخزون</p>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-action" style="background:var(--orange)" onclick="exportToExcel()">📥 جرد (Excel)</button>
-            <button class="btn-action" style="background:var(--green)" onclick="openOrderModal()">📦 توريد</button>
+        <div class="btn-group">
+            <button class="btn-action" style="background:var(--purple)" onclick="exportBackup()">💾 Back-Up (Excel)</button>
+            <button class="btn-action" style="background:var(--orange)" onclick="document.getElementById('importFile').click()">📥 Back-In (Excel)</button>
+            <input type="file" id="importFile" hidden accept=".xlsx, .xls" onchange="importFromExcel(event)">
+            <button class="btn-action" style="background:var(--green)" onclick="askExportFormat()">📊 جرد المخزن</button>
             <button class="btn-action" onclick="openAddModal()">+ صنف جديد</button>
-            <button class="btn-action" style="background:#fff" onclick="location.href='manager.html'">↩ رجوع</button>
+            <button class="btn-action" style="background:#fff" onclick="location.href='manager.html'">↩</button>
         </div>
     </div>
 
-    <input type="text" id="main-search" placeholder="ابحث باسم المنتج أو الباركود..." oninput="loadInventory()">
+    <input type="text" id="main-search" placeholder="بحث بالاسم أو الباركود..." oninput="loadInventory()">
 
     <table>
         <thead>
@@ -68,8 +62,8 @@
                 <th>الباركود</th>
                 <th>المنتج</th>
                 <th>المخزون</th>
-                <th>سعر الشراء</th>
-                <th>سعر البيع</th>
+                <th>التكلفة</th>
+                <th>البيع</th>
                 <th>تحكم</th>
             </tr>
         </thead>
@@ -80,44 +74,28 @@
         <div class="modal-content">
             <h2 id="modal-title" style="margin-top:0">بيانات الصنف</h2>
             <input type="hidden" id="edit-id">
-            
-            <label>الباركود</label>
+            <label>الباركود (أرقام فقط)</label>
             <div style="display:flex; gap:5px">
-                <input type="text" id="p-barcode" placeholder="أدخل الباركود">
-                <button onclick="generateBarcode()" style="height:45px; background:var(--gray); border:1px solid #333; color:white; border-radius:8px; cursor:pointer">🎲</button>
+                <input type="text" id="p-barcode" placeholder="622xxxx...">
+                <button onclick="generateNumericBarcode()" style="height:40px; background:var(--gray); color:white; border-radius:8px; cursor:pointer; border:1px solid #333; padding:0 10px;">🎲</button>
             </div>
-
             <label>اسم الصنف</label>
             <input type="text" id="p-name">
-            
             <div style="display: flex; gap: 10px;">
-                <div style="flex:1"><label>الكمية</label><input type="number" id="p-stock" value="0"></div>
-                <div style="flex:1"><label>الشراء</label><input type="number" id="p-cost" value="0"></div>
-                <div style="flex:1"><label>البيع</label><input type="number" id="p-price" value="0"></div>
+                <div style="flex:1"><label>الكمية</label><input type="number" id="p-stock"></div>
+                <div style="flex:1"><label>الشراء</label><input type="number" id="p-cost"></div>
+                <div style="flex:1"><label>البيع</label><input type="number" id="p-price"></div>
             </div>
-
-            <button class="btn-action" style="width:100%; justify-content:center" onclick="saveProduct()">حفظ الصنف</button>
+            <button class="btn-action" style="width:100%; justify-content:center" onclick="saveProduct()">حفظ</button>
             <button onclick="closeModal('productModal')" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">إلغاء</button>
         </div>
     </div>
 
-    <div id="orderModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:var(--green); margin-top:0">📦 إضافة توريد</h2>
-            <label>اختر المنتج</label>
-            <select id="order-product-select"></select>
-            <label>الكمية الواصلة</label>
-            <input type="number" id="order-qty" value="1">
-            <button class="btn-action" style="width:100%; background:var(--green); justify-content:center" onclick="submitOrder()">تأكيد الإضافة</button>
-            <button onclick="closeModal('orderModal')" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">إلغاء</button>
-        </div>
-    </div>
-
     <div id="print-area">
-        <div id="pr-store" style="font-size: 8pt; font-weight: bold; margin-bottom: 2px; text-transform: uppercase;"></div>
-        <div id="pr-name" style="font-size: 10pt; font-weight: bold; white-space: nowrap; overflow: hidden; width: 100%;"></div>
+        <div id="pr-store" style="font-size: 8pt; font-weight: bold;"></div>
+        <div id="pr-name" style="font-size: 9pt; font-weight: bold;"></div>
         <svg id="pr-barcode"></svg>
-        <div id="pr-price" style="font-size: 11pt; font-weight: 800; border-top: 1px solid #000; width: 80%; margin-top: 2px;"></div>
+        <div id="pr-price" style="font-size: 11pt; font-weight: 900;"></div>
     </div>
 
     <script>
@@ -130,10 +108,7 @@
 
         async function init() {
             const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
-            if(store) {
-                storeName = store.store_name;
-                document.getElementById('store-name-display').innerText = storeName;
-            }
+            if(store) { storeName = store.store_name; document.getElementById('store-name-display').innerText = storeName; }
             loadInventory();
         }
 
@@ -141,99 +116,99 @@
             const search = document.getElementById('main-search').value;
             let { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
             if(search) data = data.filter(p => p.product_name.includes(search) || (p.barcode && p.barcode.includes(search)));
-            
             allProducts = data || [];
             const tbody = document.getElementById('inventory-table');
-            const select = document.getElementById('order-product-select');
-            
-            tbody.innerHTML = '';
-            select.innerHTML = '<option value="">-- اختر صنف --</option>';
-
-            allProducts.forEach(p => {
-                select.innerHTML += `<option value="${p.id}">${p.product_name}</option>`;
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="barcode-pill">${p.barcode || '---'}</span></td>
-                        <td style="font-weight:600">${p.product_name}</td>
-                        <td style="color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${p.stock}</td>
-                        <td>${p.cost_price || 0} ج.م</td>
-                        <td style="color:var(--accent); font-weight:bold">${p.price} ج.م</td>
-                        <td>
-                            <button onclick="printLabel('${p.barcode}','${p.product_name}','${p.price}')" style="background:none; border:none; cursor:pointer; font-size:18px">🖨️</button>
-                            <button onclick="openEditModal('${p.id}')" style="background:none; border:none; color:#888; cursor:pointer; margin-right:10px;">⚙️</button>
-                        </td>
-                    </tr>`;
-            });
+            tbody.innerHTML = allProducts.map(p => `
+                <tr>
+                    <td><span style="font-family:monospace; color:var(--accent)">${p.barcode || ''}</span></td>
+                    <td>${p.product_name}</td>
+                    <td style="color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}; font-weight:bold">${p.stock}</td>
+                    <td>${p.cost_price || 0}</td>
+                    <td>${p.price}</td>
+                    <td><button onclick="printLabel('${p.barcode}','${p.product_name}','${p.price}')" style="background:none; border:none; cursor:pointer;">🖨️</button></td>
+                </tr>
+            `).join('');
         }
 
-        function generateBarcode() {
-            document.getElementById('p-barcode').value = "FTN" + Math.floor(100000 + Math.random() * 900000);
+        // باركود أرقام فقط 13 رقم
+        function generateNumericBarcode() {
+            let code = "622" + Math.floor(1000000000 + Math.random() * 9000000000);
+            document.getElementById('p-barcode').value = code;
+        }
+
+        function askExportFormat() {
+            const choice = confirm("موافق لتنزيل الجرد Excel\nإلغاء لتنزيل الجرد PDF");
+            if (choice) exportToExcel(); else exportToPDF();
         }
 
         async function exportToExcel() {
-            const today = new Date().toLocaleDateString('ar-EG');
-            let totalStock = 0, totalCost = 0, totalValue = 0;
-
+            let totalVal = 0;
             const data = allProducts.map(p => {
-                const stock = p.stock || 0;
-                const cost = p.cost_price || 0;
-                const price = p.price || 0;
-                
-                totalStock += stock;
-                totalCost += (stock * cost);
-                totalValue += (stock * price);
-
-                return {
-                    "اسم المحل": storeName,
-                    "التاريخ": today,
-                    "الباركود": p.barcode,
-                    "اسم المنتج": p.product_name,
-                    "الكمية": stock,
-                    "سعر الشراء": cost,
-                    "سعر البيع": price,
-                    "قيمة المخزن (شراء)": stock * cost,
-                    "قيمة المخزن (بيع)": stock * price
-                };
+                totalVal += (p.stock * p.price);
+                return { "الباركود": p.barcode, "الصنف": p.product_name, "الكمية": p.stock, "سعر الشراء": p.cost_price, "سعر البيع": p.price, "إجمالي القيمة": p.stock * p.price };
             });
-
-            // إضافة سطر المجموع في النهاية
-            data.push({});
-            data.push({
-                "اسم المنتج": "الإجماليات الكلية >>>",
-                "الكمية": totalStock,
-                "قيمة المخزن (شراء)": totalCost,
-                "قيمة المخزن (بيع)": totalValue
-            });
-
+            data.push({}, { "الصنف": "المجموع الكلي", "إجمالي القيمة": totalVal });
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "الجرد");
-            XLSX.writeFile(wb, `جرد_${storeName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, `جرد_${storeName}.xlsx`);
+        }
+
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text(`Inventory Report - ${storeName}`, 10, 10);
+            const body = allProducts.map(p => [p.barcode, p.product_name, p.stock, p.price]);
+            doc.autoTable({ head: [['Barcode', 'Product', 'Stock', 'Price']], body: body });
+            doc.save(`جرد_${storeName}.pdf`);
+        }
+
+        async function exportBackup() {
+            const ws = XLSX.utils.json_to_sheet(allProducts);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Backup");
+            XLSX.writeFile(wb, `Backup_${storeName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                alert(`جاري رفع ${jsonData.length} صنف...`);
+                for (let item of jsonData) {
+                    const row = {
+                        store_key: storeKey,
+                        barcode: item["الباركود"] || item["barcode"] || String(Date.now()),
+                        product_name: item["الصنف"] || item["product_name"] || "بدون اسم",
+                        stock: parseInt(item["الكمية"] || item["stock"] || 0),
+                        cost_price: parseFloat(item["سعر الشراء"] || item["cost_price"] || 0),
+                        price: parseFloat(item["سعر البيع"] || item["price"] || 0)
+                    };
+                    await _supabase.from('products').insert([row]);
+                }
+                alert("✅ تم تحديث البيانات بنجاح");
+                loadInventory();
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function printLabel(code, name, price) {
-            if(!code) return alert("لا يوجد باركود لهذا الصنف!");
             document.getElementById('pr-store').innerText = storeName;
             document.getElementById('pr-name').innerText = name;
             document.getElementById('pr-price').innerText = price + " ج.م";
-            
-            JsBarcode("#pr-barcode", code, {
-                format: "CODE128",
-                width: 2,
-                height: 40,
-                displayValue: true,
-                fontSize: 14
-            });
+            JsBarcode("#pr-barcode", code, { format: "CODE128", width: 2, height: 40, displayValue: true });
             window.print();
         }
 
         function openAddModal() {
             document.getElementById('edit-id').value = "";
             document.getElementById('p-name').value = "";
-            document.getElementById('p-stock').value = "0";
-            document.getElementById('p-cost').value = "0";
-            document.getElementById('p-price').value = "0";
-            generateBarcode(); // توليد باركود تلقائي فور الفتح
+            generateNumericBarcode();
             document.getElementById('productModal').style.display = 'flex';
         }
 
@@ -246,35 +221,11 @@
                 cost_price: parseFloat(document.getElementById('p-cost').value),
                 price: parseFloat(document.getElementById('p-price').value)
             };
-            const id = document.getElementById('edit-id').value;
-            if(id) await _supabase.from('products').update(data).eq('id', id);
-            else await _supabase.from('products').insert([data]);
+            await _supabase.from('products').insert([data]);
             closeModal('productModal'); loadInventory();
         }
 
-        async function submitOrder() {
-            const id = document.getElementById('order-product-select').value;
-            const qty = parseInt(document.getElementById('order-qty').value);
-            if(!id || isNaN(qty)) return alert("يرجى اختيار صنف");
-            const p = allProducts.find(x => x.id == id);
-            await _supabase.from('products').update({ stock: p.stock + qty }).eq('id', id);
-            alert("✅ تم توريد الكمية"); closeModal('orderModal'); loadInventory();
-        }
-
-        function openEditModal(id) {
-            const p = allProducts.find(x => x.id == id);
-            document.getElementById('edit-id').value = p.id;
-            document.getElementById('p-barcode').value = p.barcode;
-            document.getElementById('p-name').value = p.product_name;
-            document.getElementById('p-stock').value = p.stock;
-            document.getElementById('p-cost').value = p.cost_price;
-            document.getElementById('p-price').value = p.price;
-            document.getElementById('productModal').style.display = 'flex';
-        }
-
-        function openOrderModal() { document.getElementById('orderModal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
         init();
     </script>
 </body>
