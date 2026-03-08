@@ -2,146 +2,92 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>المخزن</title>
+    <title>المخزن الذكي - نظام الباركود</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --white: #ffffff; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
-        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
+        :root { --bg: #050505; --card: #111; --accent: #00f2fe; --white: #fff; --gray: #222; --red: #ff4d4d; --green: #00ff88; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
         body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
-        
         .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .version-badge { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--accent); font-weight: bold; }
-
-        .main-title { font-size: 32px; font-weight: 700; color: var(--white); margin: 0; }
-        #display-store-name { color: var(--accent); font-size: 18px; margin-top: 5px; display: block; }
-
-        .top-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        .stat-card { background: var(--card); border: 1px solid var(--gray); padding: 15px; border-radius: 15px; text-align: center; }
-        .stat-card h3 { font-size: 12px; color: #888; margin: 0; }
-        .stat-card p { font-size: 20px; font-weight: bold; margin: 5px 0 0 0; color: var(--accent); }
-
-        /* قسم النواقص السريع */
-        .shortage-list-box { background: rgba(255, 77, 77, 0.05); border: 1px solid rgba(255, 77, 77, 0.2); border-radius: 15px; padding: 15px; max-height: 150px; overflow-y: auto; }
-        .shortage-list-box h4 { color: var(--red); margin: 0 0 10px 0; font-size: 14px; display: flex; justify-content: space-between; }
-        .short-item { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #222; }
-
-        .controls-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .btn-action { background: var(--accent); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 13px; }
+        .controls-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         input, select { background: var(--card); border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 10px; outline: none; }
-        .search-input { flex: 1; min-width: 200px; }
-        .btn-action { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .btn-order { background: var(--orange); color: #000; }
-
-        .inventory-container { background: var(--card); border: 1px solid var(--gray); border-radius: 15px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #1a1a1a; padding: 15px; text-align: right; color: var(--accent); font-size: 13px; }
-        td { padding: 12px 15px; border-bottom: 1px solid var(--gray); font-size: 13px; }
-        tr:hover { background: rgba(255,255,255,0.02); }
-
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 15px; overflow: hidden; }
+        th { background: #1a1a1a; padding: 15px; text-align: right; color: var(--accent); }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--gray); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; max-height: 90vh; overflow-y: auto; }
-        .modal-content h2 { margin-top: 0; color: var(--accent); font-size: 18px; }
-        .modal-content label { display: block; font-size: 11px; color: #888; margin-bottom: 5px; margin-top: 10px; }
-        .modal-content input, .modal-content select { width: 100%; }
-
-        .btn-edit { color: var(--accent); background: none; border: none; cursor: pointer; font-weight: bold; }
-        .btn-delete { color: var(--red); background: none; border: none; cursor: pointer; font-weight: bold; margin-right: 10px; }
-
-        /* التمرير */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 10px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 400px; }
+        .barcode-preview { background: white; padding: 10px; border-radius: 5px; margin-top: 10px; display: none; text-align: center; }
+        
+        /* تصميم الاستيكر عند الطباعة */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 40mm; height: 25mm; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header-nav">
         <div>
-            <h1 class="main-title">إدارة المخزن والطلبيات</h1>
-            <span id="display-store-name">تحميل اسم المتجر...</span>
+            <h1 style="margin:0">إدارة المخزن والباركود</h1>
+            <span id="display-store-name" style="color:var(--accent)">جاري التحميل...</span>
         </div>
-        <div class="version-badge" id="display-sys-v">V 0.0.0</div>
-    </div>
-
-    <div class="top-row">
-        <div class="stats-grid">
-            <div class="stat-card"><h3>إجمالي الأصناف</h3><p id="total-items">0</p></div>
-            <div class="stat-card"><h3>نواقص المخزن</h3><p id="low-stock-count" style="color:var(--red)">0</p></div>
-            <div class="stat-card"><h3>قيمة المخزن</h3><p id="inv-value">0 ج.م</p></div>
-        </div>
-        <div class="shortage-list-box">
-            <h4>⚠️ نواقص عاجلة <span id="shortage-badge" style="font-size:10px; background:var(--red); color:#fff; padding:2px 6px; border-radius:5px;">0</span></h4>
-            <div id="quick-shortage-list">
-                </div>
-        </div>
+        <button class="btn-action" style="background:var(--green)" onclick="exportInventoryToExcel()">📊 Excel جرد المخزن</button>
     </div>
 
     <div class="controls-bar">
-        <input type="text" id="search-box" class="search-input" placeholder="بحث بالاسم أو الباركود..." oninput="loadInventory()">
-        
-        <select id="sort-filter" onchange="loadInventory()">
-            <option value="name">ترتيب بالاسم</option>
-            <option value="shortage">النواقص أولاً</option>
-            <option value="price-high">السعر: من الأعلى</option>
-            <option value="price-low">السعر: من الأقل</option>
-        </select>
-
-        <button class="btn-action" onclick="openAddModal()">+ صنف جديد</button>
-        <button class="btn-action btn-order" onclick="openOrderModal()">📦 طلبية جديدة</button>
+        <input type="text" id="search-box" style="flex:1" placeholder="بحث بالاسم أو الباركود..." oninput="loadInventory()">
+        <button class="btn-action" onclick="openAddModal()">+ إضافة صنف</button>
         <button class="btn-action" style="background:#fff" onclick="location.href='manager.html'">↩ رجوع</button>
     </div>
 
-    <div class="inventory-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>الباركود</th>
-                    <th>اسم الصنف</th>
-                    <th>الكمية</th>
-                    <th>سعر الشراء</th>
-                    <th>سعر البيع</th>
-                    <th>تاريخ الانتهاء</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody id="inventory-table"></tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>الباركود</th>
+                <th>اسم الصنف</th>
+                <th>الكمية</th>
+                <th>سعر البيع</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody id="inventory-table"></tbody>
+    </table>
 
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <h2 id="modal-title">إضافة صنف جديد</h2>
+            <h2 id="modal-title">بيانات الصنف</h2>
             <input type="hidden" id="edit-id">
-            <label>الباركود</label>
-            <input type="text" id="p-barcode">
-            <label>اسم الصنف</label>
-            <input type="text" id="p-name">
-            <label>الكمية المتوفرة</label>
-            <input type="number" id="p-stock">
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;"><label>سعر الشراء</label><input type="number" id="p-cost"></div>
-                <div style="flex: 1;"><label>سعر البيع</label><input type="number" id="p-price"></div>
+            
+            <label style="font-size: 12px; color: #888;">الباركود (اتركه فارغاً للتوليد التلقائي)</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                <input type="text" id="p-barcode" style="flex: 1;">
+                <button onclick="generateRandomBarcode()" style="background:var(--gray); color:white; border:none; padding:0 10px; border-radius:8px; cursor:pointer">🎲</button>
             </div>
-            <label>تاريخ الانتهاء</label>
-            <input type="date" id="p-expiry">
-            <button class="btn-action" style="width:100%; margin-top:20px" onclick="saveProduct()">حفظ</button>
-            <button class="btn-action" style="width:100%; background:none; color:#888; margin-top:5px;" onclick="closeModal('productModal')">إلغاء</button>
+
+            <label style="font-size: 12px; color: #888;">اسم الصنف</label>
+            <input type="text" id="p-name" style="width: 100%; margin-bottom: 10px;">
+            
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1"><label style="font-size:12px; color:#888">الكمية</label><input type="number" id="p-stock" style="width:100%"></div>
+                <div style="flex:1"><label style="font-size:12px; color:#888">السعر</label><input type="number" id="p-price" style="width:100%"></div>
+            </div>
+
+            <button class="btn-action" style="width:100%; margin-top:20px; justify-content:center" onclick="saveProduct()">حفظ الصنف</button>
+            <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer">إلغاء</button>
         </div>
     </div>
 
-    <div id="orderModal" class="modal">
-        <div class="modal-content">
-            <h2>📦 تسجيل طلبية (توريد مخزن)</h2>
-            <label>اختر المنتج</label>
-            <select id="order-product-select"></select>
-            <label>الكمية الموردة</label>
-            <input type="number" id="order-qty" placeholder="مثال: 50">
-            <label>سعر الشراء الجديد (اختياري)</label>
-            <input type="number" id="order-cost" placeholder="اتركه فارغاً إذا لم يتغير">
-            <button class="btn-action btn-order" style="width:100%; margin-top:20px" onclick="submitOrder()">تأكيد التوريد</button>
-            <button class="btn-action" style="width:100%; background:none; color:#888; margin-top:5px;" onclick="closeModal('orderModal')">إلغاء</button>
-        </div>
+    <div id="print-area" style="display:none; background:white; color:black; text-align:center; padding:5px;">
+        <b id="print-store-name" style="font-size:10px"></b><br>
+        <span id="print-product-name" style="font-size:12px; font-weight:bold"></span><br>
+        <svg id="barcode-svg"></svg><br>
+        <b id="print-price" style="font-size:12px"></b>
     </div>
 
     <script>
@@ -149,72 +95,40 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
+        let storeName = "";
 
         async function init() {
-            if(!storeKey) return location.href='index.html';
-            const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
-            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
-            if(store) document.getElementById('display-store-name').innerText = "متجر " + store.store_name;
-            if(vData) document.getElementById('display-sys-v').innerText = "V " + vData.value;
+            const { data } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
+            if(data) {
+                storeName = data.store_name;
+                document.getElementById('display-store-name').innerText = "متجر: " + storeName;
+            }
             loadInventory();
         }
 
         async function loadInventory() {
-            const searchTerm = document.getElementById('search-box').value;
-            const sortVal = document.getElementById('sort-filter').value;
-            
+            const search = document.getElementById('search-box').value;
             let query = _supabase.from('products').select('*').eq('store_key', storeKey);
+            if(search) query = query.or(`product_name.ilike.%${search}%,barcode.ilike.%${search}%`);
+            const { data } = await query;
             
-            if(searchTerm) query = query.or(`product_name.ilike.%${searchTerm}%,barcode.ilike.%${searchTerm}%`);
+            const table = document.getElementById('inventory-table');
+            table.innerHTML = data?.map(p => `
+                <tr>
+                    <td><code>${p.barcode || '---'}</code></td>
+                    <td>${p.product_name}</td>
+                    <td style="font-weight:bold; color:${p.stock<=5?'var(--red)':'var(--green)'}">${p.stock}</td>
+                    <td>${p.price} ج.م</td>
+                    <td>
+                        <button onclick="printBarcode('${p.barcode}', '${p.product_name}', '${p.price}')" style="color:var(--accent); background:none; border:none; cursor:pointer; font-weight:bold">🖨️ طباعة</button>
+                        <button onclick="openEditModal('${p.id}')" style="color:#fff; background:none; border:none; cursor:pointer; margin-right:10px">تعديل</button>
+                    </td>
+                </tr>
+            `).join('') || '';
+        }
 
-            const { data: products } = await query;
-            
-            // تطبيق الفرز اليدوي
-            let sortedProducts = [...(products || [])];
-            if(sortVal === 'name') sortedProducts.sort((a,b) => a.product_name.localeCompare(b.product_name));
-            if(sortVal === 'price-high') sortedProducts.sort((a,b) => b.price - a.price);
-            if(sortVal === 'price-low') sortedProducts.sort((a,b) => a.price - b.price);
-            if(sortVal === 'shortage') sortedProducts.sort((a,b) => a.stock - b.stock);
-
-            const tableBody = document.getElementById('inventory-table');
-            const shortageList = document.getElementById('quick-shortage-list');
-            const orderSelect = document.getElementById('order-product-select');
-            
-            tableBody.innerHTML = '';
-            shortageList.innerHTML = '';
-            orderSelect.innerHTML = '<option value="">-- اختر صنف --</option>';
-
-            let totalVal = 0, lowCount = 0;
-
-            sortedProducts.forEach(p => {
-                totalVal += (p.stock * p.price);
-                orderSelect.innerHTML += `<option value="${p.id}">${p.product_name}</option>`;
-
-                if(p.stock <= 5) {
-                    lowCount++;
-                    shortageList.innerHTML += `<div class="short-item"><span>${p.product_name}</span><b style="color:var(--red)">${p.stock} قطعة</b></div>`;
-                }
-
-                tableBody.innerHTML += `
-                    <tr>
-                        <td>${p.barcode || '---'}</td>
-                        <td>${p.product_name}</td>
-                        <td style="font-weight:bold; color:${p.stock <= 5 ? 'var(--red)' : 'var(--green)'}">${p.stock}</td>
-                        <td style="color:#aaa">${p.cost_price || 0}</td>
-                        <td style="font-weight:bold">${p.price}</td>
-                        <td>${p.expiry_date || '---'}</td>
-                        <td>
-                            <button class="btn-edit" onclick="openEditModal('${p.id}')">تعديل</button>
-                            <button class="btn-delete" onclick="deleteProduct('${p.id}')">حذف</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('total-items').innerText = products?.length || 0;
-            document.getElementById('low-stock-count').innerText = lowCount;
-            document.getElementById('shortage-badge').innerText = lowCount;
-            document.getElementById('inv-value').innerText = totalVal.toLocaleString() + " ج.م";
+        function generateRandomBarcode() {
+            document.getElementById('p-barcode').value = Math.floor(100000000000 + Math.random() * 900000000000);
         }
 
         function openAddModal() {
@@ -223,64 +137,79 @@
             document.getElementById('p-name').value = "";
             document.getElementById('p-stock').value = "";
             document.getElementById('p-price').value = "";
-            document.getElementById('p-cost').value = "";
             document.getElementById('productModal').style.display = 'flex';
         }
 
         async function openEditModal(id) {
             const { data: p } = await _supabase.from('products').select('*').eq('id', id).single();
-            if(p) {
-                document.getElementById('edit-id').value = p.id;
-                document.getElementById('p-barcode').value = p.barcode || "";
-                document.getElementById('p-name').value = p.product_name;
-                document.getElementById('p-stock').value = p.stock;
-                document.getElementById('p-price').value = p.price;
-                document.getElementById('p-cost').value = p.cost_price || 0;
-                document.getElementById('productModal').style.display = 'flex';
-            }
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('p-barcode').value = p.barcode;
+            document.getElementById('p-name').value = p.product_name;
+            document.getElementById('p-stock').value = p.stock;
+            document.getElementById('p-price').value = p.price;
+            document.getElementById('productModal').style.display = 'flex';
         }
-
-        function openOrderModal() { document.getElementById('orderModal').style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function saveProduct() {
-            const id = document.getElementById('edit-id').value;
+            let barcode = document.getElementById('p-barcode').value;
+            if(!barcode) barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+
             const data = {
                 store_key: storeKey,
-                barcode: document.getElementById('p-barcode').value,
+                barcode: barcode,
                 product_name: document.getElementById('p-name').value,
                 stock: parseInt(document.getElementById('p-stock').value),
-                price: parseFloat(document.getElementById('p-price').value),
-                cost_price: parseFloat(document.getElementById('p-cost').value) || 0,
-                expiry_date: document.getElementById('p-expiry').value || null
+                price: parseFloat(document.getElementById('p-price').value)
             };
+
+            const id = document.getElementById('edit-id').value;
             if(id) await _supabase.from('products').update(data).eq('id', id);
             else await _supabase.from('products').insert([data]);
-            closeModal('productModal'); loadInventory();
+
+            closeModal();
+            loadInventory();
         }
 
-        async function submitOrder() {
-            const pid = document.getElementById('order-product-select').value;
-            const qty = parseInt(document.getElementById('order-qty').value);
-            const newCost = document.getElementById('order-cost').value;
-            if(!pid || !qty) return alert("اختر المنتج والكمية");
+        function printBarcode(code, name, price) {
+            if(!code || code === 'null') return alert("هذا الصنف ليس له باركود!");
+            
+            document.getElementById('print-area').style.display = 'block';
+            document.getElementById('print-store-name').innerText = storeName;
+            document.getElementById('print-product-name').innerText = name;
+            document.getElementById('print-price').innerText = "السعر: " + price + " ج.م";
+            
+            JsBarcode("#barcode-svg", code, {
+                format: "CODE128",
+                width: 1.5,
+                height: 40,
+                displayValue: true,
+                fontSize: 10
+            });
 
-            const { data: p } = await _supabase.from('products').select('stock, cost_price').eq('id', pid).single();
-            const updateData = { stock: p.stock + qty };
-            if(newCost) updateData.cost_price = parseFloat(newCost);
-
-            await _supabase.from('products').update(updateData).eq('id', pid);
-            alert("تم تحديث المخزن بنجاح");
-            closeModal('orderModal'); loadInventory();
+            window.print();
+            document.getElementById('print-area').style.display = 'none';
         }
 
-        async function deleteProduct(id) {
-            if(confirm("حذف الصنف نهائياً؟")) {
-                await _supabase.from('products').delete().eq('id', id);
-                loadInventory();
-            }
+        async function exportInventoryToExcel() {
+            const { data } = await _supabase.from('products').select('barcode, product_name, stock, cost_price, price').eq('store_key', storeKey);
+            
+            const formattedData = data.map(p => ({
+                "الباركود": p.barcode,
+                "اسم الصنف": p.product_name,
+                "الكمية": p.stock,
+                "سعر الشراء": p.cost_price || 0,
+                "سعر البيع": p.price,
+                "إجمالي القيمة": p.stock * p.price
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(formattedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, `Inventory_Report_${new Date().toLocaleDateString()}.xlsx`);
         }
 
+        function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+        
         init();
     </script>
 </body>
