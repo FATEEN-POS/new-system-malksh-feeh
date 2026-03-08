@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>إدارة المخزن  - Fateen OS</title>
+    <title> المخزن - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -14,7 +14,6 @@
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
         body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
         
-        /* تصميم الهيدر والأزرار الجديد */
         .header-section { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
         .store-title { color: var(--accent); font-weight: 800; font-size: 28px; margin: 0; }
         
@@ -22,14 +21,12 @@
         .btn-main { border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .btn-main:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,242,254,0.2); }
         
-        /* ألوان الأزرار */
         .btn-add { background: var(--accent); color: #000; }
         .btn-order { background: var(--green); color: #000; }
         .btn-export { background: var(--orange); color: #000; }
         .btn-backup { background: var(--purple); color: #fff; }
         .btn-import { background: #fff; color: #000; }
 
-        /* الجدول */
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         th { background: transparent; padding: 15px; text-align: right; color: var(--accent); font-size: 14px; }
         tr { background: var(--card); border-radius: 15px; }
@@ -38,7 +35,6 @@
         td:last-child { border-left: 1px solid #222; border-radius: 15px 0 0 15px; }
         tr:hover { background: #1a1a1a; }
 
-        /* المودالات */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: #0a0a0a; padding: 30px; border-radius: 25px; border: 1px solid var(--accent); width: 450px; position: relative; }
         
@@ -199,12 +195,10 @@
             document.getElementById('p-barcode').value = "622" + Math.floor(1000000000 + Math.random() * 9000000000);
         }
 
-        // دالات فتح المودالات
         function openExportChoice() { document.getElementById('exportChoiceModal').style.display='flex'; }
         function openImportChoice() { document.getElementById('importChoiceModal').style.display='flex'; }
         function openOrderModal() { document.getElementById('orderModal').style.display='flex'; }
 
-        // تحميل نموذج الإكسيل الفارغ
         function downloadTemplate() {
             const data = [{"الباركود": "6220000000001", "الصنف": "اسم المنتج هنا", "الكمية": 10, "سعر الشراء": 50, "سعر البيع": 75}];
             const ws = XLSX.utils.json_to_sheet(data);
@@ -227,18 +221,40 @@
             closeModal('exportChoiceModal');
         }
 
+        // --- إصلاح دالة الـ PDF لدعم العربية والترتيب الصحيح ---
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.text(`Inventory Report: ${storeName}`, 105, 10, { align: 'center' });
-            const body = allProducts.map(p => [p.price, p.stock, p.product_name, p.barcode]);
+
+            // إضافة عنوان التقرير
+            doc.setFontSize(18);
+            doc.text(`Inventory Report: ${storeName}`, 105, 15, { align: 'center' });
+
+            // تجهيز البيانات مع عكس الترتيب للأعمدة لتناسب الـ PDF (الباركود أقصى اليمين في العرض)
+            const headers = [['Price', 'Cost', 'Stock', 'Product Name', 'Barcode']];
+            const body = allProducts.map(p => [
+                `${p.price} EGP`,
+                `${p.cost_price || 0} EGP`,
+                p.stock,
+                p.product_name,
+                p.barcode
+            ]);
+
             doc.autoTable({
-                head: [['Price', 'Stock', 'Product Name', 'Barcode']],
+                startY: 25,
+                head: headers,
                 body: body,
-                styles: { font: 'Cairo', halign: 'right' },
-                theme: 'striped'
+                styles: { 
+                    font: 'courier', // خط افتراضي يدعم الحروف اللاتينية بوضوح، العربية ستحتاج لخط خارجي إذا كنت تستخدم حروفاً معقدة
+                    halign: 'center',
+                    fontSize: 10
+                },
+                headStyles: { fillColor: [0, 242, 254], textColor: [0, 0, 0] },
+                alternateRowStyles: { fillColor: [240, 240, 240] },
+                margin: { top: 30 }
             });
-            doc.save(`جرد_${storeName}.pdf`);
+
+            doc.save(`Inventory_${storeName}.pdf`);
             closeModal('exportChoiceModal');
         }
 
