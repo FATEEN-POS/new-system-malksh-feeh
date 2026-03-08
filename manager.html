@@ -9,11 +9,13 @@
     <style>
         :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --white: #ffffff; --gray: #222; --red: #ff4d4d; --green: #00ff88; --orange: #ffa500; }
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
-        body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; }
+        body { background: var(--bg); color: var(--white); margin: 0; padding: 20px; overflow-x: hidden; }
         
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-radius: 15px; border: 1px solid var(--gray); margin-bottom: 20px; }
-        .welcome-text { font-size: 18px; font-weight: bold; color: var(--white); }
-        .store-tag { color: var(--accent); font-size: 13px; display: block; opacity: 0.8; }
+        .welcome-section { display: flex; align-items: center; gap: 15px; }
+        .store-info { display: flex; flex-direction: column; }
+        .feedback-text { font-size: 11px; color: var(--green); font-weight: bold; margin-top: 4px; border-top: 1px solid var(--gray); padding-top: 4px; }
+        
         .version-tag { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--accent); }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
@@ -22,7 +24,7 @@
 
         .chart-container { background: var(--card); border: 1px solid var(--gray); padding: 20px; border-radius: 15px; margin-bottom: 20px; height: 250px; }
 
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 0 10px; padding-bottom: 5px; border-bottom: 1px solid var(--gray); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 0 10px; border-bottom: 1px solid var(--gray); padding-bottom: 5px; }
         .section-title { font-size: 18px; color: var(--accent); }
 
         table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
@@ -31,28 +33,29 @@
         .clickable-row { cursor: pointer; }
         .clickable-row:hover { background: #1a1a1a; }
 
-        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .btn-add { background: var(--accent); color: #000; }
         .btn-del { background: var(--red); color: #fff; }
-        .btn-order { background: var(--green); color: #000; text-decoration: none; }
+        .btn-order { background: var(--green); color: #000; text-decoration: none; padding: 5px 12px; border-radius: 8px; font-size: 12px; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 450px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--accent); width: 450px; }
         input { width: 100%; background: #000; border: 1px solid var(--gray); color: #fff; padding: 10px; border-radius: 8px; margin-top: 10px; }
         
-        .emp-img { width: 35px; height: 35px; border-radius: 50%; vertical-align: middle; margin-left: 10px; border: 1px solid var(--accent); }
+        .emp-img { width: 35px; height: 35px; border-radius: 50%; vertical-align: middle; margin-left: 10px; border: 1px solid var(--accent); object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="welcome-section">
             <div style="cursor: pointer; font-size: 24px;" onclick="location.href='3dadat.html'">⚙️</div>
-            <div>
-                <span class="welcome-text" id="welcome-msg">مرحباً بك</span>
-                <span class="store-tag" id="store-name-top">Fateen OS</span>
+            <div class="store-info">
+                <span style="font-size: 18px; font-weight: bold;" id="mgr-welcome">مرحباً..</span>
+                <span style="color: var(--accent); font-size: 13px;" id="st-name-display">Fateen OS</span>
+                <div class="feedback-text" id="dev-feedback">رسالة المطور: جاري التحميل...</div>
             </div>
-            <div class="version-tag" id="sys-version-display">V 07</div>
+            <div class="version-tag" id="v-tag">Loading...</div>
         </div>
         <div style="display: flex; gap: 10px;">
             <button class="btn" style="background:var(--orange)" onclick="location.href='about.html'">📞 تواصل معنا</button>
@@ -69,7 +72,7 @@
 
     <div class="section-header">
         <h3 class="section-title">⚠️ نواقص تحتاج توريد</h3>
-        <button class="btn btn-order" onclick="location.href='inventory.html'">🛒 اطلب الآن</button>
+        <a href="inventory.html" class="btn-order">🛒 اطلب الآن</a>
     </div>
     <table>
         <thead><tr><th>الصنف</th><th>المخزون</th><th>الحالة</th></tr></thead>
@@ -77,16 +80,15 @@
     </table>
 
     <div class="section-header">
-        <h3 class="section-title">🕒 مبيعات اليوم (اضغط للفاصيل)</h3>
-        <input type="text" id="sales-search" placeholder="🔍 بحث..." oninput="filterSales()" style="width:200px; margin:0">
+        <h3 class="section-title">🕒 مبيعات اليوم (اضغط للفاتورة)</h3>
     </div>
     <table>
         <thead><tr><th>رقم العملية</th><th>الوقت</th><th>البائع</th><th>الإجمالي</th></tr></thead>
-        <tbody id="today-sales-table"></tbody>
+        <tbody id="sales-list"></tbody>
     </table>
 
     <div class="section-header">
-        <h3 class="section-title">👥 إدارة الفريق (موظفين فقط)</h3>
+        <h3 class="section-title">👥 إدارة الفريق (employee)</h3>
         <button class="btn btn-add" onclick="openUserModal()">+ إضافة موظف</button>
     </div>
     <table>
@@ -94,14 +96,22 @@
         <tbody id="users-list"></tbody>
     </table>
 
+    <div id="receiptModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--accent); border-bottom: 1px solid var(--gray); padding-bottom: 10px;">تفاصيل الفاتورة</h3>
+            <div id="receipt-body" style="margin-top: 15px;"></div>
+            <button class="btn" style="width:100%; margin-top:20px; background:var(--gray); color:#fff" onclick="closeModal('receiptModal')">إغلاق</button>
+        </div>
+    </div>
+
     <div id="userModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title" style="color:var(--accent)">إضافة موظف جديد</h3>
-            <input type="hidden" id="edit-user-id">
-            <input type="text" id="u-name" placeholder="اسم المستخدم">
+            <h3 id="m-title" style="color:var(--accent)">إضافة موظف جديد</h3>
+            <input type="hidden" id="edit-un">
+            <input type="text" id="u-username" placeholder="اسم المستخدم">
             <input type="text" id="u-phone" placeholder="رقم الهاتف">
             <input type="number" id="u-target" placeholder="التارجت الشهري">
-            <label style="display:block; margin-top:15px; font-size:12px; color:#888;">صورة الموظف (PNG):</label>
+            <p style="font-size: 11px; color: #888; margin: 10px 0 0;">صورة الموظف (PNG):</p>
             <input type="file" id="u-file" accept="image/png">
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn btn-add" style="flex:1" onclick="saveUser()">حفظ</button>
@@ -110,169 +120,156 @@
         </div>
     </div>
 
-    <div id="receiptModal" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--accent)">تفاصيل العملية</h3>
-            <div id="receipt-body" style="margin-top:15px"></div>
-            <button class="btn" style="width:100%; margin-top:20px; background:var(--gray); color:#fff" onclick="closeModal('receiptModal')">إغلاق</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
-        const managerUser = sessionStorage.getItem('username');
-        let allTodaySales = [];
+        const userNow = sessionStorage.getItem('username');
 
         async function init() {
             if(!storeKey) return location.href='index.html';
+            document.getElementById('mgr-welcome').innerText = `أهلاً يا ${userNow || 'مدير'}`;
             
-            // جلب بيانات المتجر والمدير
-            const { data: store } = await _supabase.from('stores').select('store_name').eq('store_key', storeKey).single();
-            if(store) document.getElementById('store-name-top').innerText = store.store_name;
-            document.getElementById('welcome-msg').innerText = `أهلاً يا ${managerUser || 'مدير'}`;
+            // جلب بيانات المتجر (اسم المتجر + فيدباك المطور)
+            const { data: st } = await _supabase.from('stores').select('store_name, feedback').eq('store_key', storeKey).single();
+            if(st) {
+                document.getElementById('st-name-display').innerText = st.store_name;
+                document.getElementById('dev-feedback').innerText = "رسالة المطور: " + (st.feedback || "لا توجد رسائل جديدة");
+            }
 
             loadVersion();
-            loadDashboard();
+            loadSales();
             loadShortages();
             loadUsers();
         }
 
         async function loadVersion() {
             const { data } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
-            if(data) document.getElementById('sys-version-display').innerText = data.value;
+            if(data) document.getElementById('v-tag').innerText = data.value;
         }
 
-        async function loadDashboard() {
+        async function loadSales() {
             const today = new Date().toISOString().split('T')[0];
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today);
-            allTodaySales = sales || [];
+            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today).order('created_at', {ascending: false});
             
             let total = 0;
             let hourly = Array(24).fill(0);
-            allTodaySales.forEach(s => {
+            
+            document.getElementById('sales-list').innerHTML = sales?.map(s => {
                 if(s.type === 'sale') total += s.total_amount;
                 hourly[new Date(s.created_at).getHours()] += s.total_amount;
-            });
+                // نمرر البيانات كـ String مشفرة لتجنب مشاكل الـ HTML
+                const saleData = encodeURIComponent(JSON.stringify(s));
+                return `
+                    <tr class="clickable-row" onclick="viewReceiptDetails('${saleData}')">
+                        <td>#${s.id.toString().slice(-6)}</td>
+                        <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
+                        <td>${s.seller_name || '---'}</td>
+                        <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
+                    </tr>`;
+            }).join('') || '';
 
             document.getElementById('total-sales').innerText = total.toLocaleString() + " ج.م";
-            document.getElementById('today-count').innerText = allTodaySales.length;
-            renderSalesTable(allTodaySales);
+            document.getElementById('today-count').innerText = sales?.length || 0;
             updateChart(hourly);
         }
 
-        function renderSalesTable(data) {
-            document.getElementById('today-sales-table').innerHTML = data.map(s => `
-                <tr class="clickable-row" onclick="viewReceipt('${s.id}')">
-                    <td>#${s.id.toString().slice(-6)}</td>
-                    <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
-                    <td>${s.seller_name || '---'}</td>
-                    <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
-                </tr>
-            `).join('');
-        }
-
-        async function viewReceipt(id) {
-            const sale = allTodaySales.find(x => x.id == id);
-            const items = JSON.parse(sale.items || '[]');
-            let html = `<p><b>البائع:</b> ${sale.seller_name}</p><hr>`;
-            html += `<table style="width:100%"><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
-            items.forEach(it => { html += `<tr><td>${it.product_name}</td><td>${it.qty}</td><td>${it.price}</td></tr>`; });
-            html += `</tbody></table><h4 style="text-align:left; color:var(--accent)">الإجمالي: ${sale.total_amount} ج.م</h4>`;
+        function viewReceiptDetails(encodedData) {
+            const sale = JSON.parse(decodeURIComponent(encodedData));
+            const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+            
+            let html = `<p><b>البائع:</b> ${sale.seller_name}</p><p><b>الوقت:</b> ${new Date(sale.created_at).toLocaleTimeString()}</p><hr>`;
+            html += `<table style="width:100%"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
+            items.forEach(i => {
+                html += `<tr><td>${i.product_name}</td><td>${i.qty}</td><td>${i.price} ج.م</td></tr>`;
+            });
+            html += `</tbody></table><h3 style="color:var(--accent); text-align:left;">الإجمالي: ${sale.total_amount} ج.م</h3>`;
+            
             document.getElementById('receipt-body').innerHTML = html;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
         async function loadUsers() {
-            // جلب المستخدمين الذين ليسوا مديرين بناءً على صور الداتا بيز
-            const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey).neq('role', 'manager');
-            const list = document.getElementById('users-list');
-            list.innerHTML = users?.map(u => `
+            // جلب الـ employee فقط
+            const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey).eq('role', 'employee');
+            document.getElementById('users-list').innerHTML = users?.map(u => `
                 <tr>
                     <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
                     <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
                     <td>${u.monthly_target || 0}</td>
                     <td>
-                        <button class="btn btn-add" onclick="editUser('${u.username}')">⚙️</button>
-                        <button class="btn btn-del" onclick="deleteUser('${u.username}')">🗑️</button>
+                        <button class="btn btn-add" style="padding:4px 8px" onclick="editUser('${u.username}')">⚙️</button>
+                        <button class="btn btn-del" style="padding:4px 8px" onclick="deleteUser('${u.username}')">🗑️</button>
                     </td>
-                </tr>
-            `).join('') || '<tr><td colspan="4">لا يوجد موظفين</td></tr>';
+                </tr>`).join('') || '<tr><td colspan="4">لا يوجد موظفين مسجلين</td></tr>';
         }
 
         async function saveUser() {
-            const uName = document.getElementById('u-name').value;
             const file = document.getElementById('u-file').files[0];
-            let imgUrl = "https://via.placeholder.com/150";
+            const uName = document.getElementById('u-username').value;
+            let url = "https://via.placeholder.com/150";
 
             if(file) {
-                const fName = `${Date.now()}_${uName}.png`;
-                const { data: up } = await _supabase.storage.from('avatars').upload(fName, file);
-                if(up) {
-                    const { data: pub } = _supabase.storage.from('avatars').getPublicUrl(fName);
-                    imgUrl = pub.publicUrl;
-                }
+                const name = `${Date.now()}_${uName}.png`;
+                await _supabase.storage.from('avatars').upload(name, file);
+                const { data } = _supabase.storage.from('avatars').getPublicUrl(name);
+                url = data.publicUrl;
             }
 
-            const userData = {
+            const d = {
                 username: uName,
                 phone: document.getElementById('u-phone').value,
                 monthly_target: parseInt(document.getElementById('u-target').value) || 0,
-                image_url: imgUrl,
-                role: 'staff',
+                image_url: url,
+                role: 'employee', // الرول الجديد
                 store_key: storeKey
             };
 
-            const editId = document.getElementById('edit-user-id').value;
-            if(editId) await _supabase.from('users').update(userData).eq('username', editId);
-            else await _supabase.from('users').insert([userData]);
+            const eid = document.getElementById('edit-un').value;
+            if(eid) await _supabase.from('users').update(d).eq('username', eid);
+            else await _supabase.from('users').insert([d]);
             
             closeModal('userModal'); loadUsers();
         }
 
-        async function deleteUser(un) {
-            if(confirm(`حذف ${un}؟`)) {
-                await _supabase.from('users').delete().eq('username', un);
-                loadUsers();
-            }
+        async function deleteUser(un) { if(confirm(`حذف الموظف ${un}؟`)) { await _supabase.from('users').delete().eq('username', un); loadUsers(); } }
+
+        async function editUser(un) {
+            const { data: u } = await _supabase.from('users').select('*').eq('username', un).single();
+            document.getElementById('edit-un').value = u.username;
+            document.getElementById('u-username').value = u.username;
+            document.getElementById('u-phone').value = u.phone;
+            document.getElementById('u-target').value = u.monthly_target;
+            document.getElementById('m-title').innerText = "تعديل الموظف";
+            document.getElementById('userModal').style.display='flex';
         }
 
         async function loadShortages() {
             const { data } = await _supabase.from('products').select('*').eq('store_key', storeKey);
-            const shorts = data?.filter(p => p.stock <= (p.alert_limit || 5)) || [];
-            document.getElementById('shortage-list').innerHTML = shorts.map(p => `
-                <tr><td>${p.product_name}</td><td style="color:var(--red)">${p.stock}</td><td>⚠️ نقص</td></tr>
-            `).join('');
+            document.getElementById('shortage-list').innerHTML = data?.filter(p => p.stock <= (p.alert_limit || 5)).map(p => `
+                <tr><td>${p.product_name}</td><td style="color:var(--red)">${p.stock}</td><td>⚠️ اطلب فوراً</td></tr>
+            `).join('') || '';
         }
 
         function updateChart(data) {
             const ctx = document.getElementById('salesChart').getContext('2d');
-            if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(ctx, {
+            if(window.ch) window.ch.destroy();
+            window.ch = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: Array.from({length: 24}, (_, i) => i + ":00"),
-                    datasets: [{ label: 'المبيعات', data: data, borderColor: '#00f2fe', tension: 0.3, fill: true, backgroundColor: 'rgba(0,242,254,0.1)' }]
+                    datasets: [{ label: 'مبيعات بالساعة', data: data, borderColor: '#00f2fe', tension: 0.3, fill: true, backgroundColor: 'rgba(0,242,254,0.1)' }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        function filterSales() {
-            const term = document.getElementById('sales-search').value.toLowerCase();
-            renderSalesTable(allTodaySales.filter(s => s.id.toString().includes(term) || s.seller_name?.toLowerCase().includes(term)));
-        }
-
-        function openUserModal() { document.getElementById('edit-user-id').value = ""; document.getElementById('userModal').style.display='flex'; }
-        async function editUser(un) {
-            const { data: u } = await _supabase.from('users').select('*').eq('username', un).single();
-            document.getElementById('edit-user-id').value = u.username;
-            document.getElementById('u-name').value = u.username;
-            document.getElementById('u-phone').value = u.phone;
-            document.getElementById('u-target').value = u.monthly_target;
-            document.getElementById('userModal').style.display='flex';
+        function openUserModal() { 
+            document.getElementById('edit-un').value=""; 
+            document.getElementById('u-username').value="";
+            document.getElementById('m-title').innerText="إضافة موظف جديد"; 
+            document.getElementById('userModal').style.display='flex'; 
         }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         function logout() { sessionStorage.clear(); location.replace('index.html'); }
