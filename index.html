@@ -3,40 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <title>Fateen OS - تسجيل الدخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
-        body { margin: 0; background: #000; color: #fff; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: 0.8s; }
-        .logo-text { font-size: 3rem; font-weight: 700; letter-spacing: 8px; animation: pulse 2s infinite; }
-        #sys-version-display { font-size: 14px; color: #444; margin-top: 10px; letter-spacing: 2px; }
-        .login-box { background: rgba(255, 255, 255, 0.03); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 90%; max-width: 400px; backdrop-filter: blur(20px); text-align: center; display: none; opacity: 0; transition: 0.8s; }
-        input { width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #fff; margin-bottom: 20px; text-align: right; outline: none; }
-        button { width: 100%; padding: 15px; background: #fff; color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        /* ======= THEMES ======= */
+        :root {
+            --bg: #050505;
+            --card: #111111;
+            --card2: #1a1a1a;
+            --accent: #00f2fe;
+            --border: #2a2a2a;
+            --text: #ffffff;
+            --text-muted: #666;
+            --input-bg: #000000;
+            --btn-color: #000;
+        }
+
+        [data-theme="light"] {
+            --bg: #f0ede5;
+            --card: #ffffff;
+            --card2: #e8e4db;
+            --accent: #004643;
+            --border: #c8c4bb;
+            --text: #1a1a1a;
+            --text-muted: #888;
+            --input-bg: #e8e4db;
+            --btn-color: #f0ede5;
+        }
+
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* BG pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle at 20% 50%, rgba(0,242,254,0.04) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(0,242,254,0.03) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="light"] body::before {
+            background-image: radial-gradient(circle at 20% 50%, rgba(0,70,67,0.06) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(0,70,67,0.04) 0%, transparent 40%);
+        }
+
+        /* ======= SPLASH ======= */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease;
+        }
+
+        .splash-logo {
+            font-size: 52px;
+            font-weight: 800;
+            letter-spacing: 10px;
+            color: var(--accent);
+            animation: pulse 1.8s infinite;
+        }
+
+        .splash-version {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            letter-spacing: 3px;
+        }
+
+        .splash-bar-bg {
+            width: 180px;
+            height: 3px;
+            background: var(--border);
+            border-radius: 10px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        .splash-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 10px;
+            animation: loadbar 2s ease forwards;
+        }
+
+        @keyframes loadbar { from { width: 0% } to { width: 100% } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ======= THEME TOGGLE ======= */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .theme-toggle:hover { border-color: var(--accent); }
+
+        /* ======= LOGIN WRAPPER ======= */
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 420px;
+            animation: fadeUp 0.5s ease;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand-logo {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--accent);
+        }
+
+        .brand-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* ======= CARD ======= */
+        .login-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 35px 30px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .store-label {
+            display: block;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 7px;
+            font-weight: 700;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            padding: 13px 16px;
+            font-size: 14px;
+            outline: none;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,242,254,0.08);
+        }
+
+        [data-theme="light"] .input-group input:focus {
+            box-shadow: 0 0 0 3px rgba(0,70,67,0.08);
+        }
+
+        .btn-main {
+            width: 100%;
+            background: var(--accent);
+            color: var(--btn-color);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            margin-top: 8px;
+        }
+
+        .btn-main:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-main:active { transform: translateY(0); }
+
+        .btn-back {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 12px;
+            padding: 11px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            margin-top: 10px;
+        }
+        .btn-back:hover { border-color: var(--accent); color: var(--accent); }
+
+        .error-msg {
+            background: rgba(255,77,77,0.1);
+            border: 1px solid rgba(255,77,77,0.3);
+            color: #ff4d4d;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            text-align: center;
+        }
+
+        [data-theme="light"] .error-msg {
+            background: rgba(192,57,43,0.08);
+            border-color: rgba(192,57,43,0.3);
+            color: #c0392b;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 22px;
+        }
+
+        /* ======= STEP TRANSITIONS ======= */
+        .step { display: none; }
+        .step.active { display: block; animation: fadeUp 0.3s ease; }
+
+        /* ======= LOADING SPINNER ======= */
+        .loading { display: none; text-align: center; padding: 20px 0; color: var(--accent); font-size: 13px; }
+        .loading.show { display: block; }
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen">
-        <div class="logo-text">FATEEN</div>
-        <div id="sys-version-display">Loading...</div>
+    <!-- SPLASH -->
+    <div id="splash">
+        <div class="splash-logo">FATEEN</div>
+        <div class="splash-version" id="splash-version">Loading...</div>
+        <div class="splash-bar-bg"><div class="splash-bar-fill"></div></div>
     </div>
 
-    <div class="login-box" id="loginUI">
-        <div id="step1">
-            <h2>دخول النظام</h2>
-            <input type="text" id="storeKeyInput" placeholder="كود المتجر">
-            <button id="nextBtn">التحقق من المتجر</button>
+    <!-- THEME TOGGLE -->
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span>
+        <span id="theme-label">ثيم فاتح</span>
+    </button>
+
+    <!-- LOGIN -->
+    <div class="login-wrapper" id="loginUI" style="display:none;">
+        <div class="brand-header">
+            <div class="brand-logo">FATEEN</div>
+            <div class="brand-sub">نظام إدارة المبيعات الذكي</div>
         </div>
-        <div id="step2" style="display: none;">
-            <div id="storeNameDisplay" style="color:#00f2fe; margin-bottom:15px; font-weight:bold;"></div>
-            <input type="text" id="usernameInput" placeholder="اسم المستخدم">
-            <input type="password" id="passwordInput" placeholder="كلمة المرور">
-            <button id="loginBtn">دخول</button>
+
+        <div class="login-card">
+
+            <!-- STEP 1: كود المتجر -->
+            <div class="step active" id="step1">
+                <div class="step-title">🏪 دخول النظام</div>
+
+                <div class="input-group">
+                    <label>كود المتجر</label>
+                    <input type="text" id="storeKeyInput" placeholder="أدخل كود المتجر..." onkeypress="if(event.key==='Enter') checkStore()">
+                </div>
+
+                <div class="loading" id="loading1">
+                    <div class="spinner"></div>
+                    جاري التحقق...
+                </div>
+
+                <button class="btn-main" onclick="checkStore()">التحقق من المتجر ←</button>
+                <div class="error-msg" id="err1">كود المتجر غير صحيح</div>
+            </div>
+
+            <!-- STEP 2: بيانات الدخول -->
+            <div class="step" id="step2">
+                <div class="step-title">👤 بيانات الدخول</div>
+
+                <div class="store-label" id="storeNameDisplay">اسم المتجر</div>
+
+                <div class="input-group">
+                    <label>اسم المستخدم</label>
+                    <input type="text" id="usernameInput" placeholder="اسم المستخدم" onkeypress="if(event.key==='Enter') document.getElementById('passwordInput').focus()">
+                </div>
+
+                <div class="input-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="passwordInput" placeholder="••••••••" onkeypress="if(event.key==='Enter') doLogin()">
+                </div>
+
+                <div class="loading" id="loading2">
+                    <div class="spinner"></div>
+                    جاري الدخول...
+                </div>
+
+                <button class="btn-main" onclick="doLogin()">دخول ←</button>
+                <button class="btn-back" onclick="goBack()">← تغيير كود المتجر</button>
+                <div class="error-msg" id="err2">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+            </div>
+
         </div>
+
+        <div class="footer-text">جميع الحقوق محفوظة &copy; 2026 Fateen POS</div>
     </div>
 
     <script>
@@ -44,51 +367,117 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function loadSystemVersion() {
-            const { data } = await _supabase.from('settings').select('version').eq('id', 1).single();
-            if (data) document.getElementById('sys-version-display').innerText = data.version;
+        let currentStore = null;
+
+        // ======= THEME =======
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute('data-theme') === 'light';
+            html.setAttribute('data-theme', isLight ? '' : 'light');
+            localStorage.setItem('fateen_theme', isLight ? 'dark' : 'light');
+            updateThemeBtn(!isLight);
         }
 
-        window.onload = () => {
-            loadSystemVersion();
+        function updateThemeBtn(isLight) {
+            document.getElementById('theme-icon').innerText = isLight ? '☀️' : '🌙';
+            document.getElementById('theme-label').innerText = isLight ? 'ثيم داكن' : 'ثيم فاتح';
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('fateen_theme');
+            if (saved === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                updateThemeBtn(true);
+            }
+        }
+
+        // ======= SPLASH =======
+        async function loadSplash() {
+            const { data } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            if (data) document.getElementById('splash-version').innerText = data.value;
+        }
+
+        function hideSplash() {
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
             setTimeout(() => {
-                document.getElementById('splash-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('splash-screen').style.display = 'none';
-                    document.getElementById('loginUI').style.display = 'block';
-                    setTimeout(() => document.getElementById('loginUI').style.opacity = '1', 50);
-                }, 800);
-            }, 2000);
-        };
+                splash.style.display = 'none';
+                const ui = document.getElementById('loginUI');
+                ui.style.display = 'block';
+            }, 600);
+        }
 
-        document.getElementById('nextBtn').onclick = async function() {
-            const sKey = document.getElementById('storeKeyInput').value;
-            const { data: store } = await _supabase.from('stores').select('*').eq('store_key', sKey).single();
-            if (store) {
-                window.currentStore = store;
-                document.getElementById('step1').style.display = 'none';
-                document.getElementById('step2').style.display = 'block';
-                document.getElementById('storeNameDisplay').innerText = store.store_name;
-            } else alert("الكود خطأ");
-        };
+        // ======= STEP 1 =======
+        async function checkStore() {
+            const key = document.getElementById('storeKeyInput').value.trim();
+            if (!key) return;
 
-        document.getElementById('loginBtn').onclick = async function() {
-            const u = document.getElementById('usernameInput').value;
+            document.getElementById('err1').style.display = 'none';
+            document.getElementById('loading1').classList.add('show');
+
+            const { data: store } = await _supabase.from('stores').select('*').eq('store_key', key).single();
+
+            document.getElementById('loading1').classList.remove('show');
+
+            if (!store) {
+                document.getElementById('err1').style.display = 'block';
+                return;
+            }
+
+            if (!store.is_active) {
+                document.getElementById('err1').innerText = 'هذا المتجر غير مفعل، تواصل مع الدعم';
+                document.getElementById('err1').style.display = 'block';
+                return;
+            }
+
+            currentStore = store;
+            document.getElementById('storeNameDisplay').innerText = '🏪 ' + store.store_name;
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            setTimeout(() => document.getElementById('usernameInput').focus(), 100);
+        }
+
+        // ======= STEP 2 =======
+        async function doLogin() {
+            const u = document.getElementById('usernameInput').value.trim();
             const p = document.getElementById('passwordInput').value;
-            const { data } = await _supabase.from('users').select('*').eq('username', u).eq('password', p).eq('store_key', window.currentStore.store_key);
+            if (!u || !p) return;
 
-            if (data && data.length > 0) {
-                const user = data[0];
-                sessionStorage.setItem('username', user.username);
-                sessionStorage.setItem('userRole', user.role);
-                sessionStorage.setItem('store_key', window.currentStore.store_key);
+            document.getElementById('err2').style.display = 'none';
+            document.getElementById('loading2').classList.add('show');
 
-                // تم التعديل هنا ليكون developer.html
-                if (user.role === 'developer') window.location.href = "developer.html";
-                else if (user.role === 'manager') window.location.href = "manager.html";
-                else window.location.href = "pos.html";
-            } else alert("بيانات خطأ");
-        };
+            const { data } = await _supabase.from('users').select('*')
+                .eq('username', u).eq('password', p).eq('store_key', currentStore.store_key);
+
+            document.getElementById('loading2').classList.remove('show');
+
+            if (!data || data.length === 0) {
+                document.getElementById('err2').style.display = 'block';
+                return;
+            }
+
+            const user = data[0];
+            sessionStorage.setItem('username', user.username);
+            sessionStorage.setItem('userRole', user.role);
+            sessionStorage.setItem('store_key', currentStore.store_key);
+
+            if (user.role === 'developer') location.href = 'developer.html';
+            else if (user.role === 'manager') location.href = 'manager.html';
+            else location.href = 'pos.html';
+        }
+
+        function goBack() {
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('err2').style.display = 'none';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+        }
+
+        // ======= INIT =======
+        loadTheme();
+        loadSplash();
+        setTimeout(hideSplash, 2200);
     </script>
 </body>
 </html>
