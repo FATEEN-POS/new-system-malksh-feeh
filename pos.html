@@ -221,14 +221,10 @@
     </div>
     <span class="version-chip" id="version-chip">V0.5</span>
 
-    <!-- بحث + باركود -->
+    <!-- بحث موحد: باركود أو اسم -->
     <div class="header-search">
         <span style="color:var(--text-muted);">🔍</span>
-        <input type="text" id="p-search" placeholder="ابحث باسم المنتج..." oninput="filterProducts()">
-    </div>
-    <div class="header-search" style="max-width:200px;">
-        <span style="color:var(--text-muted);">📷</span>
-        <input type="text" id="barcode-input" placeholder="باركود..." onkeydown="handleBarcode(event)" autocomplete="off">
+        <input type="text" id="p-search" placeholder="ابحث بالاسم أو الباركود..." oninput="handleSearchInput()" autocomplete="off">
     </div>
 
     <div class="target-box">
@@ -278,7 +274,6 @@
             <div class="pay-methods">
                 <div id="m-cash" class="method-btn active" onclick="setPayment('كاش')">💵 كاش</div>
                 <div id="m-visa" class="method-btn" onclick="setPayment('فيزا')">💳 فيزا</div>
-                <div id="m-network" class="method-btn" onclick="setPayment('شبكة')">🏧 شبكة</div>
             </div>
             <div class="print-check-row" onclick="document.getElementById('print-check').click()">
                 <input type="checkbox" id="print-check" checked onclick="event.stopPropagation()">
@@ -436,16 +431,7 @@
             </div>`).join('');
     }
 
-    // ===== BARCODE =====
-    function handleBarcode(e){
-        if(e.key!=='Enter') return;
-        const code=document.getElementById('barcode-input').value.trim();
-        if(!code) return;
-        const p=allProducts.find(x=>x.barcode===code);
-        if(p){addToCart(p);document.getElementById('barcode-input').value='';showToast(`تم إضافة: ${p.product_name}`,'success');}
-        else showToast('باركود غير موجود','error');
-        document.getElementById('barcode-input').value='';
-    }
+    // filterProducts يستخدم p-search
 
     // ===== CART =====
     function addToCart(p){
@@ -495,9 +481,28 @@
 
     function setPayment(m){
         paymentMethod=m;
-        ['m-cash','m-visa','m-network'].forEach(id=>document.getElementById(id).classList.remove('active'));
-        const map={'كاش':'m-cash','فيزا':'m-visa','شبكة':'m-network'};
+        ['m-cash','m-visa'].forEach(id=>document.getElementById(id).classList.remove('active'));
+        const map={'كاش':'m-cash','فيزا':'m-visa'};
         if(map[m]) document.getElementById(map[m]).classList.add('active');
+    }
+
+    // ===== UNIFIED SEARCH =====
+    let barcodeTimer=null;
+    function handleSearchInput(){
+        const val=document.getElementById('p-search').value.trim();
+        clearTimeout(barcodeTimer);
+        // لو مطابق باركود موجود → يتضاف فورًا بعد 400ms بدون كتابة
+        barcodeTimer=setTimeout(()=>{
+            const exact=allProducts.find(x=>x.barcode===val);
+            if(exact&&val.length>=6){
+                addToCart(exact);
+                document.getElementById('p-search').value='';
+                renderProducts();
+                showToast(`تم إضافة: ${exact.product_name}`,'success');
+                return;
+            }
+            filterProducts();
+        },400);
     }
 
     // ===== CHECKOUT =====
@@ -529,40 +534,52 @@
     // ===== PRINT RECEIPT =====
     function printReceipt(saleData,items,total){
         const now=new Date();
-        const receiptHTML=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>
-            *{box-sizing:border-box;font-family:'Cairo',sans-serif;}
-            body{width:80mm;margin:0;padding:10px;color:#000;background:#fff;font-size:12px;}
+        const receiptHTML=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>
+            *{box-sizing:border-box;margin:0;padding:0;}
+            body{width:80mm;margin:0 auto;padding:12px;color:#000;background:#fff;font-family:'Cairo',sans-serif;font-size:14px;}
             .center{text-align:center;}
-            .bold{font-weight:800;}
-            .divider{border-top:1px dashed #000;margin:8px 0;}
-            .row{display:flex;justify-content:space-between;margin:2px 0;}
-            table{width:100%;border-collapse:collapse;margin:8px 0;}
-            th,td{border:1px solid #000;padding:4px 6px;font-size:11px;text-align:center;}
-            th{background:#eee;}
-            .total-box{display:flex;border:1px solid #000;margin-top:8px;}
-            .total-label{flex:1;padding:6px;background:#eee;text-align:center;border-left:1px solid #000;font-weight:800;}
-            .total-value{flex:1;padding:6px;text-align:center;font-weight:900;font-size:15px;}
-            @media print{@page{margin:0;size:80mm auto;}}
+            .store-name{font-size:22px;font-weight:900;text-align:center;margin-bottom:2px;}
+            .sub-title{font-size:13px;text-align:center;color:#444;margin-bottom:6px;}
+            .divider{border:none;border-top:2px dashed #000;margin:8px 0;}
+            .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px;}
+            .info-item{font-size:13px;}
+            .info-item span{color:#555;}
+            .info-item b{font-weight:800;}
+            table{width:100%;border-collapse:collapse;margin:6px 0;}
+            th{background:#111;color:#fff;padding:7px 5px;font-size:13px;text-align:center;}
+            td{padding:7px 5px;font-size:13px;text-align:center;border-bottom:1px solid #ddd;}
+            td.name{text-align:right;font-weight:700;}
+            .total-box{display:flex;border:2px solid #000;border-radius:6px;overflow:hidden;margin-top:10px;}
+            .total-label{flex:1;background:#111;color:#fff;padding:10px;text-align:center;font-size:15px;font-weight:800;}
+            .total-value{flex:1;padding:10px;text-align:center;font-size:20px;font-weight:900;}
+            .footer{text-align:center;margin-top:14px;font-size:13px;color:#555;padding-top:8px;border-top:1px dashed #000;}
+            @media print{@page{margin:0;size:80mm auto;}body{padding:8px;}}
         </style></head><body>
-            <div class="center bold" style="font-size:16px;">${storeName}</div>
-            <div class="center" style="font-size:11px;color:#555;">فاتورة مبيعات</div>
-            <div class="divider"></div>
-            <div class="row"><span>التاريخ: <b>${now.toLocaleDateString('ar-EG')}</b></span><span>رقم: <b>#${String(saleData.id).slice(-6)}</b></span></div>
-            <div class="row"><span>الوقت: <b>${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</b></span><span>البائع: <b>${employeeName}</b></span></div>
-            <div class="row"><span>الدفع: <b>${paymentMethod}</b></span></div>
-            <div class="divider"></div>
+            <div class="store-name">${storeName}</div>
+            <div class="sub-title">فاتورة مبيعات</div>
+            <hr class="divider">
+            <div class="info-grid">
+                <div class="info-item"><span>التاريخ: </span><b>${now.toLocaleDateString('ar-EG')}</b></div>
+                <div class="info-item"><span>رقم: </span><b>#${String(saleData.id).slice(-6)}</b></div>
+                <div class="info-item"><span>الوقت: </span><b>${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</b></div>
+                <div class="info-item"><span>البائع: </span><b>${employeeName}</b></div>
+                <div class="info-item" style="grid-column:1/-1"><span>الدفع: </span><b>${paymentMethod}</b></div>
+            </div>
+            <hr class="divider">
             <table>
                 <thead><tr><th>الصنف</th><th>ك</th><th>سعر</th><th>إجمالي</th></tr></thead>
-                <tbody>${items.map(i=>`<tr><td style="text-align:right;">${i.product_name}</td><td>${i.qty}</td><td>${i.price}</td><td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody>
+                <tbody>${items.map(i=>`<tr><td class="name">${i.product_name}</td><td>${i.qty}</td><td>${i.price}</td><td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody>
             </table>
             <div class="total-box">
                 <div class="total-label">صافي المبلغ</div>
                 <div class="total-value">${total.toFixed(0)} ج.م</div>
             </div>
-            <div class="center" style="margin-top:14px;font-size:10px;color:#555;">شكراً لزيارتكم 🌟</div>
-            <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1000);}<\/script>
+            <div class="footer">شكراً لزيارتكم 🌟</div>
+            <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
         </body></html>`;
-        const w=window.open('','_blank','width=350,height=600');
+        const w=window.open('','_blank','width=380,height=650');
         if(w){w.document.write(receiptHTML);w.document.close();}
     }
 
@@ -685,12 +702,85 @@
     }
 
     function printShiftReport(){
-        const content=document.getElementById('shift-report-content').innerText;
-        const w=window.open('','_blank','width=400,height=500');
-        if(w){
-            w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>body{font-family:'Cairo',sans-serif;padding:20px;font-size:13px;}h2{text-align:center;}</style></head><body><h2>${storeName} - تقرير الوردية</h2><pre style="white-space:pre-wrap;">${content}</pre><script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1000);}<\/script></body></html>`);
-            w.document.close();
-        }
+        const now=new Date();
+        const diffMs=now-shiftStart;
+        const diffH=Math.floor(diffMs/3600000);
+        const diffM=Math.floor((diffMs%3600000)/60000);
+        const durationStr=diffH>0?`${diffH} ساعة و ${diffM} دقيقة`:`${diffM} دقيقة`;
+        // اجمع البيانات من الـ DOM
+        const contentEl=document.getElementById('shift-report-content');
+        const shiftHTML=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>
+            *{box-sizing:border-box;margin:0;padding:0;}
+            body{width:90mm;margin:0 auto;padding:14px;color:#000;background:#fff;font-family:'Cairo',sans-serif;}
+            .store{font-size:20px;font-weight:900;text-align:center;margin-bottom:2px;}
+            .title{font-size:14px;text-align:center;color:#444;margin-bottom:8px;}
+            .divider{border:none;border-top:2px dashed #000;margin:10px 0;}
+            .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;}
+            .row:last-child{border-bottom:none;}
+            .row-label{font-size:14px;color:#555;font-weight:700;}
+            .row-value{font-size:17px;font-weight:900;}
+            .highlight{font-size:20px;}
+            .footer{text-align:center;margin-top:12px;font-size:12px;color:#888;}
+            @media print{@page{margin:0;size:90mm auto;}body{padding:10px;}}
+        </style></head><body>
+            <div class="store">${storeName}</div>
+            <div class="title">تقرير الوردية</div>
+            <hr class="divider">
+            <div class="row"><span class="row-label">الموظف</span><span class="row-value">${employeeName}</span></div>
+            <div class="row"><span class="row-label">⏱️ مدة الوردية</span><span class="row-value" style="color:#0066cc;">${durationStr}</span></div>
+            <div class="row"><span class="row-label">🕐 بداية</span><span class="row-value">${shiftStart.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</span></div>
+            <div class="row"><span class="row-label">🕑 نهاية</span><span class="row-value">${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</span></div>
+            <hr class="divider">
+            ${contentEl.innerHTML.replace(/<[^>]*>/g,' ').split('\n').filter(l=>l.trim()).map(l=>'').join('')}
+            <div id="rows-placeholder"></div>
+            <div class="footer">Fateen OS — ${now.toLocaleDateString('ar-EG')}</div>
+            <script>
+                // استخرج القيم من الـ sessionStorage المحفوظة
+                document.getElementById('rows-placeholder').innerHTML = \`
+                    ${contentEl ? contentEl.querySelectorAll ? '' : ''}\`;
+                window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}
+            <\/script>
+        </body></html>`;
+
+        // بناء محتوى التقرير من عناصر الـ DOM مباشرة
+        const stats=contentEl.querySelectorAll('.shift-stat');
+        let rowsHTML='';
+        stats.forEach(s=>{
+            const label=s.querySelector('.shift-stat-label')?.innerText||'';
+            const value=s.querySelector('.shift-stat-value')?.innerText||'';
+            const color=s.querySelector('.shift-stat-value')?.style?.color||'#000';
+            rowsHTML+=`<div class="row"><span class="row-label">${label}</span><span class="row-value highlight" style="color:${color||'#000'};">${value}</span></div>`;
+        });
+
+        const finalHTML=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>
+            *{box-sizing:border-box;margin:0;padding:0;}
+            body{width:90mm;margin:0 auto;padding:14px;color:#000;background:#fff;font-family:'Cairo',sans-serif;}
+            .store{font-size:20px;font-weight:900;text-align:center;margin-bottom:2px;}
+            .title{font-size:14px;text-align:center;color:#444;margin-bottom:8px;}
+            .divider{border:none;border-top:2px dashed #000;margin:10px 0;}
+            .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;}
+            .row:last-child{border-bottom:none;}
+            .row-label{font-size:14px;color:#444;font-weight:700;}
+            .row-value{font-size:18px;font-weight:900;}
+            .emp-row{text-align:center;font-size:15px;font-weight:800;margin-bottom:6px;padding:8px;background:#f5f5f5;border-radius:6px;}
+            .footer{text-align:center;margin-top:14px;font-size:12px;color:#888;border-top:1px dashed #ccc;padding-top:8px;}
+            @media print{@page{margin:0;size:90mm auto;}body{padding:10px;}}
+        </style></head><body>
+            <div class="store">${storeName}</div>
+            <div class="title">تقرير إنهاء الوردية</div>
+            <hr class="divider">
+            <div class="emp-row">👤 ${employeeName}</div>
+            ${rowsHTML}
+            <div class="footer">Fateen OS — ${now.toLocaleDateString('ar-EG')} ${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+            <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
+        </body></html>`;
+
+        const w=window.open('','_blank','width=400,height=600');
+        if(w){w.document.write(finalHTML);w.document.close();}
     }
 
     function endShift(){
