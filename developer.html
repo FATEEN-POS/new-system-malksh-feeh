@@ -3,134 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المطور</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>لوحة المطور - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --bg: #050505; --card: #111111; --accent: #00f2fe; --red: #ff4d4d; --white: #ffffff; --gray: #222; }
-        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: 0.3s; }
-        body { margin: 0; background: var(--bg); color: var(--white); padding: 20px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: var(--card); border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 25px; }
-        
-        .v-update-box { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 10px; border: 1px solid #333; }
-        .v-input-field { background: #000; border: 1px solid var(--gray); color: var(--accent); padding: 3px 8px; width: 60px; border-radius: 5px; outline: none; font-size: 12px; text-align: center; }
-        .btn-v-save { background: var(--accent); color: #000; border: none; padding: 4px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px; }
+        /* ======= THEMES ======= */
+        :root {
+            --bg: #050505;
+            --card: #111111;
+            --card2: #1a1a1a;
+            --accent: #00f2fe;
+            --border: #2a2a2a;
+            --red: #ff4d4d;
+            --green: #00ff88;
+            --orange: #ffa500;
+            --text: #ffffff;
+            --text-muted: #666;
+            --input-bg: #000;
+            --btn-icon-bg: #1a1a1a;
+            --btn-icon-color: #fff;
+            --footer-bg: #111;
+            --search-bg: #000;
+        }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-item { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--gray); text-align: center; }
-        .stat-item h4 { margin: 0; color: #888; font-size: 14px; }
-        .stat-item p { margin: 10px 0 0; font-size: 24px; font-weight: 700; color: var(--accent); }
+        [data-theme="light"] {
+            --bg: #f0ede5;
+            --card: #ffffff;
+            --card2: #e8e4db;
+            --accent: #004643;
+            --border: #c8c4bb;
+            --red: #c0392b;
+            --green: #004643;
+            --orange: #e67e22;
+            --text: #1a1a1a;
+            --text-muted: #555;
+            --input-bg: #e8e4db;
+            --btn-icon-bg: #004643;
+            --btn-icon-color: #f0ede5;
+            --footer-bg: #004643;
+            --search-bg: #e8e4db;
+        }
 
-        .search-container { margin-bottom: 25px; display: flex; gap: 15px; align-items: center; }
-        .search-input { flex: 1; padding: 12px 20px; background: var(--card); border: 1px solid var(--gray); border-radius: 12px; color: #fff; outline: none; }
-        
-        .btn-add-store { padding: 12px 30px; background: var(--white); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-        
-        .stores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .store-card { background: var(--card); border: 1px solid var(--gray); border-radius: 22px; padding: 20px; position: relative; overflow: hidden; }
-        .days-left { position: absolute; top: 15px; left: 15px; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: bold; }
+        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+        body { background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
 
-        .version-badge { background: rgba(0, 242, 254, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(0, 242, 254, 0.3); font-weight: bold; }
+        /* ======= MOBILE ======= */
+        .mobile-layout { display: none; }
+        @media (max-width: 768px) {
+            .desktop-layout { display: none; }
+            .mobile-layout { display: block; padding: 15px; }
+        }
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(10px); }
-        .modal-content { background: #111; width: 90%; max-width: 550px; padding: 30px; border-radius: 25px; border: 1px solid var(--gray); max-height: 90vh; overflow-y: auto; }
-        
-        input, select, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid var(--gray); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none; }
-        .btn-action { width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; margin-top: 10px; }
+        /* ======= DESKTOP ======= */
+        .desktop-layout { display: block; padding: 20px; }
+        @media (max-width: 768px) { .desktop-layout { display: none; } }
+
+        /* ======= SHARED ======= */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-title { font-size: 20px; font-weight: 800; color: var(--text); margin: 0; }
+        .page-title span { color: var(--accent); }
+
+        .header-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        .version-badge {
+            background: var(--btn-icon-bg);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid var(--accent);
+            font-weight: 800;
+        }
+
+        .theme-toggle-btn {
+            background: var(--btn-icon-bg);
+            border: 1px solid var(--border);
+            color: var(--btn-icon-color);
+            padding: 7px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .theme-toggle-btn:hover { opacity: 0.85; }
+
+        /* version update inline */
+        .v-update-box {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--card2);
+            padding: 4px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .v-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--accent); padding: 3px 8px; width: 65px; border-radius: 6px; outline: none; font-size: 12px; text-align: center; }
+        .v-save-btn { background: var(--accent); color: #000; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px; white-space: nowrap; }
+
+        /* stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 18px; }
+        .stats-grid-desktop { grid-template-columns: repeat(4, 1fr); }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-card h4 { margin: 0; font-size: 12px; color: var(--text-muted); }
+        .stat-card p { margin: 8px 0 0; font-size: 24px; font-weight: 800; color: var(--accent); }
+
+        /* search bar */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--search-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 14px;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .search-bar input { background: transparent; border: none; color: var(--text); outline: none; font-size: 14px; width: 100%; }
+        .search-bar span { color: var(--text-muted); }
+
+        /* stores grid */
+        .stores-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .stores-grid-desktop { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+        .store-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            position: relative;
+        }
+        .store-card:hover { border-color: var(--accent); }
+
+        .days-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-weight: 800;
+            background: var(--card2);
+            border: 1px solid var(--border);
+        }
+
+        .store-card h3 { margin: 0 0 4px; font-size: 16px; }
+        .store-card .store-price { color: var(--accent); font-weight: 800; margin: 0 0 14px; font-size: 15px; }
+
+        .card-actions { display: flex; gap: 8px; }
+        .btn-card { flex: 1; padding: 9px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; font-size: 13px; font-family: 'Cairo', sans-serif; }
+        .btn-manage { background: var(--btn-icon-bg); color: var(--btn-icon-color); border: 1px solid var(--border); }
+        .btn-manage:hover { border-color: var(--accent); }
+        .btn-reports { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+        .btn-reports:hover { background: var(--accent); color: #000; }
+
+        /* add store btn */
+        .btn-add-store {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 800; font-family: 'Cairo', sans-serif; font-size: 13px; }
+        .btn-red { background: var(--red); color: #fff; }
+        .btn-orange { background: var(--orange); color: #000; }
+
+        /* footer */
+        .footer-bar {
+            background: var(--footer-bg);
+            border-top: 1px solid var(--border);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0 0 16px 16px;
+            font-size: 12px;
+            color: var(--btn-icon-color);
+            margin-top: 5px;
+        }
+        .footer-bar .v { font-weight: 800; color: var(--accent); }
+
+        /* ======= MODALS ======= */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-box {
+            background: var(--card);
+            border: 1px solid var(--accent);
+            border-radius: 22px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-box h3 { margin-top: 0; color: var(--accent); }
+        .modal-box input, .modal-box select, .modal-box textarea {
+            width: 100%; padding: 11px; background: var(--input-bg); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); margin-bottom: 12px; outline: none; font-family: 'Cairo', sans-serif; font-size: 14px;
+        }
+        .modal-box input:focus, .modal-box select:focus { border-color: var(--accent); }
+
+        .btn-full { width: 100%; padding: 13px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; font-size: 15px; font-family: 'Cairo', sans-serif; margin-top: 5px; }
         .btn-save { background: var(--accent); color: #000; }
-        .btn-cancel { background: transparent; color: #888; border: 1px solid var(--gray); }
+        .btn-cancel-modal { background: var(--card2); color: var(--text-muted); border: 1px solid var(--border) !important; }
 
-        .emp-list-item { background: #000; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+        .emp-row { background: var(--card2); padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+        .btn-del-small { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; }
+
+        .feedback-display { background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; color: var(--accent); font-size: 13px; margin-bottom: 15px; min-height: 50px; }
+
+        .toggle-active { background: var(--green); color: #000; }
+        .toggle-inactive { background: var(--red); color: #fff; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <h1 style="margin:0; font-size: 22px;">لوحة تحكم فطين <span style="color:var(--accent)">PRO</span></h1>
-            
-            <div class="v-update-box">
-                <span id="sys-v" class="version-badge">تحميل...</span>
-                <input type="text" id="sys-v-input" class="v-input-field" placeholder="الإصدار">
-                <button class="btn-v-save" onclick="updateSystemVersion()">تحديث</button>
+    <!-- ============ MOBILE ============ -->
+    <div class="mobile-layout">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Fateen <span>PRO</span></h2>
+                <div class="v-update-box" style="margin-top:8px;">
+                    <span class="version-badge" id="m-sys-v">...</span>
+                    <input type="text" class="v-input" id="m-v-input" placeholder="v">
+                    <button class="v-save-btn" onclick="updateVersion()">تحديث</button>
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                <button class="theme-toggle-btn" onclick="toggleTheme()">
+                    <span id="m-theme-icon">🌙</span>
+                    <span id="m-theme-label">فاتح</span>
+                </button>
+                <button class="btn btn-red" onclick="logout()">خروج</button>
             </div>
         </div>
-        <div style="display:flex; gap:10px;">
-            <button onclick="exportToExcel()" style="background:var(--gray); color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">تصدير Excel</button>
-            <button onclick="logout()" style="background:none; border: 1px solid var(--red); color: var(--red); padding: 5px 15px; border-radius: 10px; cursor: pointer;">خروج</button>
+
+        <div class="stats-grid">
+            <div class="stat-card"><h4>الأرباح المتوقعة</h4><p id="m-revenue">0</p></div>
+            <div class="stat-card"><h4>المتاجر</h4><p id="m-stores">0</p></div>
+            <div class="stat-card"><h4>الموظفين</h4><p id="m-emps">0</p></div>
+            <div class="stat-card"><h4>المديرين</h4><p id="m-mgrs">0</p></div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <div class="search-bar" style="flex:1; margin:0;">
+                <span>🔍</span>
+                <input type="text" id="m-search" placeholder="بحث عن متجر..." oninput="filterStores()">
+            </div>
+            <button class="btn-add-store" onclick="openModal('addModal')">+ جديد</button>
+        </div>
+
+        <div class="stores-grid" id="m-stores-grid"></div>
+
+        <div class="footer-bar" style="border-radius:12px; margin-top:15px;">
+            <span>Fateen OS</span>
+            <span class="v" id="m-footer-v">...</span>
         </div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-item">
-            <h4>إجمالي الأرباح المتوقعة</h4>
-            <p id="stat-revenue">0</p>
+    <!-- ============ DESKTOP ============ -->
+    <div class="desktop-layout">
+        <div class="page-header">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h2 class="page-title">لوحة تحكم Fateen <span>PRO</span></h2>
+                <span class="version-badge" id="d-sys-v">...</span>
+                <div class="v-update-box">
+                    <input type="text" class="v-input" id="d-v-input" placeholder="إصدار جديد">
+                    <button class="v-save-btn" onclick="updateVersion()">تحديث الإصدار</button>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn btn-orange" onclick="exportToExcel()">📊 Excel</button>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">
+                    <span id="d-theme-icon">🌙</span>
+                    <span id="d-theme-label">ثيم فاتح</span>
+                </button>
+                <button class="btn btn-red" onclick="logout()">خروج</button>
+            </div>
         </div>
-        <div class="stat-item">
-            <h4>المتاجر المشتركة</h4>
-            <p id="stat-stores">0</p>
+
+        <div class="stats-grid stats-grid-desktop" style="margin-bottom:20px;">
+            <div class="stat-card" style="border-bottom:3px solid var(--accent);"><h4>إجمالي الأرباح المتوقعة</h4><p id="d-revenue">0 ج.م</p></div>
+            <div class="stat-card" style="border-bottom:3px solid var(--green);"><h4>المتاجر المشتركة</h4><p id="d-stores">0</p></div>
+            <div class="stat-card" style="border-bottom:3px solid var(--orange);"><h4>إجمالي الموظفين</h4><p id="d-emps">0</p></div>
+            <div class="stat-card" style="border-bottom:3px solid var(--red);"><h4>إجمالي المديرين</h4><p id="d-mgrs">0</p></div>
         </div>
-        <div class="stat-item">
-            <h4>إجمالي الموظفين</h4>
-            <p id="stat-emps">0</p>
+
+        <div style="display:flex; gap:12px; margin-bottom:18px; align-items:center;">
+            <div class="search-bar" style="flex:1; margin:0;">
+                <span>🔍</span>
+                <input type="text" id="d-search" placeholder="بحث عن متجر بالاسم أو الكود..." oninput="filterStores()">
+            </div>
+            <button class="btn-add-store" onclick="openModal('addModal')">+ إضافة متجر جديد</button>
         </div>
-        <div class="stat-item">
-            <h4>إجمالي المديرين</h4>
-            <p id="stat-mgrs">0</p>
+
+        <div class="stores-grid stores-grid-desktop" id="d-stores-grid"></div>
+
+        <div class="footer-bar">
+            <span>Fateen OS</span>
+            <span class="v" id="d-footer-v">...</span>
         </div>
     </div>
 
-    <div class="search-container">
-        <input type="text" id="storeSearch" class="search-input" placeholder="بحث عن متجر بالاسم أو الكود..." oninput="filterStores()">
-        <button class="btn-add-store" onclick="openModal('addStoreModal')">+ إضافة متجر جديد</button>
-    </div>
-
-    <div class="stores-grid" id="stores-display"></div>
-
-    <div id="addStoreModal" class="modal">
-        <div class="modal-content">
-            <h2>إضافة متجر جديد</h2>
+    <!-- ======= MODAL: إضافة متجر ======= -->
+    <div id="addModal" class="modal">
+        <div class="modal-box">
+            <h3>➕ إضافة متجر جديد</h3>
             <input type="text" id="st-name" placeholder="اسم المتجر">
             <input type="text" id="st-phone" placeholder="رقم الهاتف">
-            <input type="number" id="st-price" placeholder="سعر الاشتراك">
+            <input type="number" id="st-price" placeholder="سعر الاشتراك (ج.م)">
             <select id="st-duration">
-                <option value="1">فترة تجريبية لمدة شهر</option>
-                <option value="3">ربع سنوي (3 شهور)</option>
-                <option value="6">نص سنوي (6 شهور)</option>
-                <option value="12">سنة كاملة (12 شهر)</option>
+                <option value="1">تجريبي - شهر</option>
+                <option value="3">ربع سنوي - 3 شهور</option>
+                <option value="6">نصف سنوي - 6 شهور</option>
+                <option value="12">سنوي - 12 شهر</option>
             </select>
-            <textarea id="st-notes" placeholder="ملاحظات المطور"></textarea>
-            <button class="btn-action btn-save" onclick="saveNewStore()">حفظ المتجر</button>
-            <button class="btn-action btn-cancel" onclick="closeModal('addStoreModal')">إلغاء</button>
+            <textarea id="st-notes" rows="3" placeholder="ملاحظات المطور..."></textarea>
+            <button class="btn-full btn-save" onclick="saveNewStore()">✅ حفظ المتجر</button>
+            <button class="btn-full btn-cancel-modal" onclick="closeModal('addModal')">إلغاء</button>
         </div>
     </div>
 
-    <div id="storeDetailModal" class="modal">
-        <div class="modal-content">
-            <h2 id="view-st-name"></h2>
-            <div id="store-meta" style="margin-bottom: 20px; color: #666;"></div>
-            <div id="toggle-container"></div>
-            <h4>بلاغات وفيدباك المدير:</h4>
-            <div id="mgr-feedback-display" style="background:#000; padding:15px; border-radius:15px; border:1px solid var(--gray); color:var(--accent); margin-bottom:15px;">لا يوجد فيدباك حالياً</div>
-            <h4>ملاحظات المطور:</h4>
-            <textarea id="edit-st-notes"></textarea>
-            <button onclick="updateNotes()" class="btn-action btn-save" style="width:auto; padding:5px 15px; font-size:12px;">تحديث الملاحظات</button>
-            <h4>فريق العمل الحالي:</h4>
-            <div id="employee-list"></div>
-            <div style="background:#000; padding:15px; border-radius:15px; margin-top:15px; border:1px solid #222;">
-                <h4>إضافة عضو سريع:</h4>
-                <input type="text" id="q-u-name" placeholder="اسم المستخدم">
-                <input type="password" id="q-u-pass" placeholder="الباسورد">
-                <select id="q-u-role">
+    <!-- ======= MODAL: تفاصيل متجر ======= -->
+    <div id="detailModal" class="modal">
+        <div class="modal-box">
+            <h3 id="det-name">اسم المتجر</h3>
+            <p id="det-meta" style="color:var(--text-muted); font-size:13px; margin:0 0 15px;"></p>
+
+            <h4 style="color:var(--text-muted); font-size:13px; margin:0 0 8px;">فيدباك المدير:</h4>
+            <div class="feedback-display" id="det-feedback">لا يوجد فيدباك</div>
+
+            <div id="det-toggle-wrap" style="margin-bottom:15px;"></div>
+
+            <h4 style="color:var(--text-muted); font-size:13px; margin:0 0 6px;">ملاحظات المطور:</h4>
+            <textarea id="det-notes" rows="3" placeholder="ملاحظات..."></textarea>
+            <button class="btn-full btn-save" style="padding:8px; font-size:13px; margin-bottom:15px;" onclick="updateNotes()">💾 حفظ الملاحظات</button>
+
+            <h4 style="color:var(--text-muted); font-size:13px; margin:0 0 8px;">فريق العمل:</h4>
+            <div id="det-emps"></div>
+
+            <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:15px; margin-top:15px;">
+                <h4 style="margin:0 0 10px; font-size:13px;">إضافة عضو سريع:</h4>
+                <input type="text" id="q-name" placeholder="اسم المستخدم">
+                <input type="password" id="q-pass" placeholder="كلمة المرور">
+                <select id="q-role">
                     <option value="employee">موظف كاشير</option>
                     <option value="manager">مدير فرع</option>
                 </select>
-                <button class="btn-action btn-save" onclick="quickAddUser()">تأكيد الإضافة</button>
+                <button class="btn-full btn-save" onclick="quickAddUser()">تأكيد الإضافة</button>
             </div>
-            <button class="btn-action btn-cancel" onclick="deleteCurrentStore()" style="color:var(--red); border-color:var(--red); margin-top:30px;">حذف المتجر نهائياً</button>
-            <button class="btn-action btn-cancel" onclick="closeModal('storeDetailModal')">إغلاق</button>
+
+            <button class="btn-full" style="background:transparent; color:var(--red); border:1px solid var(--red); border-radius:10px; padding:11px; margin-top:20px; cursor:pointer; font-weight:800;" onclick="deleteCurrentStore()">🗑️ حذف المتجر نهائياً</button>
+            <button class="btn-full btn-cancel-modal" onclick="closeModal('detailModal')">إغلاق</button>
         </div>
     </div>
 
@@ -142,138 +394,185 @@
         let allStores = [];
         let activeStoreKey = null;
 
-        async function updateSystemVersion() {
-            const newV = document.getElementById('sys-v-input').value;
-            if(!newV) return alert("يرجى إدخال رقم الإصدار أولاً");
-            const { error } = await _supabase.from('system_settings').update({ value: newV }).eq('key', 'sys_version');
-            if(!error) { alert("تم تحديث إصدار النظام بنجاح"); loadData(); } else { alert("خطأ: " + error.message); }
+        // ======= THEME =======
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute('data-theme') === 'light';
+            html.setAttribute('data-theme', isLight ? '' : 'light');
+            localStorage.setItem('fateen_theme', isLight ? 'dark' : 'light');
+            updateThemeBtn(!isLight);
         }
 
+        function updateThemeBtn(isLight) {
+            const icon = isLight ? '☀️' : '🌙';
+            const labelFull = isLight ? 'ثيم داكن' : 'ثيم فاتح';
+            const labelShort = isLight ? 'داكن' : 'فاتح';
+            ['m-theme-icon','d-theme-icon'].forEach(id => { const el=document.getElementById(id); if(el) el.innerText=icon; });
+            const ml = document.getElementById('m-theme-label'); if(ml) ml.innerText=labelShort;
+            const dl = document.getElementById('d-theme-label'); if(dl) dl.innerText=labelFull;
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('fateen_theme');
+            if(saved === 'light') { document.documentElement.setAttribute('data-theme','light'); updateThemeBtn(true); }
+        }
+
+        // ======= LOAD DATA =======
         async function loadData() {
-            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+            const { data: vData } = await _supabase.from('system_settings').select('value').eq('key','sys_version').single();
             if(vData) {
-                document.getElementById('sys-v').innerText = vData.value;
-                if(!document.getElementById('sys-v-input').value) document.getElementById('sys-v-input').value = vData.value;
+                ['m-sys-v','d-sys-v','m-footer-v','d-footer-v'].forEach(id => { const el=document.getElementById(id); if(el) el.innerText=vData.value; });
+                ['m-v-input','d-v-input'].forEach(id => { const el=document.getElementById(id); if(el && !el.value) el.value=vData.value; });
             }
+
             const { data: stores } = await _supabase.from('stores').select('*');
             const { data: users } = await _supabase.from('users').select('*');
             allStores = stores || [];
-            displayStores(allStores);
-            let totalRevenue = 0;
-            stores?.forEach(st => totalRevenue += Number(st.subscription_price || 0));
-            document.getElementById('stat-revenue').innerText = totalRevenue + ' ج.م';
-            document.getElementById('stat-stores').innerText = stores?.length || 0;
-            document.getElementById('stat-emps').innerText = users?.filter(u => u.role === 'employee').length || 0;
-            document.getElementById('stat-mgrs').innerText = users?.filter(u => u.role === 'manager').length || 0;
+
+            let totalRev = 0;
+            stores?.forEach(st => totalRev += Number(st.subscription_price || 0));
+            const empsCount = users?.filter(u=>u.role==='employee').length || 0;
+            const mgrsCount = users?.filter(u=>u.role==='manager').length || 0;
+
+            setStats('revenue', totalRev.toLocaleString() + ' ج.م', totalRev.toLocaleString());
+            setStats('stores', stores?.length || 0);
+            setStats('emps', empsCount);
+            setStats('mgrs', mgrsCount);
+
+            renderStores(allStores);
         }
 
-        function displayStores(storesList) {
-            const grid = document.getElementById('stores-display');
-            grid.innerHTML = '';
-            storesList.forEach(st => {
-                const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
-                let daysText = diffDays > 0 ? `باقي ${diffDays} يوم` : 'منتهي';
-                let daysColor = diffDays > 5 ? 'var(--accent)' : 'var(--red)';
-                const storeData = JSON.stringify(st);
-
-                grid.innerHTML += `
-                    <div class="store-card">
-                        <div class="days-left" style="color:${daysColor}; background:rgba(0,0,0,0.5)">${daysText}</div>
-                        <h3 style="margin-bottom:5px;">${st.store_name}</h3>
-                        <p style="color:var(--accent); font-weight:bold; margin-top:0;">${st.subscription_price} ج.م</p>
-                        
-                        <div style="display:flex; gap:8px; margin-top:15px;">
-                            <button onclick='showStoreDetails(${storeData})' style="flex:1; background:var(--gray); color:#fff; border:none; padding:8px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:bold;">⚙️ الإدارة</button>
-                            <button onclick='openStoreReports("${st.store_key}")' style="flex:1; background:rgba(0,242,254,0.1); color:var(--accent); border:1px solid var(--accent); padding:8px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:bold;">📊 التقارير</button>
-                        </div>
-                    </div>`;
-            });
+        function setStats(key, dVal, mVal) {
+            const d = document.getElementById('d-'+key); if(d) d.innerText = dVal;
+            const m = document.getElementById('m-'+key); if(m) m.innerText = mVal || dVal;
         }
 
-        function openStoreReports(key) {
-            sessionStorage.setItem('store_key', key);
-            window.open('reports.html', '_blank');
+        function renderStores(list) {
+            const html = list.map(st => {
+                const diff = Math.ceil((new Date(st.expiry_date) - new Date()) / 86400000);
+                const daysText = diff > 0 ? `باقي ${diff} يوم` : 'منتهي';
+                const daysColor = diff > 5 ? 'var(--green)' : 'var(--red)';
+                return `
+                <div class="store-card">
+                    <div class="days-badge" style="color:${daysColor}">${daysText}</div>
+                    <h3>${st.store_name}</h3>
+                    <p class="store-price">${st.subscription_price || 0} ج.م</p>
+                    <div class="card-actions">
+                        <button class="btn-card btn-manage" onclick='showDetail(${JSON.stringify(st)})'>⚙️ الإدارة</button>
+                        <button class="btn-card btn-reports" onclick='openReports("${st.store_key}")'>📊 التقارير</button>
+                    </div>
+                </div>`;
+            }).join('') || `<div style="color:var(--text-muted); text-align:center; padding:30px;">لا توجد متاجر</div>`;
+
+            const mg = document.getElementById('m-stores-grid'); if(mg) mg.innerHTML = html;
+            const dg = document.getElementById('d-stores-grid'); if(dg) dg.innerHTML = html;
         }
 
         function filterStores() {
-            const term = document.getElementById('storeSearch').value.toLowerCase();
-            const filtered = allStores.filter(st => st.store_name.toLowerCase().includes(term) || st.store_key.toLowerCase().includes(term));
-            displayStores(filtered);
+            const term = (document.getElementById('d-search')?.value || document.getElementById('m-search')?.value || '').toLowerCase();
+            renderStores(allStores.filter(st => st.store_name.toLowerCase().includes(term) || st.store_key.toLowerCase().includes(term)));
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        // ======= VERSION =======
+        async function updateVersion() {
+            const v = document.getElementById('d-v-input')?.value || document.getElementById('m-v-input')?.value;
+            if(!v) return alert("أدخل رقم الإصدار");
+            const { error } = await _supabase.from('system_settings').update({ value: v }).eq('key','sys_version');
+            if(!error) { alert("✅ تم تحديث الإصدار"); loadData(); }
+        }
 
+        // ======= ADD STORE =======
         async function saveNewStore() {
             const name = document.getElementById('st-name').value;
             const phone = document.getElementById('st-phone').value;
             const price = document.getElementById('st-price').value;
             const duration = parseInt(document.getElementById('st-duration').value);
             const notes = document.getElementById('st-notes').value;
+            if(!name) return alert("أدخل اسم المتجر");
             const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
-            const expiryString = expiry.toISOString().split('T')[0];
             const key = 'ST' + Math.floor(Math.random() * 9000 + 1000);
-            await _supabase.from('stores').insert([{ store_key: key, store_name: name, phone: phone, subscription_price: price, expiry_date: expiryString, notes: notes, is_active: true }]);
-            closeModal('addStoreModal'); loadData();
+            await _supabase.from('stores').insert([{
+                store_key: key, store_name: name, phone, subscription_price: price,
+                expiry_date: expiry.toISOString().split('T')[0], notes, is_active: true
+            }]);
+            closeModal('addModal'); loadData();
         }
 
-        async function showStoreDetails(st) {
-            activeStoreKey = st.store_key; openModal('storeDetailModal');
-            document.getElementById('view-st-name').innerText = st.store_name;
-            document.getElementById('edit-st-notes').value = st.notes || '';
-            document.getElementById('mgr-feedback-display').innerText = st.feedback || 'لا يوجد فيدباك حالياً';
-            document.getElementById('store-meta').innerHTML = `كود: ${st.store_key} | هاتف: ${st.phone}`;
-            document.getElementById('toggle-container').innerHTML = st.is_active ? `<button onclick="handleToggle(true)" class="btn-action btn-cancel">إيقاف الخدمة مؤقتاً</button>` : `<button onclick="handleToggle(false)" class="btn-action btn-save">تنشيط الخدمة الآن</button>`;
-            loadStoreUsers();
+        // ======= DETAIL =======
+        async function showDetail(st) {
+            activeStoreKey = st.store_key;
+            document.getElementById('det-name').innerText = st.store_name;
+            document.getElementById('det-meta').innerText = `كود: ${st.store_key} | هاتف: ${st.phone || '---'}`;
+            document.getElementById('det-feedback').innerText = st.feedback || 'لا يوجد فيدباك';
+            document.getElementById('det-notes').value = st.notes || '';
+            document.getElementById('det-toggle-wrap').innerHTML = st.is_active
+                ? `<button class="btn-full toggle-inactive" onclick="handleToggle(true)">⏸ إيقاف الخدمة مؤقتاً</button>`
+                : `<button class="btn-full toggle-active" onclick="handleToggle(false)">▶ تنشيط الخدمة</button>`;
+            await loadDetailEmps();
+            openModal('detailModal');
         }
 
-        async function loadStoreUsers() {
-            const { data: emps } = await _supabase.from('users').select('*').eq('store_key', activeStoreKey);
-            const list = document.getElementById('employee-list'); list.innerHTML = '';
-            emps?.filter(e => e.role !== 'developer').forEach(e => {
-                list.innerHTML += `<div class="emp-list-item"><span>${e.username} (${e.role === 'manager' ? 'مدير' : 'موظف'})</span><button onclick="delU('${e.username}')" style="color:var(--red); background:none; border:none; cursor:pointer;">حذف</button></div>`;
-            });
+        async function loadDetailEmps() {
+            const { data } = await _supabase.from('users').select('*').eq('store_key', activeStoreKey);
+            const el = document.getElementById('det-emps');
+            el.innerHTML = data?.filter(u=>u.role!=='developer').map(u => `
+                <div class="emp-row">
+                    <span>${u.username} <small style="color:var(--text-muted)">(${u.role==='manager'?'مدير':'موظف'})</small></span>
+                    <button class="btn-del-small" onclick="delUser('${u.username}')">🗑️</button>
+                </div>`).join('') || '<p style="color:var(--text-muted); font-size:13px;">لا يوجد موظفين</p>';
         }
 
         async function quickAddUser() {
-            const u = document.getElementById('q-u-name').value;
-            const p = document.getElementById('q-u-pass').value;
-            const r = document.getElementById('q-u-role').value;
-            await _supabase.from('users').insert([{ username: u, password: p, store_key: activeStoreKey, role: r }]);
-            loadStoreUsers();
+            const u = document.getElementById('q-name').value;
+            const p = document.getElementById('q-pass').value;
+            const r = document.getElementById('q-role').value;
+            if(!u || !p) return alert("أدخل البيانات");
+            await _supabase.from('users').insert([{ username:u, password:p, store_key:activeStoreKey, role:r }]);
+            document.getElementById('q-name').value='';
+            document.getElementById('q-pass').value='';
+            loadDetailEmps();
         }
 
-        async function handleToggle(status) {
-            await _supabase.from('stores').update({ is_active: !status }).eq('store_key', activeStoreKey);
-            closeModal('storeDetailModal'); loadData();
+        async function delUser(un) {
+            if(confirm(`حذف ${un}؟`)) { await _supabase.from('users').delete().eq('username',un); loadDetailEmps(); loadData(); }
+        }
+
+        async function handleToggle(isActive) {
+            await _supabase.from('stores').update({ is_active: !isActive }).eq('store_key', activeStoreKey);
+            closeModal('detailModal'); loadData();
         }
 
         async function updateNotes() {
-            await _supabase.from('stores').update({ notes: document.getElementById('edit-st-notes').value }).eq('store_key', activeStoreKey);
-            alert("تم التحديث"); loadData();
-        }
-
-        async function delU(uname) {
-            if(confirm("حذف؟")) { await _supabase.from('users').delete().eq('username', uname); loadStoreUsers(); loadData(); }
+            await _supabase.from('stores').update({ notes: document.getElementById('det-notes').value }).eq('store_key', activeStoreKey);
+            alert("✅ تم حفظ الملاحظات");
         }
 
         async function deleteCurrentStore() {
-            if(confirm("حذف نهائي؟")) {
-                await _supabase.from('users').delete().eq('store_key', activeStoreKey);
-                await _supabase.from('stores').delete().eq('store_key', activeStoreKey);
-                closeModal('storeDetailModal'); loadData();
-            }
+            if(!confirm("حذف المتجر نهائياً؟ لا يمكن التراجع!")) return;
+            await _supabase.from('users').delete().eq('store_key', activeStoreKey);
+            await _supabase.from('stores').delete().eq('store_key', activeStoreKey);
+            closeModal('detailModal'); loadData();
+        }
+
+        function openReports(key) {
+            sessionStorage.setItem('store_key', key);
+            window.open('reports.html', '_blank');
         }
 
         function exportToExcel() {
             const ws = XLSX.utils.json_to_sheet(allStores);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Stores"); XLSX.writeFile(wb, "Fateen_Stores.xlsx");
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Stores");
+            XLSX.writeFile(wb, "Fateen_Stores.xlsx");
         }
 
+        function openModal(id) { document.getElementById(id).style.display='flex'; }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function logout() { sessionStorage.clear(); location.href='index.html'; }
+
+        loadTheme();
         loadData();
         setInterval(loadData, 60000);
     </script>
 </body>
 </html>
-
