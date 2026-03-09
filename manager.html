@@ -245,7 +245,7 @@
         .modal-content input, .modal-content select { width: 100%; padding: 10px; margin-top: 8px; background: var(--search-bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; outline: none; }
 
         .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-family: 'Cairo', sans-serif; }
-        .btn-add { background: var(--accent); color: #000; }
+        .btn-add { background: var(--accent); color: var(--btn-icon-color); }
         .btn-del { background: var(--red); color: #fff; }
         .btn-orange { background: var(--orange); color: #000; }
 
@@ -253,7 +253,7 @@
 
         .version-tag {
             background: var(--btn-icon-bg);
-            color: var(--accent);
+            color: var(--btn-icon-color);
             padding: 3px 10px;
             border-radius: 6px;
             font-size: 11px;
@@ -261,11 +261,52 @@
             font-weight: 700;
         }
 
-        .feedback-box { display: flex; gap: 6px; margin-top: 8px; }
-        .feedback-box input { background: var(--search-bg); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; font-size: 12px; flex: 1; outline: none; }
-        .btn-send { background: var(--green); color: #000; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; white-space: nowrap; }
+        /* Fix 4: Feedback box moved to better position as standalone bar */
+        .feedback-bar {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .feedback-bar input { background: var(--search-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; flex: 1; outline: none; font-family: 'Cairo', sans-serif; }
+        .feedback-bar input:focus { border-color: var(--accent); }
+        .feedback-bar label { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+        .btn-send { background: var(--accent); color: var(--btn-icon-color); border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap; font-family: 'Cairo', sans-serif; }
 
         .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        /* Fix 6: Error/notification toast system */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 350px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid;
+            animation: toastIn 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .toast-success { background: rgba(0,255,136,0.1); border-color: var(--green); color: var(--green); }
+        .toast-error   { background: rgba(255,77,77,0.12); border-color: var(--red); color: var(--red); }
+        .toast-info    { background: rgba(0,242,254,0.1); border-color: var(--accent); color: var(--accent); }
+        .toast-msg { flex: 1; line-height: 1.5; }
+        @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -275,6 +316,7 @@
         <div class="store-header">
             <h2 class="store-name" id="m-store-name">اسم المتجر</h2>
             <div style="display:flex; gap:8px; align-items:center;">
+                <span class="version-tag" id="m-version">V0.5</span>
                 <span class="gear-icon" onclick="location.href='3dadat.html'">⚙️</span>
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
                     <span id="m-theme-icon">🌙</span>
@@ -283,9 +325,16 @@
             </div>
         </div>
 
+        <!-- Fix 4: Feedback bar on mobile -->
+        <div class="feedback-bar">
+            <label>📩 فيدباك:</label>
+            <input type="text" id="m-feedback-input" placeholder="اكتب ملاحظاتك للمطور...">
+            <button class="btn-send" onclick="sendFeedback('m')">إرسال</button>
+        </div>
+
         <div class="search-bar">
             <span>🔍</span>
-            <input type="text" id="m-search" placeholder="بحث او ارجاع فاتوره" onkeypress="if(event.key==='Enter') searchSale()">
+            <input type="text" id="m-search" placeholder="بحث او ارجاع فاتوره" onkeypress="if(event.key==='Enter') searchSale('m')">
         </div>
 
         <div class="stat-card" style="border-color: var(--green);">
@@ -302,7 +351,7 @@
         </div>
 
         <div class="nav-grid">
-            <a class="nav-item" onclick="location.href='manager.html'">
+            <a class="nav-item" onclick="scrollToMSales()">
                 <span class="icon">💰</span>
                 مبيعات اليوم
             </a>
@@ -328,9 +377,20 @@
             </a>
         </div>
 
+        <!-- Fix 2: Sales table on mobile -->
+        <div id="m-sales-section" style="margin-top:18px;">
+            <h3 style="color:var(--accent); margin:0 0 10px; font-size:15px;">🕒 مبيعات اليوم</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>رقم</th><th>الوقت</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                    <tbody id="m-sales-list"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="footer-bar" style="margin-top:15px; border-radius:12px;">
             <span>Fateen OS</span>
-            <span class="version" id="m-version">V0.5</span>
+            <span class="version" id="m-version-footer">V0.5</span>
         </div>
     </div>
 
@@ -343,15 +403,11 @@
                     <span class="version-tag" id="d-version">V0.5</span>
                 </div>
                 <div style="color: var(--text-muted); font-size:13px;" id="d-welcome-msg">أهلاً بك</div>
-                <div class="feedback-box">
-                    <input type="text" id="feedback-input" placeholder="اكتب ملاحظاتك للمطور هنا...">
-                    <button class="btn-send" onclick="sendFeedback()">إرسال</button>
-                </div>
             </div>
             <div class="header-controls">
                 <div class="search-bar" style="margin:0; min-width:220px;">
                     <span>🔍</span>
-                    <input type="text" id="d-search" placeholder="بحث او ارجاع فاتوره" onkeypress="if(event.key==='Enter') searchSale()">
+                    <input type="text" id="d-search" placeholder="بحث او ارجاع فاتوره" onkeypress="if(event.key==='Enter') searchSale('d')">
                 </div>
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
                     <span id="d-theme-icon">🌙</span>
@@ -360,6 +416,13 @@
                 <button class="btn btn-orange" onclick="location.href='about.html'">📞 تواصل</button>
                 <button class="btn btn-del" onclick="logout()">خروج</button>
             </div>
+        </div>
+
+        <!-- Fix 4: Feedback as dedicated bar -->
+        <div class="feedback-bar">
+            <label>📩 ملاحظة للمطور:</label>
+            <input type="text" id="feedback-input" placeholder="اكتب ملاحظاتك هنا...">
+            <button class="btn-send" onclick="sendFeedback('d')">إرسال</button>
         </div>
 
         <div class="desktop-grid">
@@ -447,6 +510,7 @@
             <h3 id="u-title" style="color:var(--accent)">إضافة موظف</h3>
             <input type="hidden" id="edit-un">
             <input type="text" id="u-username" placeholder="اسم المستخدم" style="width:100%; padding:10px; margin-top:10px;">
+            <input type="password" id="u-pass" placeholder="كلمة المرور" style="width:100%; padding:10px; margin-top:10px;">
             <input type="text" id="u-phone" placeholder="رقم الهاتف" style="width:100%; padding:10px; margin-top:10px;">
             <input type="number" id="u-target" placeholder="التارجت" style="width:100%; padding:10px; margin-top:10px;">
             <p style="font-size:11px; color:var(--text-muted); margin: 10px 0 5px;">صورة PNG:</p>
@@ -458,12 +522,27 @@
         </div>
     </div>
 
+    <!-- Toast container Fix 6 -->
+    <div id="toast-container"></div>
+
     <script>
         const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const storeKey = sessionStorage.getItem('store_key');
         const managerName = sessionStorage.getItem('username');
+
+        // ======= TOAST Fix 6 =======
+        function showToast(msg, type = 'info') {
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${icons[type]}</span><span class="toast-msg">${msg}</span>`;
+            toast.onclick = () => toast.remove();
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
 
         // ======= THEME =======
         function toggleTheme() {
@@ -477,8 +556,10 @@
         function updateThemeBtn(isLight) {
             const icon = isLight ? '☀️' : '🌙';
             const label = isLight ? 'ثيم داكن' : 'ثيم فاتح';
+            const labelShort = isLight ? 'داكن' : 'فاتح';
             ['m-theme-icon','d-theme-icon'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = icon; });
-            ['m-theme-label','d-theme-label'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = label; });
+            const ml = document.getElementById('m-theme-label'); if(ml) ml.innerText = labelShort;
+            const dl = document.getElementById('d-theme-label'); if(dl) dl.innerText = label;
         }
 
         function loadTheme() {
@@ -494,12 +575,14 @@
             loadTheme();
             if(!storeKey) return location.href='index.html';
 
-            const { data: st } = await _supabase.from('stores').select('store_name, feedback').eq('store_key', storeKey).single();
-            if(st) {
-                ['m-store-name','d-store-name'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = st.store_name; });
-                const fb = document.getElementById('feedback-input');
-                if(fb) fb.value = st.feedback || '';
-            }
+            try {
+                const { data: st, error } = await _supabase.from('stores').select('store_name, feedback').eq('store_key', storeKey).single();
+                if(error) throw error;
+                if(st) {
+                    ['m-store-name','d-store-name'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = st.store_name; });
+                    ['feedback-input','m-feedback-input'].forEach(id => { const el = document.getElementById(id); if(el) el.value = st.feedback || ''; });
+                }
+            } catch(e) { showToast('خطأ في تحميل بيانات المتجر: ' + e.message, 'error'); }
 
             const welcomeEl = document.getElementById('d-welcome-msg');
             if(welcomeEl) welcomeEl.innerText = `أهلاً يا ${managerName}`;
@@ -509,112 +592,218 @@
             await loadUsers();
         }
 
-        async function sendFeedback() {
-            const fb = document.getElementById('feedback-input').value;
-            const { error } = await _supabase.from('stores').update({ feedback: fb }).eq('store_key', storeKey);
-            if(!error) alert("تم إرسال ملاحظاتك للمطور بنجاح ✅");
+        // Fix 4: feedback with device param
+        async function sendFeedback(src) {
+            const id = src === 'm' ? 'm-feedback-input' : 'feedback-input';
+            const fb = document.getElementById(id)?.value;
+            if(!fb) return showToast('اكتب ملاحظة أولاً', 'info');
+            try {
+                const { error } = await _supabase.from('stores').update({ feedback: fb }).eq('store_key', storeKey);
+                if(error) throw error;
+                showToast('تم إرسال ملاحظاتك للمطور بنجاح', 'success');
+            } catch(e) { showToast('فشل الإرسال: ' + e.message, 'error'); }
         }
 
         async function loadVersion() {
-            const { data } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
-            if(data) {
-                ['m-version','d-version','d-version-footer'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = data.value; });
-            }
+            try {
+                const { data, error } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
+                if(error) throw error;
+                if(data) {
+                    ['m-version','d-version','d-version-footer','m-version-footer'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = data.value; });
+                }
+            } catch(e) { showToast('خطأ في تحميل الإصدار: ' + e.message, 'error'); }
         }
 
         async function loadSales() {
-            const today = new Date().toISOString().split('T')[0];
-            const { data: sales } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today).order('created_at', {ascending: false});
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const { data: sales, error } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today).order('created_at', {ascending: false});
+                if(error) throw error;
 
-            let total = 0, ret = 0;
-            const tbody = document.getElementById('sales-list');
-            if(tbody) {
-                tbody.innerHTML = sales?.map(s => {
+                let total = 0, ret = 0;
+
+                const rowsHTML = sales?.map(s => {
                     const amt = parseFloat(s.total_amount) || 0;
                     if(s.type === 'sale') total += amt; else ret += amt;
-                    return `<tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
-                        <td>#${s.id.toString().slice(-6)}</td>
-                        <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
-                        <td>${s.seller_name || '---'}</td>
-                        <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
-                        <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
-                    </tr>`;
-                }).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات اليوم</td></tr>';
-            }
+                    return { s, amt };
+                }) || [];
 
-            const totalStr = total.toLocaleString() + " ج.م";
-            const retStr = ret.toLocaleString() + " ج.م";
-            const countStr = sales?.filter(s=>s.type==='sale').length || 0;
+                // Desktop table
+                const tbody = document.getElementById('sales-list');
+                if(tbody) {
+                    tbody.innerHTML = rowsHTML.map(({s}) => `
+                        <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
+                            <td>#${s.id.toString().slice(-6)}</td>
+                            <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
+                            <td>${s.seller_name || '---'}</td>
+                            <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
+                            <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
+                        </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات اليوم</td></tr>';
+                }
 
-            ['m-total-sales','d-total-sales'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = totalStr; });
-            ['m-returns','d-returns'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = retStr; });
-            ['m-bill-count','d-bill-count'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = countStr; });
+                // Fix 2: Mobile table
+                const mtbody = document.getElementById('m-sales-list');
+                if(mtbody) {
+                    mtbody.innerHTML = rowsHTML.map(({s}) => `
+                        <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
+                            <td>#${s.id.toString().slice(-6)}</td>
+                            <td>${new Date(s.created_at).toLocaleTimeString('ar-EG', {hour:'2-digit',minute:'2-digit'})}</td>
+                            <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
+                            <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'↩'}</td>
+                        </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات</td></tr>';
+                }
+
+                const totalStr = total.toLocaleString() + " ج.م";
+                const retStr = ret.toLocaleString() + " ج.م";
+                const countStr = sales?.filter(s=>s.type==='sale').length || 0;
+
+                ['m-total-sales','d-total-sales'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = totalStr; });
+                ['m-returns','d-returns'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = retStr; });
+                ['m-bill-count','d-bill-count'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = countStr; });
+
+            } catch(e) { showToast('خطأ في تحميل المبيعات: ' + e.message, 'error'); }
         }
 
         function showReceipt(sale) {
-            const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
-            let html = `<p><b>البائع:</b> ${sale.seller_name}</p><hr style="border-color:var(--border)"><table><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
-            items.forEach(it => {
-                html += `<tr><td>${it.product_name}</td><td>${it.qty}</td><td>${it.price} ج.م</td></tr>`;
-            });
-            html += `</tbody></table><h3 style="color:var(--accent); text-align:left;">الإجمالي: ${sale.total_amount} ج.م</h3>`;
-            document.getElementById('receipt-details').innerHTML = html;
-            document.getElementById('receiptModal').style.display='flex';
+            try {
+                const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+                let html = `<p><b>البائع:</b> ${sale.seller_name}</p><hr style="border-color:var(--border)"><table><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
+                items.forEach(it => {
+                    html += `<tr><td>${it.product_name}</td><td>${it.qty}</td><td>${it.price} ج.م</td></tr>`;
+                });
+                html += `</tbody></table><h3 style="color:var(--accent); text-align:left;">الإجمالي: ${sale.total_amount} ج.م</h3>`;
+
+                // Fix 5: show return button only if sale type
+                if(sale.type === 'sale') {
+                    html += `<button class="btn btn-del" style="width:100%; margin-top:10px;" onclick="processReturn('${sale.id}')">↩ إرجاع الفاتورة كاملة</button>`;
+                } else {
+                    html += `<p style="color:var(--red); text-align:center; margin-top:10px;">✔ هذه الفاتورة مرتجعة بالفعل</p>`;
+                }
+
+                document.getElementById('receipt-details').innerHTML = html;
+                document.getElementById('receiptModal').style.display='flex';
+            } catch(e) { showToast('خطأ في عرض الفاتورة: ' + e.message, 'error'); }
+        }
+
+        // Fix 5: full return logic
+        async function processReturn(saleId) {
+            if(!confirm('هل أنت متأكد من إرجاع الفاتورة كاملة؟')) return;
+            try {
+                const { data: sale, error: e1 } = await _supabase.from('sales').select('*').eq('id', saleId).single();
+                if(e1) throw e1;
+
+                // إعادة المخزون
+                const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+                for(let item of items) {
+                    const { data: p, error: e2 } = await _supabase.from('products').select('stock').eq('id', item.id).single();
+                    if(e2) throw e2;
+                    await _supabase.from('products').update({ stock: p.stock + item.qty }).eq('id', item.id);
+                }
+
+                // تحديث نوع الفاتورة
+                const { error: e3 } = await _supabase.from('sales').update({ type: 'return' }).eq('id', saleId);
+                if(e3) throw e3;
+
+                showToast('تم الإرجاع وإعادة المخزون بنجاح', 'success');
+                closeModal('receiptModal');
+                loadSales();
+            } catch(e) { showToast('خطأ في عملية الإرجاع: ' + e.message, 'error'); }
         }
 
         async function loadUsers() {
-            const { data: users } = await _supabase.from('users').select('*').eq('store_key', storeKey).eq('role', 'employee');
-            const ul = document.getElementById('users-list');
-            if(ul) {
-                ul.innerHTML = users?.map(u => `
-                    <tr>
-                        <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
-                        <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
-                        <td>${u.monthly_target || 0}</td>
-                        <td>
-                            <button class="btn btn-add" style="padding:4px 8px" onclick="editUser('${u.username}')">⚙️</button>
-                            <button class="btn btn-del" style="padding:4px 8px" onclick="deleteUser('${u.username}')">🗑️</button>
-                        </td>
-                    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا يوجد موظفين</td></tr>';
-            }
+            try {
+                const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).eq('role', 'employee');
+                if(error) throw error;
+                const ul = document.getElementById('users-list');
+                if(ul) {
+                    ul.innerHTML = users?.map(u => `
+                        <tr>
+                            <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
+                            <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
+                            <td>${u.monthly_target || 0}</td>
+                            <td>
+                                <button class="btn btn-add" style="padding:4px 8px" onclick="editUser('${u.username}')">⚙️</button>
+                                <button class="btn btn-del" style="padding:4px 8px" onclick="deleteUser('${u.username}')">🗑️</button>
+                            </td>
+                        </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا يوجد موظفين</td></tr>';
+                }
+            } catch(e) { showToast('خطأ في تحميل الموظفين: ' + e.message, 'error'); }
         }
 
+        // Fix 3: saveUser with password field + proper insert
         async function saveUser() {
-            const file = document.getElementById('u-file').files[0];
-            const uName = document.getElementById('u-username').value;
-            let imgUrl = "https://via.placeholder.com/150";
-            if(file) {
-                const fName = `${Date.now()}_${uName}.png`;
-                await _supabase.storage.from('avatars').upload(fName, file);
-                const { data } = _supabase.storage.from('avatars').getPublicUrl(fName);
-                imgUrl = data.publicUrl;
-            }
-            const userData = {
-                username: uName,
-                phone: document.getElementById('u-phone').value,
-                monthly_target: parseInt(document.getElementById('u-target').value) || 0,
-                image_url: imgUrl,
-                role: 'employee',
-                store_key: storeKey
-            };
-            const eid = document.getElementById('edit-un').value;
-            if(eid) await _supabase.from('users').update(userData).eq('username', eid);
-            else await _supabase.from('users').insert([userData]);
-            closeModal('userModal'); loadUsers();
+            const uName = document.getElementById('u-username').value.trim();
+            const uPass = document.getElementById('u-pass').value.trim();
+            const uPhone = document.getElementById('u-phone').value.trim();
+            const uTarget = parseInt(document.getElementById('u-target').value) || 0;
+
+            if(!uName) return showToast('اسم المستخدم مطلوب', 'error');
+            if(!uPass && !document.getElementById('edit-un').value) return showToast('كلمة المرور مطلوبة', 'error');
+
+            try {
+                const file = document.getElementById('u-file').files[0];
+                let imgUrl = "https://via.placeholder.com/150";
+
+                if(file) {
+                    const fName = `${Date.now()}_${uName}.png`;
+                    const { error: upErr } = await _supabase.storage.from('avatars').upload(fName, file);
+                    if(upErr) throw upErr;
+                    const { data } = _supabase.storage.from('avatars').getPublicUrl(fName);
+                    imgUrl = data.publicUrl;
+                }
+
+                const userData = {
+                    username: uName,
+                    phone: uPhone,
+                    monthly_target: uTarget,
+                    image_url: imgUrl,
+                    role: 'employee',
+                    store_key: storeKey
+                };
+                if(uPass) userData.password = uPass;
+
+                const eid = document.getElementById('edit-un').value;
+                if(eid) {
+                    const { error } = await _supabase.from('users').update(userData).eq('username', eid).eq('store_key', storeKey);
+                    if(error) throw error;
+                    showToast('تم تحديث بيانات الموظف بنجاح', 'success');
+                } else {
+                    // التحقق إن الاسم مش موجود
+                    const { data: existing } = await _supabase.from('users').select('username').eq('username', uName).eq('store_key', storeKey);
+                    if(existing && existing.length > 0) return showToast('اسم المستخدم موجود بالفعل', 'error');
+                    const { error } = await _supabase.from('users').insert([userData]);
+                    if(error) throw error;
+                    showToast('تم إضافة الموظف بنجاح', 'success');
+                }
+
+                closeModal('userModal');
+                loadUsers();
+            } catch(e) { showToast('خطأ في حفظ الموظف: ' + e.message, 'error'); }
         }
 
         async function editUser(un) {
-            const { data: u } = await _supabase.from('users').select('*').eq('username', un).single();
-            document.getElementById('edit-un').value = u.username;
-            document.getElementById('u-username').value = u.username;
-            document.getElementById('u-phone').value = u.phone || '';
-            document.getElementById('u-target').value = u.monthly_target || '';
-            document.getElementById('u-title').innerText = "تعديل موظف";
-            document.getElementById('userModal').style.display='flex';
+            try {
+                const { data: u, error } = await _supabase.from('users').select('*').eq('username', un).eq('store_key', storeKey).single();
+                if(error) throw error;
+                document.getElementById('edit-un').value = u.username;
+                document.getElementById('u-username').value = u.username;
+                document.getElementById('u-phone').value = u.phone || '';
+                document.getElementById('u-target').value = u.monthly_target || '';
+                document.getElementById('u-pass').value = '';
+                document.getElementById('u-title').innerText = "تعديل موظف";
+                document.getElementById('userModal').style.display='flex';
+            } catch(e) { showToast('خطأ في تحميل بيانات الموظف: ' + e.message, 'error'); }
         }
 
         async function deleteUser(un) {
-            if(confirm(`حذف ${un}؟`)) { await _supabase.from('users').delete().eq('username', un); loadUsers(); }
+            if(confirm(`حذف ${un}؟`)) {
+                try {
+                    const { error } = await _supabase.from('users').delete().eq('username', un).eq('store_key', storeKey);
+                    if(error) throw error;
+                    showToast('تم حذف الموظف', 'success');
+                    loadUsers();
+                } catch(e) { showToast('خطأ في الحذف: ' + e.message, 'error'); }
+            }
         }
 
         function openUserModal() {
@@ -622,19 +811,18 @@
             document.getElementById('u-username').value="";
             document.getElementById('u-phone').value="";
             document.getElementById('u-target').value="";
+            document.getElementById('u-pass').value="";
             document.getElementById('u-title').innerText="إضافة موظف";
             document.getElementById('userModal').style.display='flex';
         }
 
-        function searchSale() {
-            const val = document.getElementById('d-search')?.value || document.getElementById('m-search')?.value;
-            if(val) alert("البحث عن: " + val);
+        function searchSale(src) {
+            const val = src === 'm' ? document.getElementById('m-search')?.value : document.getElementById('d-search')?.value;
+            if(val) showToast('البحث عن: ' + val, 'info');
         }
 
-        function scrollToSales() {
-            document.getElementById('sales-section')?.scrollIntoView({ behavior: 'smooth' });
-        }
-
+        function scrollToSales() { document.getElementById('sales-section')?.scrollIntoView({ behavior: 'smooth' }); }
+        function scrollToMSales() { document.getElementById('m-sales-section')?.scrollIntoView({ behavior: 'smooth' }); }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         function logout() { sessionStorage.clear(); location.replace('index.html'); }
 
