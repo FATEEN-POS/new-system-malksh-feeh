@@ -379,13 +379,55 @@
 
         <!-- Fix 2: Sales table on mobile -->
         <div id="m-sales-section" style="margin-top:18px;">
-            <h3 style="color:var(--accent); margin:0 0 10px; font-size:15px;">🕒 مبيعات اليوم</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                <h3 style="color:var(--accent); margin:0; font-size:15px;">🕒 مبيعات اليوم</h3>
+                <select id="m-sales-sort" onchange="sortSales()" style="padding:5px 10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:'Cairo',sans-serif; font-size:12px; outline:none;">
+                    <option value="time-desc">⬇ الأحدث</option>
+                    <option value="time-asc">⬆ الأقدم</option>
+                    <option value="amount-desc">💰 أعلى مبلغ</option>
+                    <option value="type-sale">✅ بيع فقط</option>
+                    <option value="type-return">↩ مرتجع فقط</option>
+                </select>
+            </div>
             <div style="overflow-x:auto;">
                 <table>
-                    <thead><tr><th>رقم</th><th>الوقت</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                    <thead><tr><th>رقم</th><th>التاريخ والوقت</th><th>المبلغ</th><th>الحالة</th></tr></thead>
                     <tbody id="m-sales-list"></tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- موبايل: جدول الموظفين -->
+        <div style="margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                <h3 style="color:var(--accent); margin:0; font-size:15px;">👥 الموظفين</h3>
+                <div style="display:flex; gap:6px;">
+                    <select id="m-users-sort" onchange="sortUsers()" style="padding:5px 10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:'Cairo',sans-serif; font-size:12px; outline:none;">
+                        <option value="name-asc">أ-ي</option>
+                        <option value="sales-desc">⬇ مبيعات</option>
+                        <option value="role">الوظيفة</option>
+                    </select>
+                    <button class="btn btn-add" style="font-size:12px; padding:5px 10px;" onclick="openUserModal()">+ موظف</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>الموظف</th><th>الوظيفة</th><th>مبيعات</th><th>إجراءات</th></tr></thead>
+                    <tbody id="m-users-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- موبايل: الرسم البياني -->
+        <div style="margin-top:20px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
+                <h3 style="color:var(--accent); margin:0; font-size:14px;">📊 آخر 7 أيام</h3>
+                <div style="display:flex; gap:6px;">
+                    <button id="m-chart-btn-sales" class="btn btn-add" onclick="switchChart('sales')" style="font-size:11px; padding:4px 10px;">💰</button>
+                    <button id="m-chart-btn-returns" class="btn" onclick="switchChart('returns')" style="font-size:11px; padding:4px 10px; background:var(--card2); color:var(--text);">↩</button>
+                </div>
+            </div>
+            <canvas id="m-sales-chart" height="120"></canvas>
         </div>
 
         <div class="footer-bar" style="margin-top:15px; border-radius:12px;">
@@ -463,53 +505,50 @@
 
         <!-- جدول مبيعات اليوم -->
         <div id="sales-section" style="margin-top: 25px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <h3 style="color:var(--accent); margin:0;">🕒 مبيعات اليوم بالتفصيل</h3>
-                <div class="search-bar" style="margin:0; min-width:240px;">
-                    <span>🔍</span>
-                    <input type="text" id="d-search" placeholder="بحث برقم الفاتورة أو البائع" onkeypress="if(event.key==='Enter') searchSale('d')">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <select id="sales-sort" onchange="sortSales()" style="padding:7px 12px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:'Cairo',sans-serif; font-size:13px; outline:none;">
+                        <option value="time-desc">⬇ الأحدث أولاً</option>
+                        <option value="time-asc">⬆ الأقدم أولاً</option>
+                        <option value="amount-desc">💰 أعلى مبلغ</option>
+                        <option value="amount-asc">💰 أقل مبلغ</option>
+                        <option value="type-sale">✅ مبيعات فقط</option>
+                        <option value="type-return">↩ مرتجع فقط</option>
+                    </select>
+                    <div class="search-bar" style="margin:0; min-width:220px;">
+                        <span>🔍</span>
+                        <input type="text" id="d-search" placeholder="بحث برقم الفاتورة أو البائع" oninput="filterSales()">
+                    </div>
                 </div>
             </div>
             <table>
-                <thead><tr><th>رقم الفاتورة</th><th>الوقت</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                <thead><tr><th>رقم الفاتورة</th><th>التاريخ والوقت</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
                 <tbody id="sales-list"></tbody>
             </table>
         </div>
 
         <!-- جدول الموظفين -->
         <div style="margin-top: 30px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <h3 style="color:var(--accent); margin:0;">👥 إدارة الموظفين</h3>
-                <button class="btn btn-add" onclick="openUserModal()">+ إضافة موظف</button>
+                <div style="display:flex; gap:8px;">
+                    <select id="users-sort" onchange="sortUsers()" style="padding:7px 12px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:'Cairo',sans-serif; font-size:13px; outline:none;">
+                        <option value="name-asc">أ-ي الاسم</option>
+                        <option value="sales-desc">⬇ أعلى مبيعات</option>
+                        <option value="sales-asc">⬆ أقل مبيعات</option>
+                        <option value="target-desc">⬇ أعلى تارجت</option>
+                        <option value="role">الوظيفة</option>
+                    </select>
+                    <button class="btn btn-add" onclick="openUserModal()">+ إضافة موظف</button>
+                </div>
             </div>
             <table>
-                <thead><tr><th>الموظف</th><th>مبيعات الشهر</th><th>التارجت</th><th>إجراءات</th></tr></thead>
+                <thead><tr><th>الموظف</th><th>الوظيفة</th><th>مبيعات الشهر</th><th>التارجت</th><th>إجراءات</th></tr></thead>
                 <tbody id="users-list"></tbody>
             </table>
         </div>
 
-        <!-- 7: تحديد تارجت المتجر - section مستقل -->
-        <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
-            <h3 style="color:var(--accent); margin:0 0 15px;">🎯 تارجت المتجر</h3>
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                <div style="flex:1; min-width:200px;">
-                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">تارجت الشهر الحالي</label>
-                    <input type="number" id="store-target-input" placeholder="أدخل التارجت بالجنيه" style="width:100%; padding:10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; outline:none; font-family:'Cairo',sans-serif; font-size:14px;">
-                </div>
-                <div style="padding-top:20px;">
-                    <button class="btn btn-add" onclick="saveStoreTarget()">💾 حفظ التارجت</button>
-                </div>
-            </div>
-            <div id="target-progress-bar" style="margin-top:15px; display:none;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
-                    <span id="target-progress-label">0 / 0 ج.م</span>
-                    <span id="target-progress-pct">0%</span>
-                </div>
-                <div style="background:var(--border); border-radius:8px; height:10px; overflow:hidden;">
-                    <div id="target-progress-fill" style="height:100%; background:var(--accent); border-radius:8px; transition:width 0.5s;"></div>
-                </div>
-            </div>
-        </div>
 
         <!-- 2: جدول المنتجات الناقصة -->
         <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
@@ -524,9 +563,18 @@
 
         <!-- 8: الرسم البياني - الأيام مقابل المبيعات -->
         <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
-            <h3 style="color:var(--accent); margin:0 0 15px;">📊 مبيعات آخر 7 أيام</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:8px;">
+                <h3 style="color:var(--accent); margin:0;">📊 مبيعات آخر 7 أيام</h3>
+                <div style="display:flex; gap:8px;">
+                    <button id="chart-btn-sales" class="btn btn-add" onclick="switchChart('sales')" style="font-size:12px; padding:6px 14px;">💰 مبيعات</button>
+                    <button id="chart-btn-returns" class="btn" onclick="switchChart('returns')" style="font-size:12px; padding:6px 14px; background:var(--card2); color:var(--text);">↩ مرتجع</button>
+                </div>
+            </div>
             <canvas id="sales-chart" height="100"></canvas>
         </div>
+
+        <!-- موبايل: جدول مبيعات -->
+        <div id="m-sales-section-desktop" style="display:none;"></div>
 
         <!-- 3: feedback في أسفل الصفحة (ديسكتوب) -->
         <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
@@ -535,7 +583,7 @@
                 <input type="text" id="feedback-input" placeholder="اكتب ملاحظاتك هنا..." style="flex:1; padding:10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; outline:none; font-family:'Cairo',sans-serif;">
                 <button class="btn-send" onclick="sendFeedback('d')">إرسال</button>
             </div>
-            <p style="margin:12px 0 0; font-size:12px; color:var(--text-muted); text-align:center;">جميع الحقوق محفوظة لفطين 2026</p>
+            <p style="margin:12px 0 0; font-size:12px; color:var(--text-muted); text-align:center;"></p>
         </div>
 
     </div>
@@ -543,7 +591,10 @@
     <!-- ======= MODALS ======= -->
     <div id="receiptModal" class="modal">
         <div class="modal-content" style="width: 500px;">
-            <h3 style="color:var(--accent); border-bottom: 1px solid var(--border); padding-bottom:10px;">تفاصيل الفاتورة</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                <h3 style="color:var(--accent); margin:0;">تفاصيل الفاتورة</h3>
+                <span id="receipt-code" style="background:var(--card2); color:var(--accent); border:1px solid var(--accent); border-radius:8px; padding:4px 12px; font-size:13px; font-weight:800;"></span>
+            </div>
             <div id="receipt-details" style="margin-top:15px; max-height: 400px; overflow-y: auto;"></div>
             <button class="btn" style="width:100%; margin-top:20px; background:var(--card2); color:var(--text);" onclick="closeModal('receiptModal')">إغلاق</button>
         </div>
@@ -635,7 +686,6 @@
             await loadUsers();
             await loadLowStock();
             await loadSalesChart();
-            await loadStoreTarget();
 
             // 1: ريفرش تلقائي كل دقيقة
             setInterval(async () => {
@@ -666,90 +716,87 @@
 
         // 8: الرسم البياني - آخر 7 أيام
         let salesChartInstance = null;
+        let mSalesChartInstance = null;
+        let currentChartMode = 'sales';
+
         async function loadSalesChart() {
             try {
                 const days = 7;
                 const labels = [];
-                const values = [];
+                const salesValues = [];
+                const returnValues = [];
                 for(let i = days-1; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
                     const dateStr = d.toISOString().split('T')[0];
-                    labels.push(d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' }));
+                    const dayLabel = d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' });
+                    labels.push(dayLabel);
 
-                    const { data } = await _supabase.from('sales').select('total_amount').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', dateStr + 'T00:00:00').lte('created_at', dateStr + 'T23:59:59');
-                    const total = data?.reduce((s, r) => s + (parseFloat(r.total_amount) || 0), 0) || 0;
-                    values.push(total);
+                    const { data: sData } = await _supabase.from('sales').select('total_amount,type').eq('store_key', storeKey).gte('created_at', dateStr + 'T00:00:00').lte('created_at', dateStr + 'T23:59:59');
+                    const dayTotal = sData?.filter(r=>r.type==='sale').reduce((s,r) => s+(parseFloat(r.total_amount)||0), 0) || 0;
+                    const dayRet = sData?.filter(r=>r.type==='return').reduce((s,r) => s+(parseFloat(r.total_amount)||0), 0) || 0;
+                    salesValues.push(dayTotal);
+                    returnValues.push(dayRet);
                 }
 
-                const canvas = document.getElementById('sales-chart');
-                if(!canvas) return;
-                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-                const accentColor = isDark ? '#00f2fe' : '#004643';
-                const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
-                const textColor = isDark ? '#888' : '#555';
-
-                if(salesChartInstance) salesChartInstance.destroy();
-                salesChartInstance = new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'المبيعات (ج.م)',
-                            data: values,
-                            backgroundColor: accentColor + '55',
-                            borderColor: accentColor,
-                            borderWidth: 2,
-                            borderRadius: 8,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { labels: { color: textColor, font: { family: 'Cairo' } } }
-                        },
-                        scales: {
-                            x: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } },
-                            y: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } }
-                        }
-                    }
-                });
+                window._chartLabels = labels;
+                window._chartSales = salesValues;
+                window._chartReturns = returnValues;
+                renderChart(currentChartMode);
             } catch(e) { showToast('خطأ في تحميل الرسم البياني: ' + e.message, 'error'); }
         }
 
-        // 7: تارجت المتجر
-        async function loadStoreTarget() {
-            try {
-                const { data } = await _supabase.from('stores').select('monthly_target, monthly_sales').eq('store_key', storeKey).single();
-                if(data) {
-                    const inp = document.getElementById('store-target-input');
-                    if(inp) inp.value = data.monthly_target || '';
-                    updateTargetProgress(data.monthly_sales || 0, data.monthly_target || 0);
+        function switchChart(mode) {
+            currentChartMode = mode;
+            // تحديث أزرار ديسكتوب
+            const btnS = document.getElementById('chart-btn-sales');
+            const btnR = document.getElementById('chart-btn-returns');
+            const mbtnS = document.getElementById('m-chart-btn-sales');
+            const mbtnR = document.getElementById('m-chart-btn-returns');
+            if(btnS) { btnS.className = mode==='sales' ? 'btn btn-add' : 'btn'; if(mode!=='sales') btnS.style.cssText='font-size:12px;padding:6px 14px;background:var(--card2);color:var(--text)'; else btnS.style.cssText='font-size:12px;padding:6px 14px;'; }
+            if(btnR) { btnR.className = mode==='returns' ? 'btn btn-add' : 'btn'; if(mode!=='returns') btnR.style.cssText='font-size:12px;padding:6px 14px;background:var(--card2);color:var(--text)'; else btnR.style.cssText='font-size:12px;padding:6px 14px;'; }
+            if(mbtnS) { mbtnS.className = mode==='sales' ? 'btn btn-add' : 'btn'; if(mode!=='sales') mbtnS.style.cssText='font-size:11px;padding:4px 10px;background:var(--card2);color:var(--text)'; else mbtnS.style.cssText='font-size:11px;padding:4px 10px;'; }
+            if(mbtnR) { mbtnR.className = mode==='returns' ? 'btn btn-add' : 'btn'; if(mode!=='returns') mbtnR.style.cssText='font-size:11px;padding:4px 10px;background:var(--card2);color:var(--text)'; else mbtnR.style.cssText='font-size:11px;padding:4px 10px;'; }
+            if(window._chartLabels) renderChart(mode);
+        }
+
+        function renderChart(mode) {
+            const labels = window._chartLabels || [];
+            const values = mode === 'sales' ? (window._chartSales || []) : (window._chartReturns || []);
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            const accentColor = mode === 'sales' ? (isDark ? '#00f2fe' : '#004643') : (isDark ? '#ff4d4d' : '#c0392b');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
+            const textColor = isDark ? '#888' : '#555';
+            const chartLabel = mode === 'sales' ? 'المبيعات (ج.م)' : 'المرتجع (ج.م)';
+
+            const config = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{ label: chartLabel, data: values, backgroundColor: accentColor+'55', borderColor: accentColor, borderWidth: 2, borderRadius: 8 }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: textColor, font: { family: 'Cairo' } } } },
+                    scales: {
+                        x: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } }
+                    }
                 }
-            } catch(e) {}
-        }
+            };
 
-        function updateTargetProgress(sales, target) {
-            const bar = document.getElementById('target-progress-bar');
-            if(!bar || !target) return;
-            bar.style.display = 'block';
-            const pct = Math.min(Math.round((sales / target) * 100), 100);
-            document.getElementById('target-progress-label').innerText = `${sales.toLocaleString()} / ${target.toLocaleString()} ج.م`;
-            document.getElementById('target-progress-pct').innerText = pct + '%';
-            const fill = document.getElementById('target-progress-fill');
-            fill.style.width = pct + '%';
-            fill.style.background = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--accent)';
-        }
-
-        async function saveStoreTarget() {
-            const val = parseInt(document.getElementById('store-target-input')?.value) || 0;
-            if(!val) return showToast('أدخل قيمة التارجت', 'error');
-            try {
-                const { error } = await _supabase.from('stores').update({ monthly_target: val }).eq('store_key', storeKey);
-                if(error) throw error;
-                showToast('تم حفظ التارجت بنجاح', 'success');
-                await loadStoreTarget();
-            } catch(e) { showToast('خطأ في حفظ التارجت: ' + e.message, 'error'); }
+            // ديسكتوب
+            const canvas = document.getElementById('sales-chart');
+            if(canvas) {
+                if(salesChartInstance) salesChartInstance.destroy();
+                salesChartInstance = new Chart(canvas, JSON.parse(JSON.stringify(config)));
+            }
+            // موبايل
+            const mCanvas = document.getElementById('m-sales-chart');
+            if(mCanvas) {
+                if(mSalesChartInstance) mSalesChartInstance.destroy();
+                mSalesChartInstance = new Chart(mCanvas, JSON.parse(JSON.stringify(config)));
+            }
         }
 
         // Fix 4: feedback with device param
@@ -774,59 +821,91 @@
             } catch(e) { showToast('خطأ في تحميل الإصدار: ' + e.message, 'error'); }
         }
 
+        let allSales = [];
         async function loadSales() {
             try {
                 const today = new Date().toISOString().split('T')[0];
                 const { data: sales, error } = await _supabase.from('sales').select('*').eq('store_key', storeKey).gte('created_at', today).order('created_at', {ascending: false});
                 if(error) throw error;
+                allSales = sales || [];
 
                 let total = 0, ret = 0;
-
-                const rowsHTML = sales?.map(s => {
+                allSales.forEach(s => {
                     const amt = parseFloat(s.total_amount) || 0;
                     if(s.type === 'sale') total += amt; else ret += amt;
-                    return { s, amt };
-                }) || [];
-
-                // Desktop table
-                const tbody = document.getElementById('sales-list');
-                if(tbody) {
-                    tbody.innerHTML = rowsHTML.map(({s}) => `
-                        <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
-                            <td>#${s.id.toString().slice(-6)}</td>
-                            <td>${new Date(s.created_at).toLocaleTimeString('ar-EG')}</td>
-                            <td>${s.seller_name || '---'}</td>
-                            <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
-                            <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
-                        </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات اليوم</td></tr>';
-                }
-
-                // Fix 2: Mobile table
-                const mtbody = document.getElementById('m-sales-list');
-                if(mtbody) {
-                    mtbody.innerHTML = rowsHTML.map(({s}) => `
-                        <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
-                            <td>#${s.id.toString().slice(-6)}</td>
-                            <td>${new Date(s.created_at).toLocaleTimeString('ar-EG', {hour:'2-digit',minute:'2-digit'})}</td>
-                            <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
-                            <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'↩'}</td>
-                        </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات</td></tr>';
-                }
+                });
 
                 const totalStr = total.toLocaleString() + " ج.م";
                 const retStr = ret.toLocaleString() + " ج.م";
-                const countStr = sales?.filter(s=>s.type==='sale').length || 0;
-
+                const countStr = allSales.filter(s=>s.type==='sale').length || 0;
                 ['m-total-sales','d-total-sales'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = totalStr; });
                 ['m-returns','d-returns'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = retStr; });
                 ['m-bill-count','d-bill-count'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = countStr; });
 
+                renderSales(allSales);
             } catch(e) { showToast('خطأ في تحميل المبيعات: ' + e.message, 'error'); }
+        }
+
+        function renderSales(sales) {
+            const formatDT = (dt) => {
+                const d = new Date(dt);
+                const date = d.toLocaleDateString('ar-EG', {day:'2-digit', month:'2-digit'});
+                const time = d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'});
+                return `${date} ${time}`;
+            };
+            // ديسكتوب
+            const tbody = document.getElementById('sales-list');
+            if(tbody) {
+                tbody.innerHTML = sales.map(s => `
+                    <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
+                        <td style="font-weight:bold; color:var(--accent);">#${s.id.toString().slice(-6)}</td>
+                        <td style="font-size:12px;">${formatDT(s.created_at)}</td>
+                        <td>${s.seller_name || '---'}</td>
+                        <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
+                        <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'مرتجع'}</td>
+                    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات اليوم</td></tr>';
+            }
+            // موبايل
+            const mtbody = document.getElementById('m-sales-list');
+            if(mtbody) {
+                mtbody.innerHTML = sales.map(s => `
+                    <tr class="clickable-row" onclick='showReceipt(${JSON.stringify(s)})'>
+                        <td style="font-weight:bold; color:var(--accent); font-size:11px;">#${s.id.toString().slice(-6)}</td>
+                        <td style="font-size:11px;">${formatDT(s.created_at)}</td>
+                        <td style="color:var(--accent); font-weight:bold;">${s.total_amount} ج.م</td>
+                        <td style="color:${s.type==='sale'?'var(--green)':'var(--red)'}">${s.type==='sale'?'بيع':'↩'}</td>
+                    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا توجد مبيعات</td></tr>';
+            }
+        }
+
+        function sortSales() {
+            const val = document.getElementById('sales-sort')?.value || document.getElementById('m-sales-sort')?.value || 'time-desc';
+            let sorted = [...allSales];
+            if(val === 'time-desc') sorted.sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
+            else if(val === 'time-asc') sorted.sort((a,b) => new Date(a.created_at)-new Date(b.created_at));
+            else if(val === 'amount-desc') sorted.sort((a,b) => (parseFloat(b.total_amount)||0)-(parseFloat(a.total_amount)||0));
+            else if(val === 'amount-asc') sorted.sort((a,b) => (parseFloat(a.total_amount)||0)-(parseFloat(b.total_amount)||0));
+            else if(val === 'type-sale') sorted = sorted.filter(s=>s.type==='sale');
+            else if(val === 'type-return') sorted = sorted.filter(s=>s.type==='return');
+            renderSales(sorted);
+        }
+
+        function filterSales() {
+            const q = document.getElementById('d-search')?.value?.toLowerCase() || '';
+            const filtered = allSales.filter(s =>
+                s.id.toString().slice(-6).includes(q) ||
+                (s.seller_name||'').toLowerCase().includes(q)
+            );
+            renderSales(filtered);
         }
 
         function showReceipt(sale) {
             try {
                 const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+                // عرض كود الفاتورة
+                const codeEl = document.getElementById('receipt-code');
+                if(codeEl) codeEl.innerText = '#' + sale.id.toString().slice(-6);
+
                 let html = `<p><b>البائع:</b> ${sale.seller_name}</p><hr style="border-color:var(--border)"><table><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
                 items.forEach(it => {
                     html += `<tr><td>${it.product_name}</td><td>${it.qty}</td><td>${it.price} ج.م</td></tr>`;
@@ -870,24 +949,58 @@
             } catch(e) { showToast('خطأ في عملية الإرجاع: ' + e.message, 'error'); }
         }
 
+        let allUsers = [];
         async function loadUsers() {
             try {
-                const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).eq('role', 'employee');
+                const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).in('role', ['employee','manager']);
                 if(error) throw error;
-                const ul = document.getElementById('users-list');
-                if(ul) {
-                    ul.innerHTML = users?.map(u => `
-                        <tr>
-                            <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
-                            <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
-                            <td>${u.monthly_target || 0}</td>
-                            <td>
-                                <button class="btn btn-add" style="padding:4px 8px" onclick="editUser('${u.username}')">⚙️</button>
-                                <button class="btn btn-del" style="padding:4px 8px" onclick="deleteUser('${u.username}')">🗑️</button>
-                            </td>
-                        </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا يوجد موظفين</td></tr>';
-                }
+                allUsers = users || [];
+                renderUsers(allUsers);
             } catch(e) { showToast('خطأ في تحميل الموظفين: ' + e.message, 'error'); }
+        }
+
+        function renderUsers(users) {
+            const roleLabel = r => r === 'manager' ? '<span style="color:var(--orange);font-weight:700;">مدير</span>' : '<span style="color:var(--accent);">موظف</span>';
+            // ديسكتوب
+            const ul = document.getElementById('users-list');
+            if(ul) {
+                ul.innerHTML = users?.map(u => `
+                    <tr>
+                        <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
+                        <td>${roleLabel(u.role)}</td>
+                        <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
+                        <td>${u.monthly_target || 0}</td>
+                        <td>
+                            <button class="btn btn-add" style="padding:4px 8px" onclick="editUser('${u.username}')">⚙️</button>
+                            <button class="btn btn-del" style="padding:4px 8px" onclick="deleteUser('${u.username}')">🗑️</button>
+                        </td>
+                    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا يوجد موظفين</td></tr>';
+            }
+            // موبايل
+            const mul = document.getElementById('m-users-list');
+            if(mul) {
+                mul.innerHTML = users?.map(u => `
+                    <tr>
+                        <td><img src="${u.image_url || 'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
+                        <td>${roleLabel(u.role)}</td>
+                        <td style="color:var(--green)">${(u.monthly_sales || 0).toLocaleString()} ج.م</td>
+                        <td>
+                            <button class="btn btn-add" style="padding:3px 6px; font-size:11px;" onclick="editUser('${u.username}')">⚙️</button>
+                            <button class="btn btn-del" style="padding:3px 6px; font-size:11px;" onclick="deleteUser('${u.username}')">🗑️</button>
+                        </td>
+                    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لا يوجد موظفين</td></tr>';
+            }
+        }
+
+        function sortUsers() {
+            const val = document.getElementById('users-sort')?.value || document.getElementById('m-users-sort')?.value || 'name-asc';
+            let sorted = [...allUsers];
+            if(val === 'name-asc') sorted.sort((a,b) => a.username.localeCompare(b.username, 'ar'));
+            else if(val === 'sales-desc') sorted.sort((a,b) => (b.monthly_sales||0)-(a.monthly_sales||0));
+            else if(val === 'sales-asc') sorted.sort((a,b) => (a.monthly_sales||0)-(b.monthly_sales||0));
+            else if(val === 'target-desc') sorted.sort((a,b) => (b.monthly_target||0)-(a.monthly_target||0));
+            else if(val === 'role') sorted.sort((a,b) => a.role.localeCompare(b.role));
+            renderUsers(sorted);
         }
 
         // Fix 3: saveUser with password field + proper insert
@@ -976,10 +1089,7 @@
             document.getElementById('userModal').style.display='flex';
         }
 
-        function searchSale(src) {
-            const val = src === 'm' ? document.getElementById('m-search')?.value : document.getElementById('d-search')?.value;
-            if(val) showToast('البحث عن: ' + val, 'info');
-        }
+        function searchSale(src) { filterSales(); }
 
         function scrollToSales() { document.getElementById('sales-section')?.scrollIntoView({ behavior: 'smooth' }); }
         function scrollToMSales() { document.getElementById('m-sales-section')?.scrollIntoView({ behavior: 'smooth' }); }
