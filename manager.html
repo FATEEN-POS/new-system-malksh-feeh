@@ -389,7 +389,7 @@
         </div>
 
         <div class="footer-bar" style="margin-top:15px; border-radius:12px;">
-            <span>Fateen OS</span>
+            <span style="font-size:11px; color:var(--nav-text); opacity:0.7;">جميع الحقوق محفوظة لفطين 2026</span>
             <span class="version" id="m-version-footer">V0.5</span>
         </div>
     </div>
@@ -405,10 +405,6 @@
                 <div style="color: var(--text-muted); font-size:13px;" id="d-welcome-msg">أهلاً بك</div>
             </div>
             <div class="header-controls">
-                <div class="search-bar" style="margin:0; min-width:220px;">
-                    <span>🔍</span>
-                    <input type="text" id="d-search" placeholder="بحث او ارجاع فاتوره" onkeypress="if(event.key==='Enter') searchSale('d')">
-                </div>
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
                     <span id="d-theme-icon">🌙</span>
                     <span id="d-theme-label">ثيم فاتح</span>
@@ -416,13 +412,6 @@
                 <button class="btn btn-orange" onclick="location.href='about.html'">📞 تواصل</button>
                 <button class="btn btn-del" onclick="logout()">خروج</button>
             </div>
-        </div>
-
-        <!-- Fix 4: Feedback as dedicated bar -->
-        <div class="feedback-bar">
-            <label>📩 ملاحظة للمطور:</label>
-            <input type="text" id="feedback-input" placeholder="اكتب ملاحظاتك هنا...">
-            <button class="btn-send" onclick="sendFeedback('d')">إرسال</button>
         </div>
 
         <div class="desktop-grid">
@@ -468,7 +457,7 @@
         </div>
 
         <div class="footer-bar">
-            <span>Fateen OS</span>
+            <span style="font-size:11px; opacity:0.7;">جميع الحقوق محفوظة لفطين 2026</span>
             <span class="version" id="d-version-footer">V0.5</span>
         </div>
 
@@ -476,6 +465,10 @@
         <div id="sales-section" style="margin-top: 25px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 style="color:var(--accent); margin:0;">🕒 مبيعات اليوم بالتفصيل</h3>
+                <div class="search-bar" style="margin:0; min-width:240px;">
+                    <span>🔍</span>
+                    <input type="text" id="d-search" placeholder="بحث برقم الفاتورة أو البائع" onkeypress="if(event.key==='Enter') searchSale('d')">
+                </div>
             </div>
             <table>
                 <thead><tr><th>رقم الفاتورة</th><th>الوقت</th><th>البائع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
@@ -494,6 +487,57 @@
                 <tbody id="users-list"></tbody>
             </table>
         </div>
+
+        <!-- 7: تحديد تارجت المتجر - section مستقل -->
+        <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
+            <h3 style="color:var(--accent); margin:0 0 15px;">🎯 تارجت المتجر</h3>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">تارجت الشهر الحالي</label>
+                    <input type="number" id="store-target-input" placeholder="أدخل التارجت بالجنيه" style="width:100%; padding:10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; outline:none; font-family:'Cairo',sans-serif; font-size:14px;">
+                </div>
+                <div style="padding-top:20px;">
+                    <button class="btn btn-add" onclick="saveStoreTarget()">💾 حفظ التارجت</button>
+                </div>
+            </div>
+            <div id="target-progress-bar" style="margin-top:15px; display:none;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
+                    <span id="target-progress-label">0 / 0 ج.م</span>
+                    <span id="target-progress-pct">0%</span>
+                </div>
+                <div style="background:var(--border); border-radius:8px; height:10px; overflow:hidden;">
+                    <div id="target-progress-fill" style="height:100%; background:var(--accent); border-radius:8px; transition:width 0.5s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2: جدول المنتجات الناقصة -->
+        <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
+            <h3 style="color:var(--red); margin:0 0 15px;">⚠️ منتجات تحتاج تعبئة (مخزون ≤ 5)</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>اسم المنتج</th><th>الكمية المتبقية</th></tr></thead>
+                    <tbody id="low-stock-list"><tr><td colspan="2" style="text-align:center; color:var(--text-muted);">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 8: الرسم البياني - الأيام مقابل المبيعات -->
+        <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
+            <h3 style="color:var(--accent); margin:0 0 15px;">📊 مبيعات آخر 7 أيام</h3>
+            <canvas id="sales-chart" height="100"></canvas>
+        </div>
+
+        <!-- 3: feedback في أسفل الصفحة (ديسكتوب) -->
+        <div style="margin-top:30px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;">
+            <h3 style="color:var(--accent); margin:0 0 12px;">📩 ملاحظة للمطور</h3>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="feedback-input" placeholder="اكتب ملاحظاتك هنا..." style="flex:1; padding:10px; background:var(--search-bg); border:1px solid var(--border); color:var(--text); border-radius:8px; outline:none; font-family:'Cairo',sans-serif;">
+                <button class="btn-send" onclick="sendFeedback('d')">إرسال</button>
+            </div>
+            <p style="margin:12px 0 0; font-size:12px; color:var(--text-muted); text-align:center;">جميع الحقوق محفوظة لفطين 2026</p>
+        </div>
+
     </div>
 
     <!-- ======= MODALS ======= -->
@@ -570,7 +614,6 @@
             }
         }
 
-        // ======= INIT =======
         async function init() {
             loadTheme();
             if(!storeKey) return location.href='index.html';
@@ -590,6 +633,123 @@
             await loadVersion();
             await loadSales();
             await loadUsers();
+            await loadLowStock();
+            await loadSalesChart();
+            await loadStoreTarget();
+
+            // 1: ريفرش تلقائي كل دقيقة
+            setInterval(async () => {
+                await loadSales();
+                await loadLowStock();
+                await loadSalesChart();
+            }, 60000);
+        }
+
+        // 2: تحميل المنتجات الناقصة
+        async function loadLowStock() {
+            try {
+                const { data, error } = await _supabase.from('products').select('product_name, stock').eq('store_key', storeKey).lte('stock', 5).order('stock', {ascending: true});
+                if(error) throw error;
+                const el = document.getElementById('low-stock-list');
+                if(!el) return;
+                if(!data || data.length === 0) {
+                    el.innerHTML = '<tr><td colspan="2" style="text-align:center; color:var(--green);">✅ جميع المنتجات بمخزون كافٍ</td></tr>';
+                    return;
+                }
+                el.innerHTML = data.map(p => `
+                    <tr>
+                        <td>${p.product_name}</td>
+                        <td style="color:${p.stock === 0 ? 'var(--red)' : 'var(--orange)'}; font-weight:bold;">${p.stock} قطعة</td>
+                    </tr>`).join('');
+            } catch(e) { showToast('خطأ في تحميل النواقص: ' + e.message, 'error'); }
+        }
+
+        // 8: الرسم البياني - آخر 7 أيام
+        let salesChartInstance = null;
+        async function loadSalesChart() {
+            try {
+                const days = 7;
+                const labels = [];
+                const values = [];
+                for(let i = days-1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    labels.push(d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' }));
+
+                    const { data } = await _supabase.from('sales').select('total_amount').eq('store_key', storeKey).eq('type', 'sale').gte('created_at', dateStr + 'T00:00:00').lte('created_at', dateStr + 'T23:59:59');
+                    const total = data?.reduce((s, r) => s + (parseFloat(r.total_amount) || 0), 0) || 0;
+                    values.push(total);
+                }
+
+                const canvas = document.getElementById('sales-chart');
+                if(!canvas) return;
+                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+                const accentColor = isDark ? '#00f2fe' : '#004643';
+                const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
+                const textColor = isDark ? '#888' : '#555';
+
+                if(salesChartInstance) salesChartInstance.destroy();
+                salesChartInstance = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'المبيعات (ج.م)',
+                            data: values,
+                            backgroundColor: accentColor + '55',
+                            borderColor: accentColor,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: textColor, font: { family: 'Cairo' } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, font: { family: 'Cairo' } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            } catch(e) { showToast('خطأ في تحميل الرسم البياني: ' + e.message, 'error'); }
+        }
+
+        // 7: تارجت المتجر
+        async function loadStoreTarget() {
+            try {
+                const { data } = await _supabase.from('stores').select('monthly_target, monthly_sales').eq('store_key', storeKey).single();
+                if(data) {
+                    const inp = document.getElementById('store-target-input');
+                    if(inp) inp.value = data.monthly_target || '';
+                    updateTargetProgress(data.monthly_sales || 0, data.monthly_target || 0);
+                }
+            } catch(e) {}
+        }
+
+        function updateTargetProgress(sales, target) {
+            const bar = document.getElementById('target-progress-bar');
+            if(!bar || !target) return;
+            bar.style.display = 'block';
+            const pct = Math.min(Math.round((sales / target) * 100), 100);
+            document.getElementById('target-progress-label').innerText = `${sales.toLocaleString()} / ${target.toLocaleString()} ج.م`;
+            document.getElementById('target-progress-pct').innerText = pct + '%';
+            const fill = document.getElementById('target-progress-fill');
+            fill.style.width = pct + '%';
+            fill.style.background = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--accent)';
+        }
+
+        async function saveStoreTarget() {
+            const val = parseInt(document.getElementById('store-target-input')?.value) || 0;
+            if(!val) return showToast('أدخل قيمة التارجت', 'error');
+            try {
+                const { error } = await _supabase.from('stores').update({ monthly_target: val }).eq('store_key', storeKey);
+                if(error) throw error;
+                showToast('تم حفظ التارجت بنجاح', 'success');
+                await loadStoreTarget();
+            } catch(e) { showToast('خطأ في حفظ التارجت: ' + e.message, 'error'); }
         }
 
         // Fix 4: feedback with device param
