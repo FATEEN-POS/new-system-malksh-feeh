@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ======= THEMES ======= */
         :root {
@@ -43,6 +44,7 @@
             --btn-icon-color: #f0ede5;
             --footer-bg: #004643;
             --search-bg: #e8e4db;
+            --accent-on-accent: #f0ede5;
         }
 
         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; transition: background 0.3s, color 0.3s, border-color 0.3s; }
@@ -80,7 +82,7 @@
 
         .version-badge {
             background: var(--btn-icon-bg);
-            color: var(--accent);
+            color: var(--btn-icon-color);
             padding: 4px 12px;
             border-radius: 8px;
             font-size: 12px;
@@ -114,8 +116,8 @@
             border-radius: 10px;
             border: 1px solid var(--border);
         }
-        .v-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--accent); padding: 3px 8px; width: 65px; border-radius: 6px; outline: none; font-size: 12px; text-align: center; }
-        .v-save-btn { background: var(--accent); color: #000; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px; white-space: nowrap; }
+        .v-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 3px 8px; width: 65px; border-radius: 6px; outline: none; font-size: 12px; text-align: center; }
+        .v-save-btn { background: var(--accent); color: var(--btn-icon-color); border: none; padding: 4px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px; white-space: nowrap; font-family: 'Cairo', sans-serif; }
 
         /* stats */
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 18px; }
@@ -183,7 +185,7 @@
         /* add store btn */
         .btn-add-store {
             background: var(--accent);
-            color: #000;
+            color: var(--btn-icon-color);
             border: none;
             padding: 9px 18px;
             border-radius: 10px;
@@ -191,6 +193,7 @@
             cursor: pointer;
             font-size: 13px;
             white-space: nowrap;
+            font-family: 'Cairo', sans-serif;
         }
 
         .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 800; font-family: 'Cairo', sans-serif; font-size: 13px; }
@@ -232,7 +235,7 @@
         .modal-box input:focus, .modal-box select:focus { border-color: var(--accent); }
 
         .btn-full { width: 100%; padding: 13px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; font-size: 15px; font-family: 'Cairo', sans-serif; margin-top: 5px; }
-        .btn-save { background: var(--accent); color: #000; }
+        .btn-save { background: var(--accent); color: var(--btn-icon-color); }
         .btn-cancel-modal { background: var(--card2); color: var(--text-muted); border: 1px solid var(--border) !important; }
 
         .emp-row { background: var(--card2); padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
@@ -283,6 +286,15 @@
 
         <div class="stores-grid" id="m-stores-grid"></div>
 
+        <!-- رسم بياني موبايل -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:15px; margin-top:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; color:var(--accent); font-size:14px;">📈 الأرباح الشهري</h3>
+                <span id="m-profit-status" style="font-size:12px; font-weight:800;"></span>
+            </div>
+            <div style="height:200px;"><canvas id="m-revenue-chart"></canvas></div>
+        </div>
+
         <div class="footer-bar" style="border-radius:12px; margin-top:15px;">
             <span>Fateen OS</span>
             <span class="v" id="m-footer-v">...</span>
@@ -326,6 +338,18 @@
         </div>
 
         <div class="stores-grid stores-grid-desktop" id="d-stores-grid"></div>
+
+        <!-- رسم بياني الأرباح -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0; color:var(--accent); font-size:16px;">📈 تحليل الأرباح الشهري</h3>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <span id="d-profit-status" style="font-size:13px; font-weight:800;"></span>
+                    <select id="d-chart-year" onchange="renderChart()" style="background:var(--input-bg); border:1px solid var(--border); color:var(--text); padding:5px 10px; border-radius:8px; outline:none; font-family:'Cairo',sans-serif;"></select>
+                </div>
+            </div>
+            <div style="height:280px;"><canvas id="d-revenue-chart"></canvas></div>
+        </div>
 
         <div class="footer-bar">
             <span>Fateen OS</span>
@@ -401,6 +425,7 @@
             html.setAttribute('data-theme', isLight ? '' : 'light');
             localStorage.setItem('fateen_theme', isLight ? 'dark' : 'light');
             updateThemeBtn(!isLight);
+            setTimeout(renderChart, 350);
         }
 
         function updateThemeBtn(isLight) {
@@ -570,8 +595,103 @@
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         function logout() { sessionStorage.clear(); location.href='index.html'; }
 
+        // ======= CHART =======
+        let chartD = null, chartM = null;
+        let storesHistory = [];
+
+        async function loadChartData() {
+            // نجيب كل المتاجر ونحسب الأرباح من subscription_price × عدد المتاجر لكل شهر
+            // بما إن مفيش تاريخ مبيعات فعلي للمطور، هنستخدم created_at للمتاجر
+            const { data: stores } = await _supabase.from('stores').select('subscription_price, created_at');
+            storesHistory = stores || [];
+
+            const yearEl = document.getElementById('d-chart-year');
+            if(yearEl && yearEl.options.length === 0) {
+                const years = [...new Set(stores?.map(s => new Date(s.created_at).getFullYear()) || [])];
+                const currentYear = new Date().getFullYear();
+                if(!years.includes(currentYear)) years.push(currentYear);
+                years.sort((a,b) => b-a);
+                years.forEach(y => { const o = document.createElement('option'); o.value=y; o.text=y; yearEl.appendChild(o); });
+            }
+
+            renderChart();
+        }
+
+        function renderChart() {
+            const year = parseInt(document.getElementById('d-chart-year')?.value || new Date().getFullYear());
+            const months = ['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+            // حساب الأرباح التراكمية لكل شهر
+            const monthlyRevenue = Array(12).fill(0);
+            storesHistory.forEach(st => {
+                const d = new Date(st.created_at);
+                if(d.getFullYear() === year) {
+                    monthlyRevenue[d.getMonth()] += Number(st.subscription_price || 0);
+                }
+            });
+
+            // تحديد الحالة: ربح أو خسارة (مقارنة بآخر شهرين)
+            const currentMonth = new Date().getMonth();
+            const prev = monthlyRevenue[currentMonth - 1] || 0;
+            const curr = monthlyRevenue[currentMonth] || 0;
+            const diff = curr - prev;
+            const statusText = diff >= 0 ? `▲ +${diff.toLocaleString()} ج.م ربح` : `▼ ${diff.toLocaleString()} ج.م خسارة`;
+            const statusColor = diff >= 0 ? 'var(--green)' : 'var(--red)';
+
+            ['d-profit-status','m-profit-status'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) { el.innerText = statusText; el.style.color = statusColor; }
+            });
+
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+            const textColor = isLight ? '#555' : '#888';
+            const accentColor = isLight ? '#004643' : '#00f2fe';
+
+            const chartConfig = (canvasId, height) => {
+                const ctx = document.getElementById(canvasId)?.getContext('2d');
+                if(!ctx) return null;
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'الأرباح (ج.م)',
+                            data: monthlyRevenue,
+                            backgroundColor: monthlyRevenue.map((v,i) => i === currentMonth ? accentColor : (isLight ? 'rgba(0,70,67,0.2)' : 'rgba(0,242,254,0.15)')),
+                            borderColor: accentColor,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ` ${ctx.raw.toLocaleString()} ج.م`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Cairo', size: height > 250 ? 11 : 9 } } },
+                            y: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Cairo' }, callback: v => v.toLocaleString() } }
+                        }
+                    }
+                });
+            };
+
+            if(chartD) chartD.destroy();
+            if(chartM) chartM.destroy();
+            chartD = chartConfig('d-revenue-chart', 280);
+            chartM = chartConfig('m-revenue-chart', 200);
+        }
+
         loadTheme();
         loadData();
+        loadChartData();
         setInterval(loadData, 60000);
     </script>
 </body>
