@@ -336,6 +336,14 @@
 <div id="toast-container"></div>
 
 <script>
+    // ===== SECURITY CHECK =====
+    (function securityCheck(){
+        const sk=sessionStorage.getItem('store_key');
+        const un=sessionStorage.getItem('username');
+        const role=sessionStorage.getItem('userRole');
+        if(!sk||!un){location.replace('index.html');return;}
+        if(role==='employee'){location.replace('pos.html');return;}
+    })();
     const SUPABASE_URL='https://xyvxowlbvuqbggkslwqr.supabase.co';
     const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
     const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
@@ -496,8 +504,15 @@
         const newCat=document.getElementById('p-new-category').value.trim();
         const selCat=document.getElementById('p-category-select').value;
         const category=newCat||selCat||null;
-        const data={store_key:storeKey,barcode:document.getElementById('p-barcode').value,product_name:document.getElementById('p-name').value,category,stock:parseInt(document.getElementById('p-stock').value)||0,cost_price:parseFloat(document.getElementById('p-cost').value)||0,price:parseFloat(document.getElementById('p-price').value)||0,expiry_date:document.getElementById('p-expiry').value||null};
+        const pName=document.getElementById('p-name').value.trim();
+        if(!pName){showToast('اسم المنتج مطلوب','error');return;}
+        const data={store_key:storeKey,barcode:document.getElementById('p-barcode').value,product_name:pName,category,stock:parseInt(document.getElementById('p-stock').value)||0,cost_price:parseFloat(document.getElementById('p-cost').value)||0,price:parseFloat(document.getElementById('p-price').value)||0,expiry_date:document.getElementById('p-expiry').value||null};
         try{
+            // تحقق من تكرار الاسم عند الإضافة فقط
+            if(!id){
+                const{data:existing}=await _supabase.from('products').select('id').eq('store_key',storeKey).eq('product_name',pName);
+                if(existing&&existing.length>0){showToast('اسم المنتج موجود بالفعل — اختار اسماً مختلفاً','error');return;}
+            }
             if(id){const{error}=await _supabase.from('products').update(data).eq('id',id);if(error)throw error;showToast('تم تحديث الصنف بنجاح','success');}
             else{const{error}=await _supabase.from('products').insert([data]);if(error)throw error;showToast('تم إضافة الصنف بنجاح','success');}
             closeModal('productModal');loadInventory();

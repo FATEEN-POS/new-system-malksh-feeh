@@ -538,6 +538,14 @@
      SCRIPT - كل الـ JS محفوظ كما هو
 ================================================ -->
 <script>
+    // ===== SECURITY CHECK =====
+    (function securityCheck(){
+        const sk=sessionStorage.getItem('store_key');
+        const un=sessionStorage.getItem('username');
+        const role=sessionStorage.getItem('userRole');
+        if(!sk||!un){location.replace('index.html');return;}
+        if(role==='employee'){location.replace('pos.html');return;}
+    })();
     const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

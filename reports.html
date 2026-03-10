@@ -528,6 +528,14 @@
 <div id="toast-container"></div>
 
 <script>
+    // ===== SECURITY CHECK =====
+    (function securityCheck(){
+        const sk=sessionStorage.getItem('store_key');
+        const un=sessionStorage.getItem('username');
+        const role=sessionStorage.getItem('userRole');
+        if(!sk||!un){location.replace('index.html');return;}
+        if(role==='employee'){location.replace('pos.html');return;}
+    })();
     const SUPABASE_URL='https://xyvxowlbvuqbggkslwqr.supabase.co';
     const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
     const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
@@ -624,7 +632,7 @@
         const start=document.getElementById('d-start').value;
         const end=document.getElementById('d-end').value;
         try{
-            const{data}=await _supabase.from('sales').select('*').eq('store_key',storeKey).gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59').order('created_at',{ascending:false});
+            const{data}=await _supabase.from('sales').select('*').eq('store_key',storeKey).gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59').limit(500).order('created_at',{ascending:false}).limit(500);
             let total=0,ret=0,cash=0,card=0,count=0;
             const body=document.getElementById('daily-body');
             if(!data||!data.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">لا توجد بيانات في هذه الفترة</td></tr>';setKPI('d-total','0');setKPI('d-return','0');setKPI('d-cash','0');setKPI('d-card','0');setKPI('d-count','0');setKPI('d-avg','0');return;}
@@ -656,7 +664,7 @@
         const start=document.getElementById('p-start').value;
         const end=document.getElementById('p-end').value;
         try{
-            const{data}=await _supabase.from('sales').select('*').eq('store_key',storeKey).gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59');
+            const{data}=await _supabase.from('sales').select('*').eq('store_key',storeKey).gte('created_at',start+'T00:00:00').lte('created_at',end+'T23:59:59').limit(500);
             let total=0,ret=0,cash=0,card=0,saleCount=0;
             const dailyMap={};
             data?.forEach(s=>{

@@ -386,13 +386,31 @@
     }
 
     // ===== LOAD PRODUCTS =====
-    async function loadProducts(){
+    async function loadProducts(forceRefresh=false){
         try{
+            const cacheKey='fateen_products_'+storeKey;
+            if(!forceRefresh){
+                const cached=sessionStorage.getItem(cacheKey);
+                if(cached){allProducts=JSON.parse(cached);buildCatTabs();renderProducts();return;}
+            }
             const{data}=await _supabase.from('products').select('*').eq('store_key',storeKey).gt('stock',0).order('product_name');
             allProducts=data||[];
+            sessionStorage.setItem(cacheKey,JSON.stringify(allProducts));
             buildCatTabs();
             renderProducts();
         }catch(e){showToast('خطأ في تحميل المنتجات','error');}
+    }
+
+    function updateLocalStock(cartItems){
+        const cacheKey='fateen_products_'+storeKey;
+        cartItems.forEach(item=>{
+            const p=allProducts.find(x=>x.id===item.id);
+            if(p) p.stock=Math.max(0,p.stock-item.qty);
+        });
+        allProducts=allProducts.filter(p=>p.stock>0);
+        sessionStorage.setItem(cacheKey,JSON.stringify(allProducts));
+        buildCatTabs();
+        renderProducts();
     }
 
     function buildCatTabs(){
@@ -513,8 +531,9 @@
         if(btn){btn.disabled=true;btn.innerText='⏳ جاري الحفظ...';}
         const total=cart.reduce((s,i)=>s+(i.price*i.qty),0);
         try{
+            const slimItems=cart.map(i=>({id:i.id,product_name:i.product_name,price:i.price,qty:i.qty}));
             const{data:saleData,error}=await _supabase.from('sales').insert([{
-                store_key:storeKey,items:cart,total_amount:total,
+                store_key:storeKey,items:slimItems,total_amount:total,
                 payment_method:paymentMethod,seller_name:currentUser,type:'sale'
             }]).select().single();
             if(error) throw error;
@@ -525,9 +544,9 @@
             shiftSalesData.push({...saleData,type:'sale'});
             showToast('تم البيع بنجاح ✅','success');
             if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total);
+            updateLocalStock(cart);
             cart=[];
             renderCart();
-            loadProducts();
             updateTargetDisplay();
         }catch(e){showToast('خطأ في الشبكة: '+e.message,'error');}
         finally{
@@ -745,7 +764,13 @@
             <div class="emp-row">👤 ${employeeName}</div>
             ${rowsHTML}
             <div class="footer">Fateen OS — ${now.toLocaleDateString('ar-EG')} ${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
-            <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
+            <script>
+    // ===== SECURITY CHECK =====
+    (function securityCheck(){
+        const sk=sessionStorage.getItem('store_key');
+        const un=sessionStorage.getItem('username');
+        if(!sk||!un){location.replace('index.html');return;}
+    })();window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
         </body></html>`;
 
         const w=window.open('','_blank','width=400,height=600');
