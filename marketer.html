@@ -1,1 +1,359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الماركتر - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg:#080808; --surface:#111111; --surface2:#181818; --surface3:#202020;
+            --accent:#00f2fe; --accent-dim:rgba(0,242,254,0.08);
+            --border:#252525; --text:#f0f0f0; --text-muted:#666;
+            --green:#00e676; --green-dim:rgba(0,230,118,0.1);
+            --red:#ff4d4d; --red-dim:rgba(255,77,77,0.1);
+            --orange:#ffa040; --orange-dim:rgba(255,160,64,0.1);
+            --btn-color:#000; --input-bg:#0a0a0a;
+            --shadow:0 4px 24px rgba(0,0,0,0.5);
+            --radius:14px; --radius-sm:9px;
+        }
+        [data-theme="light"] {
+            --bg:#f0ede5; --surface:#ffffff; --surface2:#f5f2eb; --surface3:#eae7df;
+            --accent:#004643; --accent-dim:rgba(0,70,67,0.07);
+            --border:#ddd8cf; --text:#1a1a1a; --text-muted:#777;
+            --green:#00875a; --green-dim:rgba(0,135,90,0.08);
+            --red:#c0392b; --red-dim:rgba(192,57,43,0.08);
+            --orange:#d35400; --orange-dim:rgba(211,84,0,0.08);
+            --btn-color:#f0ede5; --input-bg:#f5f2eb;
+            --shadow:0 4px 24px rgba(0,0,0,0.08);
+        }
+        *,*::before,*::after { box-sizing:border-box; font-family:'Cairo',sans-serif; transition:background 0.25s,color 0.25s,border-color 0.25s; }
+        body { margin:0; padding:0; background:var(--bg); color:var(--text); min-height:100vh; }
 
+        /* TOPBAR */
+        .topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 20px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--shadow); }
+        .topbar-left { display:flex; align-items:center; gap:12px; }
+        .topbar-right { display:flex; align-items:center; gap:8px; }
+        .store-title { font-size:16px; font-weight:800; }
+        .version-chip { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-size:11px; font-weight:800; }
+        .topbar-btn { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+        .topbar-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-danger-sm { background:var(--red-dim); border-color:var(--red); color:var(--red); }
+
+        /* CONTENT */
+        .page-wrap { padding:24px 20px; max-width:1200px; margin:0 auto; }
+
+        /* STATS */
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; position:relative; overflow:hidden; }
+        .stat-card::before { content:''; position:absolute; bottom:0; right:0; left:0; height:3px; }
+        .stat-card.green::before { background:var(--green); }
+        .stat-card.accent::before { background:var(--accent); }
+        .stat-card.orange::before { background:var(--orange); }
+        .stat-card h4 { margin:0 0 8px; font-size:12px; color:var(--text-muted); }
+        .stat-card p { margin:0; font-size:24px; font-weight:800; }
+        .stat-card.green p { color:var(--green); }
+        .stat-card.accent p { color:var(--accent); }
+        .stat-card.orange p { color:var(--orange); }
+
+        /* SECTION */
+        .section-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
+        .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+        .section-title { font-size:15px; font-weight:800; color:var(--accent); margin:0; }
+
+        /* TABLE */
+        .table-wrap { overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--border); }
+        .data-table { width:100%; border-collapse:collapse; }
+        .data-table th { background:var(--surface2); padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; font-weight:700; border-bottom:1px solid var(--border); }
+        .data-table td { padding:11px 14px; border-bottom:1px solid var(--border); font-size:13px; }
+        .data-table tbody tr:last-child td { border-bottom:none; }
+
+        /* BADGE */
+        .badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+        .badge-green { background:var(--green-dim); color:var(--green); }
+        .badge-accent { background:var(--accent-dim); color:var(--accent); }
+        .badge-orange { background:var(--orange-dim); color:var(--orange); }
+
+        /* BUTTONS */
+        .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-family:'Cairo',sans-serif; font-weight:700; font-size:13px; transition:opacity 0.2s,transform 0.15s; }
+        .btn:hover { opacity:0.88; transform:translateY(-1px); }
+        .btn-primary { background:var(--accent); color:var(--btn-color); }
+        .btn-ghost { background:var(--surface3); color:var(--text); border:1px solid var(--border); }
+
+        /* MODAL */
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; padding:16px; }
+        .modal.open { display:flex; }
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; width:460px; max-width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:var(--shadow); }
+        .modal-title { font-size:16px; font-weight:800; color:var(--accent); margin:0 0 18px; padding-bottom:14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .modal-close { cursor:pointer; color:var(--text-muted); font-size:18px; }
+        .modal-close:hover { color:var(--red); }
+        .field-group { margin-top:12px; }
+        .field-group label { font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px; font-weight:600; }
+        .text-input { width:100%; padding:10px 14px; background:var(--input-bg); border:1px solid var(--border); color:var(--text); border-radius:var(--radius-sm); font-family:'Cairo',sans-serif; font-size:13px; outline:none; }
+        .text-input:focus { border-color:var(--accent); }
+
+        /* TOAST */
+        #toast-container { position:fixed; bottom:20px; left:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:340px; }
+        .toast { padding:12px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:700; border:1px solid; animation:toastIn 0.3s ease; cursor:pointer; display:flex; align-items:flex-start; gap:8px; }
+        .toast-msg { flex:1; line-height:1.5; }
+        .toast-success { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+        .toast-error { background:var(--red-dim); border-color:var(--red); color:var(--red); }
+        .toast-info { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+        @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        /* MOBILE */
+        @media (max-width:600px) {
+            .page-wrap { padding:14px; }
+            .stats-grid { grid-template-columns:repeat(2,1fr); }
+            .topbar { padding:0 12px; height:54px; }
+            .store-title { font-size:14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="store-title">📢 لوحة الماركتر</div>
+        <span class="version-chip" id="version-chip">V0.5</span>
+    </div>
+    <div class="topbar-right">
+        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+        <button class="topbar-btn btn-danger-sm" onclick="logout()">خروج</button>
+    </div>
+</div>
+
+<div class="page-wrap">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-card accent">
+            <h4>المتاجر المضافة</h4>
+            <p id="stat-stores">0</p>
+        </div>
+        <div class="stat-card green">
+            <h4>إجمالي العمولات</h4>
+            <p id="stat-commission">0 ج.م</p>
+        </div>
+        <div class="stat-card orange">
+            <h4>إجمالي المبيعات</h4>
+            <p id="stat-sales">0 ج.م</p>
+        </div>
+    </div>
+
+    <!-- المتاجر -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3 class="section-title">🏪 المتاجر المسجلة</h3>
+            <button class="btn btn-primary" onclick="openAddStoreModal()">+ إضافة متجر</button>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>اسم المتجر</th>
+                        <th>كود المتجر</th>
+                        <th>الاشتراك</th>
+                        <th>انتهاء</th>
+                        <th>العمولة</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody id="stores-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- العمولات التفصيلية -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3 class="section-title">💰 تفاصيل العمولات</h3>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>المتجر</th>
+                        <th>إجمالي المبيعات</th>
+                        <th>نسبة العمولة</th>
+                        <th>قيمة العمولة</th>
+                    </tr>
+                </thead>
+                <tbody id="commission-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal إضافة متجر -->
+<div id="addStoreModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span>إضافة متجر جديد</span>
+            <span class="modal-close" onclick="closeModal('addStoreModal')">✕</span>
+        </div>
+        <div class="field-group"><label>اسم المتجر</label><input class="text-input" type="text" id="st-name" placeholder="اسم المتجر"></div>
+        <div class="field-group"><label>رقم الهاتف</label><input class="text-input" type="text" id="st-phone" placeholder="010xxxxxxxx"></div>
+        <div class="field-group"><label>سعر الاشتراك (ج.م)</label><input class="text-input" type="number" id="st-price" placeholder="0"></div>
+        <div class="field-group">
+            <label>مدة الاشتراك</label>
+            <select class="text-input" id="st-duration">
+                <option value="1">شهر تجريبي</option>
+                <option value="3">ربع سنوي (3 شهور)</option>
+                <option value="6">نص سنة (6 شهور)</option>
+                <option value="12">سنة كاملة</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="saveNewStore()">✅ حفظ المتجر</button>
+            <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="closeModal('addStoreModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+    const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const currentUser = sessionStorage.getItem('username');
+    const storeKey = sessionStorage.getItem('store_key');
+
+    // SECURITY
+    (function(){
+        const role = sessionStorage.getItem('userRole');
+        if(!currentUser || role !== 'marketer') { location.replace('index.html'); }
+    })();
+
+    // THEME
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isLight = html.getAttribute('data-theme') === 'light';
+        html.setAttribute('data-theme', isLight ? '' : 'light');
+        localStorage.setItem('fateen_theme', isLight ? 'dark' : 'light');
+        document.getElementById('theme-icon').innerText = isLight ? '🌙' : '☀️';
+    }
+    (function loadTheme(){
+        const saved = localStorage.getItem('fateen_theme');
+        if(saved === 'light') { document.documentElement.setAttribute('data-theme','light'); document.getElementById('theme-icon').innerText = '☀️'; }
+    })();
+
+    // TOAST
+    function showToast(msg, type='info') {
+        const icons = { success:'✅', error:'❌', info:'ℹ️' };
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${icons[type]}</span><span class="toast-msg">${msg}</span>`;
+        toast.onclick = () => toast.remove();
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openAddStoreModal() { document.getElementById('addStoreModal').classList.add('open'); }
+    function logout() { sessionStorage.clear(); location.replace('index.html'); }
+
+    async function init() {
+        // تحميل الإصدار
+        try {
+            const { data } = await _supabase.from('system_settings').select('value').eq('key','sys_version').single();
+            if(data) document.getElementById('version-chip').innerText = data.value;
+        } catch(e) {}
+
+        await loadStores();
+    }
+
+    async function loadStores() {
+        try {
+            // جلب المتاجر المرتبطة بهذا الماركتر
+            const { data: stores, error } = await _supabase.from('stores').select('*').eq('marketer_id', currentUser);
+            if(error) throw error;
+
+            const storesList = stores || [];
+            document.getElementById('stat-stores').innerText = storesList.length;
+
+            // جلب إجمالي المبيعات لكل متجر
+            let totalSales = 0;
+            let totalCommission = 0;
+            const commissionRows = [];
+
+            for(let st of storesList) {
+                const { data: sales } = await _supabase.from('sales').select('total_amount').eq('store_key', st.store_key).eq('type','sale');
+                const storeSales = sales?.reduce((s,r) => s + (parseFloat(r.total_amount)||0), 0) || 0;
+                const commissionRate = st.commission_rate || 0;
+                const commissionAmt = (storeSales * commissionRate) / 100;
+                totalSales += storeSales;
+                totalCommission += commissionAmt;
+                commissionRows.push({ name: st.store_name, sales: storeSales, rate: commissionRate, amount: commissionAmt });
+            }
+
+            document.getElementById('stat-sales').innerText = totalSales.toLocaleString() + ' ج.م';
+            document.getElementById('stat-commission').innerText = totalCommission.toLocaleString() + ' ج.م';
+
+            // جدول المتاجر
+            const storesTable = document.getElementById('stores-table');
+            storesTable.innerHTML = storesList.length ? storesList.map(st => {
+                const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000*60*60*24));
+                const daysColor = diffDays > 5 ? 'badge-green' : 'badge-orange';
+                const daysText = diffDays > 0 ? `${diffDays} يوم` : 'منتهي';
+                return `<tr>
+                    <td style="font-weight:700;">${st.store_name}</td>
+                    <td><span class="badge badge-accent">${st.store_key}</span></td>
+                    <td style="color:var(--green); font-weight:700;">${st.subscription_price || 0} ج.م</td>
+                    <td><span class="badge ${daysColor}">${daysText}</span></td>
+                    <td style="color:var(--orange);">${st.commission_rate || 0}%</td>
+                    <td><span class="badge ${st.is_active ? 'badge-green' : 'badge-orange'}">${st.is_active ? 'نشط' : 'موقوف'}</span></td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">لا يوجد متاجر مسجلة بعد</td></tr>';
+
+            // جدول العمولات
+            const commissionTable = document.getElementById('commission-table');
+            commissionTable.innerHTML = commissionRows.length ? commissionRows.map(r => `
+                <tr>
+                    <td style="font-weight:700;">${r.name}</td>
+                    <td style="color:var(--accent);">${r.sales.toLocaleString()} ج.م</td>
+                    <td><span class="badge badge-orange">${r.rate}%</span></td>
+                    <td style="color:var(--green); font-weight:800;">${r.amount.toLocaleString()} ج.م</td>
+                </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</td></tr>';
+
+        } catch(e) { showToast('خطأ في تحميل البيانات: ' + e.message, 'error'); }
+    }
+
+    async function saveNewStore() {
+        const name = document.getElementById('st-name').value.trim();
+        const phone = document.getElementById('st-phone').value.trim();
+        const price = document.getElementById('st-price').value;
+        const duration = parseInt(document.getElementById('st-duration').value);
+        if(!name) return showToast('اسم المتجر مطلوب','error');
+
+        const expiry = new Date();
+        expiry.setMonth(expiry.getMonth() + duration);
+        const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
+
+        try {
+            const { error } = await _supabase.from('stores').insert([{
+                store_key: key,
+                store_name: name,
+                phone: phone,
+                subscription_price: parseFloat(price) || 0,
+                expiry_date: expiry.toISOString().split('T')[0],
+                is_active: true,
+                marketer_id: currentUser
+            }]);
+            if(error) throw error;
+            showToast(`تم إضافة المتجر بنجاح — الكود: ${key}`, 'success');
+            closeModal('addStoreModal');
+            loadStores();
+        } catch(e) { showToast('خطأ في إضافة المتجر: ' + e.message, 'error'); }
+    }
+
+    init();
+</script>
+</body>
+</html>

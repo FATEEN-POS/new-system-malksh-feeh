@@ -351,9 +351,50 @@
             <div style="height:280px;"><canvas id="d-revenue-chart"></canvas></div>
         </div>
 
+        <!-- قسم الماركترز -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0; color:var(--accent); font-size:16px;">📢 إدارة الماركترز</h3>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:3px 12px; font-size:12px; font-weight:800;">إجمالي: <span id="d-marketers-count">0</span> ماركتر</span>
+                    <button onclick="openModal('addMarketerModal')" style="background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">+ ماركتر جديد</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto; border-radius:8px; border:1px solid var(--border);">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--surface2);">
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">الماركتر</th>
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">عدد المتاجر</th>
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">إجمالي المبيعات</th>
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">نسبة العمولة</th>
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">صافي العمولة</th>
+                            <th style="padding:11px 14px; text-align:right; color:var(--text-muted); font-size:12px; border-bottom:1px solid var(--border);">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="d-marketers-table">
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="footer-bar">
             <span>Fateen OS</span>
             <span class="v" id="d-footer-v">...</span>
+        </div>
+    </div>
+
+    <!-- ======= MODAL: إضافة ماركتر ======= -->
+    <div id="addMarketerModal" class="modal">
+        <div class="modal-box">
+            <h3>📢 إضافة ماركتر جديد</h3>
+            <input type="text" id="mkt-username" placeholder="اسم المستخدم">
+            <input type="password" id="mkt-password" placeholder="كلمة المرور">
+            <input type="text" id="mkt-phone" placeholder="رقم الهاتف">
+            <input type="number" id="mkt-commission" placeholder="نسبة العمولة %" min="0" max="100" value="10">
+            <button class="btn-full btn-save" onclick="saveMarketer()">✅ حفظ الماركتر</button>
+            <button class="btn-full btn-cancel-modal" onclick="closeModal('addMarketerModal')">إلغاء</button>
         </div>
     </div>
 
@@ -507,21 +548,7 @@
         }
 
         // ======= ADD STORE =======
-        async function saveNewStore() {
-            const name = document.getElementById('st-name').value;
-            const phone = document.getElementById('st-phone').value;
-            const price = document.getElementById('st-price').value;
-            const duration = parseInt(document.getElementById('st-duration').value);
-            const notes = document.getElementById('st-notes').value;
-            if(!name) return alert("أدخل اسم المتجر");
-            const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
-            const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
-            await _supabase.from('stores').insert([{
-                store_key: key, store_name: name, phone, subscription_price: price,
-                expiry_date: expiry.toISOString().split('T')[0], notes, is_active: true
-            }]);
-            closeModal('addModal'); loadData();
-        }
+        // saveNewStore moved to bottom
 
         // ======= DETAIL =======
         async function showDetail(st) {
@@ -689,10 +716,101 @@
             chartM = chartConfig('m-revenue-chart', 200);
         }
 
+        // ======= MARKETERS =======
+        async function loadMarketers() {
+            try {
+                const { data: marketers } = await _supabase.from('users').select('*').eq('role','marketer');
+                const mList = marketers || [];
+                const el = document.getElementById('d-marketers-count');
+                if(el) el.innerText = mList.length;
+
+                const tbody = document.getElementById('d-marketers-table');
+                if(!tbody) return;
+
+                if(!mList.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا يوجد ماركترز بعد</td></tr>';
+                    return;
+                }
+
+                let rows = '';
+                for(let m of mList) {
+                    const { data: mStores } = await _supabase.from('stores').select('*').eq('marketer_id', m.username);
+                    const storesList = mStores || [];
+                    let totalSales = 0;
+                    for(let st of storesList) {
+                        const { data: sales } = await _supabase.from('sales').select('total_amount').eq('store_key', st.store_key).eq('type','sale');
+                        totalSales += sales?.reduce((s,r) => s+(parseFloat(r.total_amount)||0), 0) || 0;
+                    }
+                    const commRate = m.commission_rate || 0;
+                    const commAmt = (totalSales * commRate) / 100;
+                    rows += `<tr>
+                        <td style="font-weight:700;">${m.username}</td>
+                        <td style="color:var(--accent);">${storesList.length}</td>
+                        <td style="color:var(--green); font-weight:700;">${totalSales.toLocaleString()} ج.م</td>
+                        <td><span style="background:var(--orange-dim); color:var(--orange); padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700;">${commRate}%</span></td>
+                        <td style="color:var(--green); font-weight:800;">${commAmt.toLocaleString()} ج.م</td>
+                        <td>
+                            <button onclick="editMarketerCommission('${m.username}', ${commRate})" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700;">تعديل العمولة</button>
+                            <button onclick="deleteMarketer('${m.username}')" style="background:var(--red-dim); color:var(--red); border:1px solid var(--red); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700; margin-right:4px;">حذف</button>
+                        </td>
+                    </tr>`;
+                }
+                tbody.innerHTML = rows;
+            } catch(e) { console.error('خطأ في تحميل الماركترز:', e); }
+        }
+
+        async function saveMarketer() {
+            const u = document.getElementById('mkt-username').value.trim();
+            const p = document.getElementById('mkt-password').value.trim();
+            const ph = document.getElementById('mkt-phone').value.trim();
+            const comm = parseFloat(document.getElementById('mkt-commission').value) || 10;
+            if(!u || !p) return alert('اسم المستخدم وكلمة المرور مطلوبين');
+            const { error } = await _supabase.from('users').insert([{
+                username: u, password: p, phone: ph,
+                role: 'marketer', commission_rate: comm,
+                store_key: 'DEVELOPER'
+            }]);
+            if(!error) { alert('تم إضافة الماركتر بنجاح'); closeModal('addMarketerModal'); loadMarketers(); }
+            else alert('خطأ: ' + error.message);
+        }
+
+        async function editMarketerCommission(username, currentRate) {
+            const newRate = prompt(`نسبة العمولة الحالية: ${currentRate}%\nأدخل النسبة الجديدة:`, currentRate);
+            if(newRate === null) return;
+            const { error } = await _supabase.from('users').update({ commission_rate: parseFloat(newRate) }).eq('username', username);
+            if(!error) { alert('تم تحديث العمولة'); loadMarketers(); }
+        }
+
+        async function deleteMarketer(username) {
+            if(!confirm(`حذف الماركتر ${username}؟`)) return;
+            await _supabase.from('users').delete().eq('username', username);
+            loadMarketers();
+        }
+
+        // تغيير ST إلى FS
+        async function saveNewStore() {
+            const name = document.getElementById('st-name').value.trim();
+            const phone = document.getElementById('st-phone').value.trim();
+            const price = document.getElementById('st-price').value;
+            const duration = parseInt(document.getElementById('st-duration').value);
+            const notes = document.getElementById('st-notes').value;
+            if(!name) return alert('اسم المتجر مطلوب');
+            const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
+            const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
+            const { error } = await _supabase.from('stores').insert([{
+                store_key: key, store_name: name, phone, subscription_price: parseFloat(price)||0,
+                expiry_date: expiry.toISOString().split('T')[0], notes, is_active: true
+            }]);
+            if(!error) { alert(`تم إضافة المتجر\nالكود: ${key}`); closeModal('addModal'); loadData(); }
+            else alert('خطأ: ' + error.message);
+        }
+
         loadTheme();
         loadData();
         loadChartData();
+        loadMarketers();
         setInterval(loadData, 60000);
+        setInterval(loadMarketers, 60000);
     </script>
 </body>
 </html>

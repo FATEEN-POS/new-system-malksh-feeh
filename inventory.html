@@ -631,10 +631,7 @@
 
     function exportToPDF(){
         try{
-            if(typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined'){
-                showToast('مكتبة PDF غير محملة، حاول تاني','error'); return;
-            }
-            const{jsPDF}= window.jspdf || jspdf;
+            const{jsPDF}=window.jspdf;
             const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
             doc.setFillColor(17,17,17);doc.rect(0,0,297,30,'F');
             doc.setTextColor(0,242,254);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Inventory Report',148,12,{align:'center'});
@@ -684,9 +681,26 @@
     }
 
     function printLabel(code,name,price){
-        document.getElementById('pr-store').innerText=storeName;document.getElementById('pr-name').innerText=name;document.getElementById('pr-price').innerText=price+' ج.م';
+        document.getElementById('pr-store').innerText=storeName;
+        document.getElementById('pr-name').innerText=name;
+        document.getElementById('pr-price').innerText=price+' ج.م';
         if(code) JsBarcode('#pr-barcode',code,{format:'CODE128',width:2,height:40,displayValue:true});
-        window.print();
+        
+        // حل مشكلة الطباعة على الفون
+        const printArea = document.getElementById('print-area');
+        const printWindow = window.open('','_blank','width=400,height=300');
+        if(printWindow) {
+            printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+                body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+                .label{width:40mm;padding:5px;text-align:center;border:1px solid #000;font-family:Cairo,sans-serif;}
+                .label div{font-size:8pt;font-weight:bold;margin-bottom:2px;}
+            </style></head><body><div class="label">${printArea.innerHTML}</div></body></html>`);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(()=>{ printWindow.print(); printWindow.close(); }, 500);
+        } else {
+            window.print();
+        }
     }
 
     function closeModal(id){const el=document.getElementById(id);if(el){el.classList.remove('open');el.style.display='';}}

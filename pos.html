@@ -769,7 +769,9 @@
     (function securityCheck(){
         const sk=sessionStorage.getItem('store_key');
         const un=sessionStorage.getItem('username');
+        const role=sessionStorage.getItem('userRole');
         if(!sk||!un){location.replace('index.html');return;}
+        if(role==='manager'||role==='developer'){location.replace('manager.html');return;}
     })();window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
         </body></html>`;
 
