@@ -66,8 +66,9 @@
         /* ===== LAYOUT TOGGLE ===== */
         .mobile-only { display: none; }
         .desktop-only { display: block; }
+        .mobile-only { display: none; }
         @media (max-width: 768px) {
-            .mobile-only { display: block; }
+            .mobile-only { display: flex; }
             .desktop-only { display: none; }
         }
 
@@ -224,7 +225,7 @@
             </div>
             <div class="m-header-right">
                 <span class="version-chip" id="m-version">V0.5</span>
-                <button style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" onclick="location.href='3dadat.html'">⚙️ الإعدادات</button>
+                <button style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;" class="mobile-only" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" onclick="location.href='3dadat.html'">⚙️ الإعدادات</button>
                 <button class="theme-btn" onclick="toggleTheme()">
                     <span id="m-theme-icon">🌙</span>
                 </button>
@@ -361,6 +362,7 @@
                     <span id="d-theme-icon">🌙</span>
                     <span id="d-theme-label">ثيم فاتح</span>
                 </button>
+                <button class="btn btn-ghost" onclick="location.href='3dadat.html'">⚙️ الإعدادات</button>
                 <button class="btn btn-ghost" onclick="location.href='about.html'">📞 تواصل</button>
                 <button class="btn btn-danger" onclick="logout()">خروج</button>
             </div>
@@ -520,7 +522,6 @@
         <div class="field-group"><label>كلمة المرور</label><input class="text-input" type="password" id="u-pass" placeholder="كلمة المرور"></div>
         <div class="field-group"><label>رقم الهاتف</label><input class="text-input" type="text" id="u-phone" placeholder="رقم الهاتف"></div>
         <div class="field-group"><label>التارجت الشهري</label><input class="text-input" type="number" id="u-target" placeholder="0"></div>
-        <div class="field-group"><label>صورة (PNG)</label><input class="text-input" type="file" id="u-file" accept="image/png" style="padding:7px;"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="saveUser()">💾 حفظ</button>
             <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="closeModal('userModal')">إلغاء</button>
@@ -774,16 +775,7 @@
         if(!uName) return showToast('اسم المستخدم مطلوب','error');
         if(!uPass && !document.getElementById('edit-un').value) return showToast('كلمة المرور مطلوبة','error');
         try {
-            const file = document.getElementById('u-file').files[0];
-            let imgUrl = "";
-            if(file) {
-                const fName = `${Date.now()}_${uName}.png`;
-                const { error: upErr } = await _supabase.storage.from('avatars').upload(fName, file);
-                if(upErr) throw upErr;
-                const { data } = _supabase.storage.from('avatars').getPublicUrl(fName);
-                imgUrl = data.publicUrl;
-            }
-            const userData = { username:uName, phone:uPhone, monthly_target:uTarget, image_url:imgUrl, role:'employee', store_key:storeKey };
+            const userData = { username:uName, phone:uPhone, monthly_target:uTarget, role:'employee', store_key:storeKey };
             if(uPass) userData.password = uPass;
             const eid = document.getElementById('edit-un').value;
             if(eid) {

@@ -141,7 +141,7 @@
 
         /* ===== PROFILE CARD ===== */
         .profile-card { text-align: center; }
-        .profile-img-wrap {
+        /* .profile-img-wrap {
             position: relative; width: 120px; height: 120px;
             margin: 0 auto 16px; border-radius: 50%;
             border: 3px solid var(--accent);
@@ -472,7 +472,7 @@
                 document.getElementById('emp-name').value  = emp.full_name || '';
                 document.getElementById('emp-phone').value = emp.phone || '';
                 document.getElementById('emp-pass').value  = emp.password || '';
-                document.getElementById('header-img').src  = img;
+
                 document.getElementById('header-name').innerText = emp.username || '';
                 const roleLabel = emp.role === 'manager' ? 'مدير' : 'موظف';
                 document.getElementById('header-role').innerText = roleLabel;
