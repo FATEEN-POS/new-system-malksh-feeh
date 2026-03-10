@@ -141,7 +141,7 @@
 
         /* ===== PROFILE CARD ===== */
         .profile-card { text-align: center; }
-        /* .profile-img-wrap {
+        .profile-img-wrap {
             position: relative; width: 120px; height: 120px;
             margin: 0 auto 16px; border-radius: 50%;
             border: 3px solid var(--accent);
@@ -275,7 +275,7 @@
     <div class="topbar-left">
         <a class="back-btn" onclick="history.back()">⬅️ رجوع</a>
         <div class="emp-badge">
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
+            <img id="header-img" src="https://via.placeholder.com/40" alt="">
             <div>
                 <div class="name" id="header-name">الموظف</div>
                 <span class="role" id="header-role">موظف</span>
@@ -320,7 +320,11 @@
         <!-- PROFILE CARD -->
         <div class="card profile-card">
             <div class="card-title">👤 الملف الشخصي</div>
-            <div style="width:80px;height:80px;border-radius:50%;background:var(--accent-dim);border:3px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;">👤</div>
+            <div class="profile-img-wrap">
+                <img id="profile-img" src="https://via.placeholder.com/120" alt="">
+                <label for="file-input" class="upload-overlay">📸</label>
+                <input type="file" id="file-input" accept="image/*" onchange="processAndUploadImage()">
+            </div>
             <div class="field-group">
                 <label>الاسم الكامل</label>
                 <input type="text" id="emp-name" placeholder="الاسم الثلاثي">
@@ -472,7 +476,9 @@
                 document.getElementById('emp-name').value  = emp.full_name || '';
                 document.getElementById('emp-phone').value = emp.phone || '';
                 document.getElementById('emp-pass').value  = emp.password || '';
-
+                const img = emp.image_url || 'https://via.placeholder.com/120';
+                document.getElementById('profile-img').src = img;
+                document.getElementById('header-img').src  = img;
                 document.getElementById('header-name').innerText = emp.username || '';
                 const roleLabel = emp.role === 'manager' ? 'مدير' : 'موظف';
                 document.getElementById('header-role').innerText = roleLabel;
@@ -594,7 +600,36 @@
         } catch(e) { showToast('خطأ في الحفظ: ' + e.message, 'error'); }
     }
 
-    // ===== IMAGE UPLOAD ===== catch(err) { showToast('خطأ في رفع الصورة: ' + err.message, 'error'); }
+    // ===== IMAGE UPLOAD =====
+    async function processAndUploadImage() {
+        const file = document.getElementById('file-input').files[0];
+        if(!file) return;
+        showToast('جاري رفع الصورة...', 'info');
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const size = 300;
+                canvas.width = canvas.height = size;
+                let sX, sY, sW, sH;
+                if(img.width > img.height) { sH=img.height; sW=img.height; sX=(img.width-img.height)/2; sY=0; }
+                else { sW=img.width; sH=img.width; sX=0; sY=(img.height-img.width)/2; }
+                ctx.drawImage(img, sX, sY, sW, sH, 0, 0, size, size);
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const fileName = `${currentUsername}-${Date.now()}.jpg`;
+                        const { error: upErr } = await _supabase.storage.from('avatars').upload(fileName, blob, { contentType:'image/jpeg' });
+                        if(upErr) throw upErr;
+                        const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(fileName);
+                        await _supabase.from('users').update({ image_url: urlData.publicUrl }).eq('username', currentUsername).eq('store_key', storeKey);
+                        document.getElementById('profile-img').src = urlData.publicUrl;
+                        document.getElementById('header-img').src  = urlData.publicUrl;
+                        showToast('تم تحديث الصورة بنجاح', 'success');
+                    } catch(err) { showToast('خطأ في رفع الصورة: ' + err.message, 'error'); }
                 }, 'image/jpeg', 0.85);
             };
         };
