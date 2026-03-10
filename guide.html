@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل الاستخدام - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg:#080808; --surface:#111111; --surface2:#181818; --surface3:#202020;
+            --accent:#00f2fe; --accent-dim:rgba(0,242,254,0.08);
+            --border:#252525; --text:#f0f0f0; --text-muted:#777;
+            --green:#00e676; --green-dim:rgba(0,230,118,0.1);
+            --red:#ff4d4d; --red-dim:rgba(255,77,77,0.1);
+            --orange:#ffa040; --orange-dim:rgba(255,160,64,0.1);
+            --btn-color:#000; --input-bg:#0a0a0a;
+            --shadow:0 4px 24px rgba(0,0,0,0.5);
+            --radius:14px; --radius-sm:9px;
+        }
+        [data-theme="light"] {
+            --bg:#f0ede5; --surface:#ffffff; --surface2:#f5f2eb; --surface3:#eae7df;
+            --accent:#004643; --accent-dim:rgba(0,70,67,0.07);
+            --border:#ddd8cf; --text:#1a1a1a; --text-muted:#777;
+            --green:#00875a; --green-dim:rgba(0,135,90,0.08);
+            --red:#c0392b; --red-dim:rgba(192,57,43,0.08);
+            --orange:#d35400; --orange-dim:rgba(211,84,0,0.08);
+            --btn-color:#f0ede5; --input-bg:#f5f2eb;
+            --shadow:0 4px 24px rgba(0,0,0,0.08);
+        }
+        *,*::before,*::after { box-sizing:border-box; font-family:'Cairo',sans-serif; transition:background 0.25s,color 0.25s,border-color 0.25s; }
+        body { margin:0; padding:0; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+        /* TOPBAR */
+        .topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 20px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--shadow); }
+        .topbar-left { display:flex; align-items:center; gap:12px; }
+        .topbar-right { display:flex; align-items:center; gap:8px; }
+        .store-title { font-size:16px; font-weight:800; }
+        .version-chip { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-size:11px; font-weight:800; }
+        .topbar-btn { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:700; text-decoration:none; }
+        .topbar-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+        /* LAYOUT */
+        .layout { display:flex; flex:1; min-height:0; }
+
+        /* SIDEBAR */
+        .sidebar { width:240px; background:var(--surface); border-left:1px solid var(--border); padding:20px 0; position:sticky; top:60px; height:calc(100vh - 60px); overflow-y:auto; flex-shrink:0; }
+        .sidebar-title { font-size:11px; font-weight:800; color:var(--text-muted); padding:0 16px 8px; text-transform:uppercase; letter-spacing:1px; }
+        .nav-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-muted); border-right:3px solid transparent; transition:all 0.2s; }
+        .nav-item:hover { background:var(--surface2); color:var(--text); }
+        .nav-item.active { background:var(--accent-dim); color:var(--accent); border-right-color:var(--accent); }
+        .nav-icon { width:20px; text-align:center; }
+        .nav-divider { height:1px; background:var(--border); margin:10px 16px; }
+
+        /* CONTENT */
+        .content { flex:1; padding:28px 24px; overflow-y:auto; max-width:860px; }
+
+        /* SECTION */
+        .section { display:none; }
+        .section.active { display:block; }
+        .section-hero { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
+        .section-hero-icon { font-size:32px; width:56px; height:56px; background:var(--accent-dim); border:2px solid var(--accent); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .section-hero-title { font-size:20px; font-weight:900; margin:0 0 4px; }
+        .section-hero-desc { font-size:13px; color:var(--text-muted); margin:0; }
+
+        /* CARDS */
+        .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; margin-bottom:20px; }
+        .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+        .card-icon { font-size:20px; margin-bottom:10px; }
+        .card-title { font-size:14px; font-weight:800; margin:0 0 6px; }
+        .card-desc { font-size:12px; color:var(--text-muted); line-height:1.7; margin:0; }
+
+        /* STEPS */
+        .steps { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+        .step { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; gap:14px; align-items:flex-start; }
+        .step-num { width:28px; height:28px; background:var(--accent); color:var(--btn-color); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; flex-shrink:0; }
+        .step-content { flex:1; }
+        .step-title { font-size:13px; font-weight:800; margin:0 0 4px; }
+        .step-desc { font-size:12px; color:var(--text-muted); margin:0; line-height:1.7; }
+
+        /* TIP */
+        .tip { background:var(--green-dim); border:1px solid var(--green); border-radius:var(--radius-sm); padding:12px 16px; font-size:12px; color:var(--green); margin-bottom:14px; display:flex; gap:8px; align-items:flex-start; }
+        .warn { background:var(--orange-dim); border:1px solid var(--orange); border-radius:var(--radius-sm); padding:12px 16px; font-size:12px; color:var(--orange); margin-bottom:14px; display:flex; gap:8px; align-items:flex-start; }
+
+        /* FAQ */
+        .faq-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; }
+        .faq-q { padding:16px; font-size:13px; font-weight:800; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+        .faq-q:hover { background:var(--surface2); }
+        .faq-a { padding:0 16px; max-height:0; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s; font-size:13px; color:var(--text-muted); line-height:1.8; }
+        .faq-a.open { max-height:300px; padding:0 16px 16px; }
+        .faq-arrow { transition:transform 0.3s; font-size:11px; color:var(--text-muted); }
+        .faq-arrow.open { transform:rotate(180deg); }
+
+        /* SECTION TITLE */
+        .sec-title { font-size:15px; font-weight:900; color:var(--accent); margin:0 0 14px; display:flex; align-items:center; gap:8px; }
+        .sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+        /* MOBILE */
+        .mob-nav { display:none; background:var(--surface); border-bottom:1px solid var(--border); padding:8px 12px; gap:6px; overflow-x:auto; }
+        .mob-nav-btn { white-space:nowrap; background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); padding:6px 12px; border-radius:20px; cursor:pointer; font-size:11px; font-weight:700; flex-shrink:0; }
+        .mob-nav-btn.active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
+
+        @media(max-width:768px) {
+            .sidebar { display:none; }
+            .mob-nav { display:flex; }
+            .content { padding:16px; }
+            .section-hero { flex-direction:column; text-align:center; }
+            .cards-grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="topbar-left">
+        <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
+        <div class="store-title">📖 دليل الاستخدام</div>
+        <span class="version-chip">Fateen OS</span>
+    </div>
+    <div class="topbar-right">
+        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+    </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mob-nav" id="mob-nav">
+    <button class="mob-nav-btn active" onclick="showSection('start','btn-start',this)">🚀 البداية</button>
+    <button class="mob-nav-btn" onclick="showSection('inventory','btn-inventory',this)">📦 المنتجات</button>
+    <button class="mob-nav-btn" onclick="showSection('employees','btn-employees',this)">👥 الموظفين</button>
+    <button class="mob-nav-btn" onclick="showSection('reports','btn-reports',this)">📊 التقارير</button>
+    <button class="mob-nav-btn" onclick="showSection('settings','btn-settings',this)">⚙️ الإعدادات</button>
+    <button class="mob-nav-btn" onclick="showSection('faq','btn-faq',this)">❓ FAQ</button>
+</div>
+
+<div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-title">القائمة</div>
+        <div class="nav-item active" id="btn-start" onclick="showSection('start','btn-start',this)"><span class="nav-icon">🚀</span> البداية</div>
+        <div class="nav-item" id="btn-inventory" onclick="showSection('inventory','btn-inventory',this)"><span class="nav-icon">📦</span> المنتجات والمخزون</div>
+        <div class="nav-item" id="btn-employees" onclick="showSection('employees','btn-employees',this)"><span class="nav-icon">👥</span> الموظفين</div>
+        <div class="nav-item" id="btn-reports" onclick="showSection('reports','btn-reports',this)"><span class="nav-icon">📊</span> التقارير</div>
+        <div class="nav-item" id="btn-settings" onclick="showSection('settings','btn-settings',this)"><span class="nav-icon">⚙️</span> الإعدادات</div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" id="btn-faq" onclick="showSection('faq','btn-faq',this)"><span class="nav-icon">❓</span> الأسئلة الشائعة</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- ===== البداية ===== -->
+        <div class="section active" id="sec-start">
+            <div class="section-hero">
+                <div class="section-hero-icon">🚀</div>
+                <div>
+                    <div class="section-hero-title">البداية مع Fateen OS</div>
+                    <div class="section-hero-desc">كل اللي محتاج تعرفه عشان تبدأ تشتغل بالنظام من أول يوم</div>
+                </div>
+            </div>
+
+            <div class="sec-title">📋 نظرة عامة على الصفحات</div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🖥️</div>
+                    <div class="card-title">لوحة التحكم</div>
+                    <div class="card-desc">إحصائيات المبيعات اليومية، متابعة الموظفين، والمنتجات منخفضة المخزون.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🛒</div>
+                    <div class="card-title">الكاشير</div>
+                    <div class="card-desc">صفحة البيع الرئيسية — بحث بالاسم أو الباركود، سلة، دفع، وطباعة فاتورة.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">المخزون</div>
+                    <div class="card-desc">إدارة المنتجات، التوريد، الجرد، وتسجيل الهالك.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">التقارير</div>
+                    <div class="card-desc">تقارير المبيعات، أداء الموظفين، ومراقبة المخزون مع تصدير PDF وExcel.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-title">الإعدادات</div>
+                    <div class="card-desc">بيانات المتجر، كلمة المرور، إعدادات الفاتورة، والنسخ الاحتياطي.</div>
+                </div>
+            </div>
+
+            <div class="sec-title">🔑 تسجيل الدخول</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">ادخل كود المتجر</div>
+                        <div class="step-desc">كود المتجر الخاص بك — لو مش عارفه تواصل مع الدعم الفني.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">ادخل اسم المستخدم وكلمة المرور</div>
+                        <div class="step-desc">بيانات حسابك كمدير أو موظف.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٣</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط دخول</div>
+                        <div class="step-desc">المدير بيروح للوحة التحكم، والموظف بيروح لصفحة الكاشير مباشرة.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip">💡 النظام بيتذكر الثيم اللي اخترته (فاتح/داكن) حتى بعد ما تخرج.</div>
+        </div>
+
+        <!-- ===== المنتجات ===== -->
+        <div class="section" id="sec-inventory">
+            <div class="section-hero">
+                <div class="section-hero-icon">📦</div>
+                <div>
+                    <div class="section-hero-title">المنتجات والمخزون</div>
+                    <div class="section-hero-desc">إدارة كاملة للمنتجات والكميات والتوريد والجرد</div>
+                </div>
+            </div>
+
+            <div class="sec-title">➕ إضافة منتج جديد</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط "صنف جديد"</div>
+                        <div class="step-desc">من صفحة المخزون اضغط الزر في أعلى الصفحة.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">ادخل بيانات المنتج</div>
+                        <div class="step-desc">اسم المنتج (لازم يكون فريد)، السعر، سعر التكلفة، الكمية، الباركود، الفئة، وتاريخ الصلاحية.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٣</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط حفظ</div>
+                        <div class="step-desc">المنتج هيظهر في المخزون وفي الكاشير فوراً.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec-title">🚚 توريد فاتورة</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط "توريد فاتورة"</div>
+                        <div class="step-desc">لإضافة كميات لأكتر من منتج في نفس الوقت.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">ابحث عن المنتجات وحدد الكميات</div>
+                        <div class="step-desc">ابحث بالاسم أو الباركود وحط الكمية الواردة لكل منتج.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٣</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط تأكيد التوريد</div>
+                        <div class="step-desc">الكميات هتتضاف للمخزون فوراً.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec-title">🗑️ تسجيل هالك</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط أيقونة الهالك 🗑️ على المنتج</div>
+                        <div class="step-desc">من قائمة المنتجات اضغط على أيقونة الهالك بجانب المنتج.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">ادخل الكمية التالفة</div>
+                        <div class="step-desc">الكمية هتتخصم من المخزون وتتسجل كهالك في التقارير.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warn">⚠️ اسم المنتج لازم يكون فريد — مينفعش تضيف منتجين بنفس الاسم في نفس المتجر.</div>
+        </div>
+
+        <!-- ===== الموظفين ===== -->
+        <div class="section" id="sec-employees">
+            <div class="section-hero">
+                <div class="section-hero-icon">👥</div>
+                <div>
+                    <div class="section-hero-title">إدارة الموظفين</div>
+                    <div class="section-hero-desc">إضافة وتعديل وحذف الموظفين ومتابعة أدائهم</div>
+                </div>
+            </div>
+
+            <div class="sec-title">➕ إضافة موظف</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">من لوحة التحكم اضغط "+ إضافة موظف"</div>
+                        <div class="step-desc">في قسم الموظفين في لوحة التحكم.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">ادخل بيانات الموظف</div>
+                        <div class="step-desc">اسم المستخدم، كلمة المرور، رقم الهاتف، والتارجت الشهري.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٣</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط حفظ</div>
+                        <div class="step-desc">الموظف هيقدر يسجل دخول بنفس بيانات المتجر فوراً.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec-title">📈 متابعة الأداء</div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">التارجت الشهري</div>
+                    <div class="card-desc">بتحدد لكل موظف تارجت شهري وبتشوف نسبة تحقيقه في التقارير.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">تقرير الموظفين</div>
+                    <div class="card-desc">في صفحة التقارير بتشوف ترتيب الموظفين حسب المبيعات.</div>
+                </div>
+            </div>
+
+            <div class="tip">💡 الموظف بيشوف إحصائياته الخاصة بس من صفحة الكاشير — المدير بيشوف الكل.</div>
+        </div>
+
+        <!-- ===== التقارير ===== -->
+        <div class="section" id="sec-reports">
+            <div class="section-hero">
+                <div class="section-hero-icon">📊</div>
+                <div>
+                    <div class="section-hero-title">التقارير</div>
+                    <div class="section-hero-desc">تقارير شاملة للمبيعات والمخزون وأداء الموظفين</div>
+                </div>
+            </div>
+
+            <div class="sec-title">📋 أنواع التقارير</div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-title">ملخص المبيعات</div>
+                    <div class="card-desc">إجمالي المبيعات، المرتجعات، الصافي، وعدد الفواتير في أي فترة.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📅</div>
+                    <div class="card-title">فترات المبيعات</div>
+                    <div class="card-desc">مقارنة المبيعات على مدار الوقت مع رسوم بيانية.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">👤</div>
+                    <div class="card-title">أداء الموظفين</div>
+                    <div class="card-desc">ترتيب الموظفين حسب المبيعات ونسبة تحقيق التارجت.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">مراقبة المخزون</div>
+                    <div class="card-desc">المنتجات منخفضة المخزون والهالك المسجل.</div>
+                </div>
+            </div>
+
+            <div class="sec-title">📤 تصدير التقارير</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">اختار الفترة الزمنية</div>
+                        <div class="step-desc">اليوم، الأسبوع، الشهر، أو فترة مخصصة.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">اضغط PDF أو Excel</div>
+                        <div class="step-desc">التقرير هيتنزل على جهازك فوراً.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== الإعدادات ===== -->
+        <div class="section" id="sec-settings">
+            <div class="section-hero">
+                <div class="section-hero-icon">⚙️</div>
+                <div>
+                    <div class="section-hero-title">الإعدادات</div>
+                    <div class="section-hero-desc">تخصيص النظام وإدارة البيانات والأمان</div>
+                </div>
+            </div>
+
+            <div class="sec-title">🏪 هوية المتجر</div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🏷️</div>
+                    <div class="card-title">اسم المتجر والتليفون</div>
+                    <div class="card-desc">بيظهروا على الفواتير المطبوعة.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🧾</div>
+                    <div class="card-title">الرقم الضريبي</div>
+                    <div class="card-desc">رقمك في مصلحة الضرائب — بيظهر على الفاتورة الإلكترونية.</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-title">ذيل الفاتورة</div>
+                    <div class="card-desc">نص بيظهر في آخر كل فاتورة — مثلاً "شكراً لتعاملكم معنا".</div>
+                </div>
+            </div>
+
+            <div class="sec-title">🔒 الأمان</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">١</div>
+                    <div class="step-content">
+                        <div class="step-title">تغيير كلمة مرور المدير</div>
+                        <div class="step-desc">من قسم الأمان في الإعدادات — ادخل كلمة المرور القديمة والجديدة.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">٢</div>
+                    <div class="step-content">
+                        <div class="step-title">النسخ الاحتياطي</div>
+                        <div class="step-desc">اضغط "تصدير النسخة الاحتياطية" — هيتنزل ملف JSON بكل بيانات المتجر.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warn">⚠️ احتفظ بالنسخة الاحتياطية في مكان آمن — هي الطريقة الوحيدة لاستعادة بياناتك لو في مشكلة.</div>
+        </div>
+
+        <!-- ===== FAQ ===== -->
+        <div class="section" id="sec-faq">
+            <div class="section-hero">
+                <div class="section-hero-icon">❓</div>
+                <div>
+                    <div class="section-hero-title">الأسئلة الشائعة</div>
+                    <div class="section-hero-desc">إجابات على أكثر الأسئلة اللي بتيجي</div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">نسيت كلمة مرور المدير — إيه اللي أعمله؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">تواصل مع الدعم الفني عبر واتساب وهيساعدك تعيد ضبطها. من صفحة تسجيل الدخول في الأسفل في زر "تواصل معنا" يوصلك للدعم مباشرة.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">نسيت كود المتجر — فين ألاقيه؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">كود المتجر موجود في صفحة الإعدادات في قسم الأمان. لو مش قادر تدخل تواصل مع الدعم الفني.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">المنتج مش بيظهر في الكاشير — ليه؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">في سببين محتملين: الأول إن الكمية صفر أو أقل — الكاشير بيخفي المنتجات اللي خلصت. الثاني إن المنتج في فئة معينة وانت مختار فئة تانية — اضغط على "عام" عشان تشوف كل المنتجات.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">إزاي أرجع فاتورة؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">من صفحة الكاشير اضغط على زر "مرتجع"، ابحث برقم الفاتورة، وبعدين اختار هترجع الفاتورة كلها ولا منتج معين.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">الفاتورة مش بتتطبع — إيه الحل؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">تأكد إن checkbox "طباعة الفاتورة" محدد قبل ما تضغط إتمام البيع. وتأكد إن المتصفح مش بيبلوك الـ popups — ادي الموقع صلاحية فتح نوافذ جديدة.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">إزاي أعمل نسخة احتياطية؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">من صفحة الإعدادات، قسم "الأمان والنسخ"، اضغط "تصدير النسخة الاحتياطية" — هيتنزل ملف JSON على جهازك فيه كل بيانات المتجر.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">الصفحة بطيئة أو مش بتشتغل — إيه اللي أعمله؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">أول حاجة تأكد من اتصال النت. لو النت شغال جرب تعمل تحديث للصفحة (F5). لو المشكلة فاضلة تواصل مع الدعم الفني.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">ممكن أشتغل على الموبايل؟ <span class="faq-arrow">▼</span></div>
+                <div class="faq-a">أيوه، النظام بيشتغل على الموبايل والتابلت والكمبيوتر. الصفحات كلها Responsive وبتتكيف مع حجم الشاشة.</div>
+            </div>
+
+            <div style="margin-top:24px; background:var(--accent-dim); border:1px solid var(--accent); border-radius:var(--radius); padding:18px; text-align:center;">
+                <div style="font-size:15px; font-weight:800; margin-bottom:8px;">مش لاقي إجابة؟</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">تواصل معنا على واتساب وهنرد عليك في أسرع وقت</div>
+                <a href="https://wa.me/201273929303" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#25d366; color:#fff; padding:10px 20px; border-radius:var(--radius-sm); font-weight:800; font-size:13px; text-decoration:none;">
+                    💬 تواصل معنا
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // THEME
+    function toggleTheme(){
+        const html=document.documentElement;
+        const isLight=html.getAttribute('data-theme')==='light';
+        html.setAttribute('data-theme',isLight?'':'light');
+        localStorage.setItem('fateen_theme',isLight?'dark':'light');
+        document.getElementById('theme-icon').innerText=isLight?'🌙':'☀️';
+    }
+    (function loadTheme(){
+        const saved=localStorage.getItem('fateen_theme');
+        if(saved==='light'){document.documentElement.setAttribute('data-theme','light');document.getElementById('theme-icon').innerText='☀️';}
+    })();
+
+    // NAV
+    function showSection(id, btnId, el) {
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        document.querySelectorAll('.mob-nav-btn').forEach(n=>n.classList.remove('active'));
+        document.getElementById('sec-'+id).classList.add('active');
+        const sideBtn = document.getElementById('btn-'+id);
+        if(sideBtn) sideBtn.classList.add('active');
+        if(el) el.classList.add('active');
+    }
+
+    // FAQ
+    function toggleFaq(el) {
+        const answer = el.nextElementSibling;
+        const arrow = el.querySelector('.faq-arrow');
+        answer.classList.toggle('open');
+        arrow.classList.toggle('open');
+    }
+</script>
+</body>
+</html>
