@@ -515,7 +515,7 @@
             const notes = document.getElementById('st-notes').value;
             if(!name) return alert("أدخل اسم المتجر");
             const expiry = new Date(); expiry.setMonth(expiry.getMonth() + duration);
-            const key = 'ST' + Math.floor(Math.random() * 9000 + 1000);
+            const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
             await _supabase.from('stores').insert([{
                 store_key: key, store_name: name, phone, subscription_price: price,
                 expiry_date: expiry.toISOString().split('T')[0], notes, is_active: true

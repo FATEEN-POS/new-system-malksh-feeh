@@ -786,9 +786,11 @@
         if(!uName) return showToast('اسم المستخدم مطلوب','error');
         if(!uPass && !document.getElementById('edit-un').value) return showToast('كلمة المرور مطلوبة','error');
         try {
-            const userData = { username:uName, phone:uPhone, monthly_target:uTarget, role:'employee', store_key:storeKey };
-            if(uPass) userData.password = uPass;
             const eid = document.getElementById('edit-un').value;
+            const userData = eid
+                ? { username:uName, phone:uPhone, monthly_target:uTarget, store_key:storeKey }
+                : { username:uName, phone:uPhone, monthly_target:uTarget, role:'employee', store_key:storeKey };
+            if(uPass) userData.password = uPass;
             if(eid) {
                 const { error } = await _supabase.from('users').update(userData).eq('username',eid).eq('store_key',storeKey);
                 if(error) throw error;

@@ -631,7 +631,10 @@
 
     function exportToPDF(){
         try{
-            const{jsPDF}=window.jspdf;
+            if(typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined'){
+                showToast('مكتبة PDF غير محملة، حاول تاني','error'); return;
+            }
+            const{jsPDF}= window.jspdf || jspdf;
             const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
             doc.setFillColor(17,17,17);doc.rect(0,0,297,30,'F');
             doc.setTextColor(0,242,254);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Inventory Report',148,12,{align:'center'});
