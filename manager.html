@@ -117,7 +117,6 @@
         .stat-pill .value { font-size: 22px; font-weight: 800; margin: 0; }
 
         /* ===== SHARED: EMP IMAGE ===== */
-        .emp-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-left: 8px; border: 1px solid var(--border); }
 
         /* ===== SHARED: MODAL ===== */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 16px; }
@@ -225,7 +224,7 @@
             </div>
             <div class="m-header-right">
                 <span class="version-chip" id="m-version">V0.5</span>
-                <span style="font-size:20px; cursor:pointer; color:var(--text-muted);" onclick="location.href='3dadat.html'">⚙️</span>
+                <button style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" onclick="location.href='3dadat.html'">⚙️ الإعدادات</button>
                 <button class="theme-btn" onclick="toggleTheme()">
                     <span id="m-theme-icon">🌙</span>
                 </button>
@@ -731,7 +730,7 @@
         if(ul) {
             ul.innerHTML = users?.map(u => `
                 <tr>
-                    <td><img src="${u.image_url||'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
+                    <td><span style="font-size:18px;">👤</span> ${u.username}</td>
                     <td>${roleLabel(u.role)}</td>
                     <td style="color:var(--green); font-weight:700;">${(u.monthly_sales||0).toLocaleString()} ج.م</td>
                     <td style="color:var(--text-muted);">${u.monthly_target||0}</td>
@@ -745,7 +744,7 @@
         if(mul) {
             mul.innerHTML = users?.map(u => `
                 <tr>
-                    <td style="font-size:12px;"><img src="${u.image_url||'https://via.placeholder.com/40'}" class="emp-img"> ${u.username}</td>
+                    <td style="font-size:12px;"><span style="font-size:18px;">👤</span> ${u.username}</td>
                     <td>${roleLabel(u.role)}</td>
                     <td style="color:var(--green); font-weight:700; font-size:12px;">${(u.monthly_sales||0).toLocaleString()} ج.م</td>
                     <td>
@@ -776,7 +775,7 @@
         if(!uPass && !document.getElementById('edit-un').value) return showToast('كلمة المرور مطلوبة','error');
         try {
             const file = document.getElementById('u-file').files[0];
-            let imgUrl = "https://via.placeholder.com/150";
+            let imgUrl = "";
             if(file) {
                 const fName = `${Date.now()}_${uName}.png`;
                 const { error: upErr } = await _supabase.storage.from('avatars').upload(fName, file);

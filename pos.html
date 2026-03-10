@@ -42,7 +42,6 @@
             box-shadow:var(--shadow);z-index:100;
         }
         .user-info{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-        .user-img{width:42px;height:42px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;}
         .user-name{font-weight:800;font-size:14px;line-height:1.2;}
         .user-role{font-size:11px;color:var(--text-muted);}
         .version-chip{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:800;flex-shrink:0;}
@@ -213,7 +212,7 @@
 <!-- HEADER -->
 <header>
     <div class="user-info">
-        <img id="header-user-img" src="https://via.placeholder.com/42" class="user-img">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
         <div>
             <div class="user-name" id="display-emp-name">الموظف</div>
             <div class="user-role" id="display-store-name">المتجر</div>
@@ -373,7 +372,6 @@
             if(user){
                 employeeName=user.full_name||currentUser;
                 document.getElementById('display-emp-name').innerText=employeeName;
-                if(user.image_url) document.getElementById('header-user-img').src=user.image_url;
                 document.getElementById('monthly-target').innerText=(user.monthly_target||0).toLocaleString();
             }
         }catch(e){}
@@ -383,7 +381,7 @@
         }catch(e){}
         await loadProducts();
         updateTargetDisplay();
-        // Keyboard shortcut
+        document.getElementById('p-search').focus();
         document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();checkout();}});
     }
 
@@ -506,8 +504,13 @@
     }
 
     // ===== CHECKOUT =====
+    let checkoutInProgress=false;
     async function checkout(){
+        if(checkoutInProgress) return;
         if(!cart.length){showToast('السلة فارغة','error');return;}
+        checkoutInProgress=true;
+        const btn=document.querySelector('.btn-checkout');
+        if(btn){btn.disabled=true;btn.innerText='⏳ جاري الحفظ...';}
         const total=cart.reduce((s,i)=>s+(i.price*i.qty),0);
         try{
             const{data:saleData,error}=await _supabase.from('sales').insert([{
@@ -515,12 +518,10 @@
                 payment_method:paymentMethod,seller_name:currentUser,type:'sale'
             }]).select().single();
             if(error) throw error;
-            // تحديث المخزون
             for(let item of cart){
                 const{data:p}=await _supabase.from('products').select('stock').eq('id',item.id).single();
                 if(p) await _supabase.from('products').update({stock:p.stock-item.qty}).eq('id',item.id);
             }
-            // تسجيل في مبيعات الوردية
             shiftSalesData.push({...saleData,type:'sale'});
             showToast('تم البيع بنجاح ✅','success');
             if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total);
@@ -529,6 +530,11 @@
             loadProducts();
             updateTargetDisplay();
         }catch(e){showToast('خطأ في الشبكة: '+e.message,'error');}
+        finally{
+            checkoutInProgress=false;
+            if(btn){btn.disabled=false;btn.innerText='✅ إتمام البيع (F2)';}
+            document.getElementById('p-search').focus();
+        }
     }
 
     // ===== PRINT RECEIPT =====
