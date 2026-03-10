@@ -470,6 +470,7 @@
             sessionStorage.setItem('store_key', currentStore.store_key);
 
             if (user.role === 'developer') location.href = 'developer.html';
+            else if (user.role === 'marketer') location.href = 'marketer.html';
             else if (user.role === 'manager') location.href = 'manager.html';
             else location.href = 'pos.html';
         }
