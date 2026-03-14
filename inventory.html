@@ -158,6 +158,7 @@
     <button class="btn btn-green"  onclick="openOrderModal()">📦 توريد فاتورة</button>
     <button class="btn btn-orange" onclick="openExportChoice()">📊 جرد المخزن</button>
     <button class="btn btn-purple" onclick="exportBackup()">💾 Back-Up</button>
+    <button class="btn" id="fav-filter-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);" onclick="toggleFavFilter()">⭐ المفضلة</button>
     <button class="btn btn-white"  onclick="openImportChoice()">📥 Back-In</button>
 </div>
 
@@ -306,6 +307,16 @@
             <span class="modal-close" onclick="closeModal('orderModal')">✕</span>
         </div>
         <div class="field-group">
+            <label>المورد</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <select id="supplier-select" style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;outline:none;" onchange="onSupplierChange()">
+                    <option value="">-- اختار مورد --</option>
+                </select>
+                <button onclick="openAddSupplierModal()" style="background:var(--accent);color:var(--btn-color);border:none;padding:10px 14px;border-radius:var(--radius-sm);font-weight:700;cursor:pointer;font-size:12px;white-space:nowrap;">+ جديد</button>
+            </div>
+            <input type="text" id="supplier-name-input" placeholder="أو اكتب اسم المورد مباشرة..." style="width:100%;margin-top:8px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;outline:none;">
+        </div>
+        <div class="field-group">
             <label>ابحث عن منتج لإضافته</label>
             <div style="position:relative;">
                 <input type="text" id="order-search" placeholder="اكتب اسم المنتج..." oninput="orderSearchProducts()" autocomplete="off"
@@ -323,6 +334,22 @@
         <div style="display:flex;gap:10px;">
             <button class="btn btn-green" style="flex:1;justify-content:center;" onclick="submitOrder()">✅ تأكيد التوريد</button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="closeModal('orderModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Supplier Modal -->
+<div id="addSupplierModal" class="modal">
+    <div class="modal-box" style="width:400px;">
+        <div class="modal-title">
+            <span>➕ إضافة مورد جديد</span>
+            <span class="modal-close" onclick="closeModal('addSupplierModal')">✕</span>
+        </div>
+        <div class="field-group"><label>اسم المورد</label><input class="text-input" type="text" id="new-supplier-name" placeholder="اسم المورد"></div>
+        <div class="field-group"><label>رقم الهاتف (اختياري)</label><input class="text-input" type="text" id="new-supplier-phone" placeholder="010xxxxxxxx"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveNewSupplier()">💾 حفظ</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="closeModal('addSupplierModal')">إلغاء</button>
         </div>
     </div>
 </div>
@@ -383,6 +410,8 @@
         }catch(e){}
         await loadVersion();
         await loadInventory();
+        await loadSuppliers();
+        loadFavorites();
     }
 
     async function loadVersion(){
@@ -449,6 +478,7 @@
                 <td style="font-weight:800;color:var(--accent);">${p.price} ج.م</td>
                 <td>${expiry}</td>
                 <td style="white-space:nowrap;">
+                    <span class="action-icon" title="مفضلة" onclick="toggleFavorite('${p.id}')" id="fav-${p.id}" style="color:${getFavoriteIds().includes(String(p.id))?'#ffd700':'var(--text-muted)'}">⭐</span>
                     <span class="action-icon" title="هالك" onclick="openWastedModal('${p.id}','${safeN}',${p.stock})">🗑️</span>
                     <span class="action-icon" title="طباعة" onclick="printLabel('${p.barcode||''}','${safeN}','${p.price}')">🖨️</span>
                     <span class="action-icon" title="تعديل" onclick="openEditModal('${p.id}')">⚙️</span>
@@ -600,16 +630,70 @@
     function updateOrderQty(i,val){orderItems[i].qty=parseInt(val)||1;renderOrderItems();}
     function removeOrderItem(i){orderItems.splice(i,1);renderOrderItems();}
 
+    // ======= SUPPLIERS =======
+    let allSuppliers = [];
+
+    async function loadSuppliers() {
+        try {
+            const { data } = await _supabase.from('suppliers').select('*').eq('store_key', storeKey).order('name');
+            allSuppliers = data || [];
+            renderSupplierSelect();
+        } catch(e) {}
+    }
+
+    function renderSupplierSelect() {
+        const sel = document.getElementById('supplier-select');
+        if(!sel) return;
+        sel.innerHTML = '<option value="">-- اختار مورد --</option>';
+        allSuppliers.forEach(s => {
+            sel.innerHTML += `<option value="${s.name}">${s.name}${s.phone ? ' — '+s.phone : ''}</option>`;
+        });
+    }
+
+    function onSupplierChange() {
+        const sel = document.getElementById('supplier-select');
+        const input = document.getElementById('supplier-name-input');
+        if(sel.value) input.value = sel.value;
+    }
+
+    function openAddSupplierModal() { document.getElementById('addSupplierModal').classList.add('open'); }
+
+    async function saveNewSupplier() {
+        const name = document.getElementById('new-supplier-name').value.trim();
+        const phone = document.getElementById('new-supplier-phone').value.trim();
+        if(!name) return showToast('اسم المورد مطلوب','error');
+        try {
+            const { error } = await _supabase.from('suppliers').insert([{ name, phone, store_key: storeKey }]);
+            if(error) throw error;
+            showToast('تم إضافة المورد بنجاح','success');
+            closeModal('addSupplierModal');
+            document.getElementById('new-supplier-name').value = '';
+            document.getElementById('new-supplier-phone').value = '';
+            loadSuppliers();
+        } catch(e) { showToast('خطأ: '+e.message,'error'); }
+    }
+
     async function submitOrder(){
         if(!orderItems.length) return showToast('أضف منتجاً على الأقل','error');
+        const supplierName = document.getElementById('supplier-name-input')?.value?.trim() || document.getElementById('supplier-select')?.value || '';
         try{
             for(const item of orderItems){
                 const p=allProducts.find(x=>x.id==item.id);
                 const{error}=await _supabase.from('products').update({stock:p.stock+item.qty}).eq('id',item.id);
                 if(error) throw error;
             }
-            showToast(`تم توريد ${orderItems.length} صنف بنجاح`,'success');
-            closeModal('orderModal');loadInventory();
+            // حفظ سجل التوريد
+            await _supabase.from('supply_records').insert([{
+                store_key: storeKey,
+                supplier: supplierName || 'غير محدد',
+                items: JSON.stringify(orderItems),
+                total_items: orderItems.length,
+                created_at: new Date().toISOString()
+            }]).then(() => {});
+            showToast(`تم توريد ${orderItems.length} صنف بنجاح${supplierName ? ' من: '+supplierName : ''}`, 'success');
+            document.getElementById('supplier-name-input').value = '';
+            document.getElementById('supplier-select').value = '';
+            closeModal('orderModal'); loadInventory();
         }catch(e){showToast('خطأ في التوريد: '+e.message,'error');}
     }
 
@@ -704,6 +788,61 @@
     }
 
     function closeModal(id){const el=document.getElementById(id);if(el){el.classList.remove('open');el.style.display='';}}
+
+    // ======= FAVORITES =======
+    let showFavOnly = false;
+
+    function getFavoriteIds() {
+        return JSON.parse(localStorage.getItem('fav_'+storeKey) || '[]');
+    }
+
+    function saveFavoriteIds(ids) {
+        localStorage.setItem('fav_'+storeKey, JSON.stringify(ids));
+    }
+
+    function loadFavorites() {
+        // إعادة رسم الأيقونات بعد تحميل المنتجات
+        const ids = getFavoriteIds();
+        ids.forEach(id => {
+            const el = document.getElementById('fav-'+id);
+            if(el) el.style.color = '#ffd700';
+        });
+    }
+
+    function toggleFavorite(productId) {
+        const ids = getFavoriteIds();
+        const idx = ids.indexOf(String(productId));
+        if(idx === -1) {
+            ids.push(String(productId));
+            const el = document.getElementById('fav-'+productId);
+            if(el) el.style.color = '#ffd700';
+            showToast('أضيف للمفضلة ⭐','success');
+        } else {
+            ids.splice(idx, 1);
+            const el = document.getElementById('fav-'+productId);
+            if(el) el.style.color = 'var(--text-muted)';
+            showToast('حُذف من المفضلة','info');
+        }
+        saveFavoriteIds(ids);
+    }
+
+    function toggleFavFilter() {
+        showFavOnly = !showFavOnly;
+        const btn = document.getElementById('fav-filter-btn');
+        if(showFavOnly) {
+            btn.style.background = '#ffd700';
+            btn.style.color = '#000';
+            btn.style.borderColor = '#ffd700';
+            const ids = getFavoriteIds();
+            const favProducts = allProducts.filter(p => ids.includes(String(p.id)));
+            renderProducts(favProducts);
+        } else {
+            btn.style.background = 'var(--surface2)';
+            btn.style.color = 'var(--text)';
+            btn.style.borderColor = 'var(--border)';
+            renderProducts(allProducts);
+        }
+    }
 
     init();
 </script>

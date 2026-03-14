@@ -355,6 +355,7 @@
         <!-- Header -->
         <div class="d-header">
             <div class="d-header-left">
+                <img src="لوجو_فطين_ابيض.png" id="d-logo" style="height:36px;object-fit:contain;" onerror="this.style.display='none'">
                 <h2 id="d-store-name">اسم المتجر</h2>
                 <div class="sub" id="d-welcome-msg">أهلاً بك</div>
             </div>
@@ -577,6 +578,7 @@
         const label = isLight ? 'ثيم داكن' : 'ثيم فاتح';
         ['m-theme-icon','d-theme-icon'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = icon; });
         const dl = document.getElementById('d-theme-label'); if(dl) dl.innerText = label;
+        const logo = document.getElementById('d-logo'); if(logo) logo.src = isLight ? 'لوجو_فطين_اسود.png' : 'لوجو_فطين_ابيض.png';
     }
     function loadTheme() {
         const saved = localStorage.getItem('fateen_theme');
@@ -588,9 +590,17 @@
         loadTheme();
         if(!storeKey) return location.href='index.html';
         try {
+            const cacheKey = 'store_data_'+storeKey;
+            const cached = sessionStorage.getItem(cacheKey);
+            if(cached) {
+                const st = JSON.parse(cached);
+                ['m-store-name','d-store-name'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = st.store_name; });
+                ['feedback-input','m-feedback-input'].forEach(id => { const el = document.getElementById(id); if(el) el.value = st.feedback || ''; });
+            }
             const { data: st, error } = await _supabase.from('stores').select('store_name, feedback').eq('store_key', storeKey).single();
             if(error) throw error;
             if(st) {
+                sessionStorage.setItem(cacheKey, JSON.stringify(st));
                 ['m-store-name','d-store-name'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = st.store_name; });
                 ['feedback-input','m-feedback-input'].forEach(id => { const el = document.getElementById(id); if(el) el.value = st.feedback || ''; });
             }
@@ -606,6 +616,7 @@
         await loadSalesChart();
 
         setInterval(async () => {
+            if(document.hidden) return;
             await loadSales();
             await loadLowStock();
             await loadSalesChart();

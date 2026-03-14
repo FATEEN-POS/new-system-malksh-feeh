@@ -103,9 +103,25 @@
         @media(max-width:768px) {
             .sidebar { display:none; }
             .mob-nav { display:flex; }
-            .content { padding:16px; }
-            .section-hero { flex-direction:column; text-align:center; }
+            .content { padding:14px; max-width:100%; }
+            .section-hero { flex-direction:column; text-align:center; padding:18px 14px; }
+            .section-hero-icon { margin:0 auto 12px; }
             .cards-grid { grid-template-columns:1fr; }
+            .steps .step { padding:14px; gap:10px; }
+            .tip, .warn { font-size:12px; padding:10px 12px; }
+            .faq-q { font-size:12px; padding:12px 14px; }
+            .sec-title { font-size:12px; }
+            .topbar { padding:0 12px; height:54px; }
+            .store-title { font-size:13px; }
+        }
+        @media(min-width:769px) and (max-width:1024px) {
+            .sidebar { width:200px; }
+            .content { padding:20px 18px; }
+            .cards-grid { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(min-width:1025px) {
+            .content { padding:28px 32px; }
+            .cards-grid { grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); }
         }
     </style>
 </head>

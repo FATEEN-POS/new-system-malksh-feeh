@@ -579,6 +579,7 @@
             const p = document.getElementById('q-pass').value;
             const r = document.getElementById('q-role').value;
             if(!u || !p) return alert("أدخل البيانات");
+            if(p.length < 8) return alert("كلمة المرور لازم تكون 8 حروف على الأقل");
             await _supabase.from('users').insert([{ username:u, password:p, store_key:activeStoreKey, role:r }]);
             document.getElementById('q-name').value='';
             document.getElementById('q-pass').value='';
@@ -765,6 +766,7 @@
             const ph = document.getElementById('mkt-phone').value.trim();
             const comm = parseFloat(document.getElementById('mkt-commission').value) || 10;
             if(!u || !p) return alert('اسم المستخدم وكلمة المرور مطلوبين');
+            if(p.length < 8) return alert('كلمة المرور لازم تكون 8 حروف على الأقل');
             const { error } = await _supabase.from('users').insert([{
                 username: u, password: p, phone: ph,
                 role: 'marketer', commission_rate: comm,
@@ -809,8 +811,8 @@
         loadData();
         loadChartData();
         loadMarketers();
-        setInterval(loadData, 60000);
-        setInterval(loadMarketers, 60000);
+        setInterval(() => { if(!document.hidden) loadData(); }, 60000);
+        setInterval(() => { if(!document.hidden) loadMarketers(); }, 60000);
     </script>
 </body>
 </html>

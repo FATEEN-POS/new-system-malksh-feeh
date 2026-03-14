@@ -293,7 +293,8 @@
 
     <!-- SPLASH -->
     <div id="splash">
-        <div class="splash-logo">FATEEN</div>
+        <img src="لوجو_فطين_ابيض.png" id="splash-logo-img" style="height:80px;object-fit:contain;margin-bottom:12px;" onerror="this.style.display='none';document.getElementById('splash-logo-txt').style.display='block'">
+        <div class="splash-logo" id="splash-logo-txt" style="display:none;">FATEEN</div>
         <div class="splash-version" id="splash-version">Loading...</div>
         <div class="splash-bar-bg"><div class="splash-bar-fill"></div></div>
     </div>
@@ -307,7 +308,8 @@
     <!-- LOGIN -->
     <div class="login-wrapper" id="loginUI" style="display:none;">
         <div class="brand-header">
-            <div class="brand-logo">FATEEN</div>
+            <img src="لوجو_فطين_ابيض.png" id="brand-logo-img" style="height:60px;object-fit:contain;margin-bottom:8px;" onerror="this.style.display='none';document.getElementById('brand-logo-txt').style.display='block'">
+            <div class="brand-logo" id="brand-logo-txt" style="display:none;">FATEEN</div>
             <div class="brand-sub">نظام إدارة المبيعات الذكي</div>
         </div>
 
@@ -389,6 +391,11 @@
         function updateThemeBtn(isLight) {
             document.getElementById('theme-icon').innerText = isLight ? '☀️' : '🌙';
             document.getElementById('theme-label').innerText = isLight ? 'ثيم داكن' : 'ثيم فاتح';
+            const imgs = ['splash-logo-img','brand-logo-img'];
+            imgs.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.src = isLight ? 'لوجو_فطين_اسود.png' : 'لوجو_فطين_ابيض.png';
+            });
         }
 
         function loadTheme() {
