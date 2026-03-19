@@ -379,6 +379,69 @@
             </div>
         </div>
 
+        <!-- قسم الداتابيز -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0; color:var(--accent); font-size:16px;">🗄️ حالة قاعدة البيانات</h3>
+                <button onclick="loadDbStats()" style="background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">🔄 تحديث</button>
+            </div>
+
+            <!-- شريط الحجم -->
+            <div style="margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:13px; font-weight:700; color:var(--text-muted);">استخدام التخزين</span>
+                    <span style="font-size:13px; font-weight:800;" id="db-size-text">جاري التحميل...</span>
+                </div>
+                <div style="background:var(--card2); border-radius:20px; height:12px; overflow:hidden; border:1px solid var(--border);">
+                    <div id="db-size-bar" style="height:100%; width:0%; border-radius:20px; background:var(--green); transition:width 0.6s ease;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                    <span style="font-size:11px; color:var(--text-muted);">0 MB</span>
+                    <span style="font-size:11px; color:var(--text-muted);">500 MB (الحد الأقصى)</span>
+                </div>
+            </div>
+
+            <!-- إحصائيات الجداول -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px;" id="db-stats-grid">
+                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المبيعات النشطة</div>
+                    <div style="font-size:20px; font-weight:800; color:var(--accent);" id="db-sales-count">—</div>
+                </div>
+                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المبيعات المؤرشفة</div>
+                    <div style="font-size:20px; font-weight:800; color:var(--orange);" id="db-archive-count">—</div>
+                </div>
+                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المنتجات</div>
+                    <div style="font-size:20px; font-weight:800; color:var(--green);" id="db-products-count">—</div>
+                </div>
+                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المشتريات</div>
+                    <div style="font-size:20px; font-weight:800; color:var(--text);" id="db-purchases-count">—</div>
+                </div>
+            </div>
+
+            <!-- الأرشفة -->
+            <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:800; margin-bottom:4px;">🗃️ الأرشفة التلقائية</div>
+                        <div style="font-size:12px; color:var(--text-muted);" id="db-archive-status">تنقل السجلات الأقدم من 90 يوم للأرشيف</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <div style="text-align:center; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:8px 14px;">
+                            <div style="font-size:10px; color:var(--text-muted);">فاضل على الأرشفة</div>
+                            <div style="font-size:16px; font-weight:800; color:var(--orange);" id="db-days-to-archive">—</div>
+                        </div>
+                        <button onclick="runArchive()" id="archive-btn" style="background:var(--orange); color:#000; border:none; padding:10px 18px; border-radius:8px; font-weight:800; cursor:pointer; font-size:13px; font-family:'Cairo',sans-serif;">
+                            ⚡ أرشفة الآن
+                        </button>
+                    </div>
+                </div>
+                <div id="archive-result" style="margin-top:10px; display:none; padding:10px; background:var(--card); border-radius:8px; font-size:12px; color:var(--green); font-weight:700;"></div>
+            </div>
+        </div>
+
         <div class="footer-bar">
             <span>Fateen OS</span>
             <span class="v" id="d-footer-v">...</span>
@@ -390,11 +453,29 @@
         <div class="modal-box">
             <h3>📢 إضافة ماركتر جديد</h3>
             <input type="text" id="mkt-username" placeholder="اسم المستخدم">
-            <input type="password" id="mkt-password" placeholder="كلمة المرور">
+            <input type="password" id="mkt-password" placeholder="كلمة المرور (6 أحرف على الأقل)">
             <input type="text" id="mkt-phone" placeholder="رقم الهاتف">
             <input type="number" id="mkt-commission" placeholder="نسبة العمولة %" min="0" max="100" value="10">
             <button class="btn-full btn-save" onclick="saveMarketer()">✅ حفظ الماركتر</button>
             <button class="btn-full btn-cancel-modal" onclick="closeModal('addMarketerModal')">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- ======= MODAL: اختيار حقول Excel ======= -->
+    <div id="excelChoiceModal" class="modal">
+        <div class="modal-box">
+            <h3>📊 تصدير Excel — اختر البيانات</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-names" checked> أسماء المتاجر</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-keys"> أكواد المتاجر</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-phones" checked> أرقام الهواتف</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-emails"> الإيميلات</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-prices"> أسعار الاشتراك</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-expiry"> تواريخ الانتهاء</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ex-status"> حالة المتجر</label>
+            </div>
+            <button class="btn-full btn-save" onclick="doExportExcel()">📥 تصدير</button>
+            <button class="btn-full btn-cancel-modal" onclick="document.getElementById('excelChoiceModal').style.display='none'">إلغاء</button>
         </div>
     </div>
 
@@ -579,7 +660,7 @@
             const p = document.getElementById('q-pass').value;
             const r = document.getElementById('q-role').value;
             if(!u || !p) return alert("أدخل البيانات");
-            if(p.length < 8) return alert("كلمة المرور لازم تكون 8 حروف على الأقل");
+            if(p.length < 6) return alert("كلمة المرور لازم تكون 6 أحرف على الأقل");
             await _supabase.from('users').insert([{ username:u, password:p, store_key:activeStoreKey, role:r }]);
             document.getElementById('q-name').value='';
             document.getElementById('q-pass').value='';
@@ -613,10 +694,35 @@
         }
 
         function exportToExcel() {
-            const ws = XLSX.utils.json_to_sheet(allStores);
+            document.getElementById('excelChoiceModal').style.display='flex';
+        }
+
+        function doExportExcel() {
+            const fields = [];
+            if(document.getElementById('ex-names').checked) fields.push('store_name');
+            if(document.getElementById('ex-keys').checked) fields.push('store_key');
+            if(document.getElementById('ex-phones').checked) fields.push('phone');
+            if(document.getElementById('ex-emails').checked) fields.push('email');
+            if(document.getElementById('ex-prices').checked) fields.push('subscription_price');
+            if(document.getElementById('ex-expiry').checked) fields.push('expiry_date');
+            if(document.getElementById('ex-status').checked) fields.push('is_active');
+            if(!fields.length) return alert('اختر حقلاً واحداً على الأقل');
+            const data = allStores.map(st => {
+                const row = {};
+                if(fields.includes('store_name')) row['اسم المتجر'] = st.store_name;
+                if(fields.includes('store_key')) row['كود المتجر'] = st.store_key;
+                if(fields.includes('phone')) row['رقم الهاتف'] = st.phone||'';
+                if(fields.includes('email')) row['البريد الإلكتروني'] = st.email||'';
+                if(fields.includes('subscription_price')) row['سعر الاشتراك'] = st.subscription_price||0;
+                if(fields.includes('expiry_date')) row['تاريخ الانتهاء'] = st.expiry_date||'';
+                if(fields.includes('is_active')) row['الحالة'] = st.is_active?'نشط':'موقوف';
+                return row;
+            });
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Stores");
-            XLSX.writeFile(wb, "Fateen_Stores.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "المتاجر");
+            XLSX.writeFile(wb, `Fateen_Stores_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.getElementById('excelChoiceModal').style.display='none';
         }
 
         function openModal(id) { document.getElementById(id).style.display='flex'; }
@@ -766,7 +872,7 @@
             const ph = document.getElementById('mkt-phone').value.trim();
             const comm = parseFloat(document.getElementById('mkt-commission').value) || 10;
             if(!u || !p) return alert('اسم المستخدم وكلمة المرور مطلوبين');
-            if(p.length < 8) return alert('كلمة المرور لازم تكون 8 حروف على الأقل');
+            if(p.length < 6) return alert('كلمة المرور لازم تكون 6 أحرف على الأقل');
             const { error } = await _supabase.from('users').insert([{
                 username: u, password: p, phone: ph,
                 role: 'marketer', commission_rate: comm,
@@ -807,10 +913,109 @@
             else alert('خطأ: ' + error.message);
         }
 
+        // ======= DATABASE STATS =======
+        async function loadDbStats() {
+            try {
+                const { data, error } = await _supabase.rpc('get_db_size');
+                if(error || !data) {
+                    // fallback: count manually
+                    const [s, sa, p, pu] = await Promise.all([
+                        _supabase.from('sales').select('id', {count:'exact', head:true}),
+                        _supabase.from('sales_archive').select('id', {count:'exact', head:true}),
+                        _supabase.from('products').select('id', {count:'exact', head:true}),
+                        _supabase.from('purchases').select('id', {count:'exact', head:true}),
+                    ]);
+                    document.getElementById('db-sales-count').innerText = (s.count||0).toLocaleString();
+                    document.getElementById('db-archive-count').innerText = (sa.count||0).toLocaleString();
+                    document.getElementById('db-products-count').innerText = (p.count||0).toLocaleString();
+                    document.getElementById('db-purchases-count').innerText = (pu.count||0).toLocaleString();
+                    document.getElementById('db-size-text').innerText = 'لا يمكن حساب الحجم تلقائياً';
+                    return;
+                }
+
+                const sizeMB = parseFloat(data.total_size_mb) || 0;
+                const maxMB = 500;
+                const pct = Math.min((sizeMB / maxMB) * 100, 100);
+                const barColor = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--orange)' : 'var(--green)';
+
+                document.getElementById('db-size-bar').style.width = pct + '%';
+                document.getElementById('db-size-bar').style.background = barColor;
+                document.getElementById('db-size-text').innerHTML =
+                    `<span style="color:${barColor}; font-weight:900;">${sizeMB} MB</span>
+                     <span style="color:var(--text-muted); font-size:11px;"> / 500 MB
+                     (${(maxMB - sizeMB).toFixed(1)} MB متبقي)</span>`;
+
+                document.getElementById('db-sales-count').innerText = (data.sales_rows||0).toLocaleString();
+                document.getElementById('db-archive-count').innerText = (data.sales_archive_rows||0).toLocaleString();
+                document.getElementById('db-products-count').innerText = (data.products_rows||0).toLocaleString();
+                document.getElementById('db-purchases-count').innerText = (data.purchases_rows||0).toLocaleString();
+
+                // حساب فاضل على الأرشفة (آخر أرشفة)
+                const { data: lastSale } = await _supabase
+                    .from('sales')
+                    .select('created_at')
+                    .order('created_at', {ascending: true})
+                    .limit(1)
+                    .single();
+
+                if(lastSale) {
+                    const oldest = new Date(lastSale.created_at);
+                    const archiveDate = new Date(oldest);
+                    archiveDate.setDate(archiveDate.getDate() + 90);
+                    const daysLeft = Math.ceil((archiveDate - new Date()) / 86400000);
+                    const daysEl = document.getElementById('db-days-to-archive');
+                    if(daysLeft <= 0) {
+                        daysEl.innerText = 'الآن!';
+                        daysEl.style.color = 'var(--red)';
+                        document.getElementById('db-archive-status').innerText =
+                            '⚠️ يوجد سجلات جاهزة للأرشفة';
+                    } else {
+                        daysEl.innerText = daysLeft + ' يوم';
+                        daysEl.style.color = daysLeft < 15 ? 'var(--orange)' : 'var(--green)';
+                        document.getElementById('db-archive-status').innerText =
+                            `تنقل السجلات الأقدم من 90 يوم — أقدم سجل: ${oldest.toLocaleDateString('ar-EG')}`;
+                    }
+                } else {
+                    document.getElementById('db-days-to-archive').innerText = 'لا يوجد';
+                }
+
+            } catch(e) {
+                document.getElementById('db-size-text').innerText = 'خطأ في التحميل';
+                console.error(e);
+            }
+        }
+
+        async function runArchive() {
+            const btn = document.getElementById('archive-btn');
+            const resultEl = document.getElementById('archive-result');
+            btn.disabled = true;
+            btn.innerText = '⏳ جاري الأرشفة...';
+            resultEl.style.display = 'none';
+            try {
+                const { data, error } = await _supabase.rpc('run_full_archive');
+                if(error) throw error;
+                const r = data;
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `✅ تمت الأرشفة بنجاح —
+                    مبيعات: ${r.sales_archived || 0} سجل |
+                    مشتريات: ${r.purchases_archived || 0} سجل |
+                    مصروفات: ${r.expenses_archived || 0} سجل`;
+                await loadDbStats();
+            } catch(e) {
+                resultEl.style.display = 'block';
+                resultEl.style.color = 'var(--red)';
+                resultEl.innerText = 'خطأ في الأرشفة: ' + e.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '⚡ أرشفة الآن';
+            }
+        }
+
         loadTheme();
         loadData();
         loadChartData();
         loadMarketers();
+        loadDbStats();
         setInterval(() => { if(!document.hidden) loadData(); }, 60000);
         setInterval(() => { if(!document.hidden) loadMarketers(); }, 60000);
     </script>

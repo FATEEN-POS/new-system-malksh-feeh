@@ -266,13 +266,46 @@
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: 1fr 1fr; }
         }
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
+        .sidebar-overlay.open{display:block;}
+        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
+        .sidebar.open{right:0;}
+        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
+        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
+        .sidebar-close:hover{color:var(--red);}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
+        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
+        .sb-trigger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
+        .sb-trigger:hover{border-color:var(--accent);}
     </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="main-sidebar">
+    <div class="sidebar-head">
+        <span class="sidebar-head-title">☰ القائمة</span>
+        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>الكاشير</a>
+        <a class="sb-item" onclick="location.href='employeesite.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">👤</span>ملفي الشخصي</a>
+        <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
+        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
+        <a class="sb-item" onclick="sessionStorage.clear();location.href='index.html'" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
+    </nav>
+    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
+</div>
+
 <!-- TOP BAR -->
 <div class="topbar">
     <div class="topbar-left">
+        <div class="sb-trigger" onclick="openSidebar()">☰</div>
         <a class="back-btn" onclick="history.back()">⬅️ رجوع</a>
         <div class="emp-badge">
             <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
@@ -446,6 +479,11 @@
         setTimeout(() => t.remove(), 4000);
     }
 
+    // ===== SIDEBAR =====
+    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
+    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSidebar();});
+
     // ===== THEME =====
     function toggleTheme() {
         const html = document.documentElement;
@@ -482,7 +520,14 @@
                 const roleLabel = emp.role === 'manager' ? 'مدير' : 'موظف';
                 document.getElementById('header-role').innerText = roleLabel;
 
-                await loadStats(emp.monthly_target || 0);
+                // جلب إعدادات المتجر للصلاحيات
+                const { data: store } = await _supabase.from('stores').select('perm_show_stats').eq('store_key', storeKey).single();
+                if(store && store.perm_show_stats === false) {
+                    const statsRow = document.querySelector('.stats-row');
+                    if(statsRow) statsRow.style.display = 'none';
+                } else {
+                    await loadStats(emp.monthly_target || 0);
+                }
                 await loadAllSales();
             }
         } catch(e) { showToast('خطأ في تحميل البيانات: ' + e.message, 'error'); }

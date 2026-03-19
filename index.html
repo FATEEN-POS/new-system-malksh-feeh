@@ -288,6 +288,12 @@
         .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fateen OS">
+    <meta name="theme-color" content="#00f2fe">
 </head>
 <body>
 
@@ -494,6 +500,15 @@
         loadTheme();
         loadSplash();
         setTimeout(hideSplash, 2200);
+
+        // ===== PWA Service Worker =====
+        if('serviceWorker' in navigator){
+            navigator.serviceWorker.register('/sw.js').then(reg=>{
+                console.log('Fateen OS SW registered:', reg.scope);
+            }).catch(e=>{
+                console.log('SW registration failed:', e);
+            });
+        }
     </script>
 </body>
 </html>

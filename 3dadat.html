@@ -6,6 +6,7 @@
     <title>الإعدادات - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg:#080808; --surface:#111111; --surface2:#181818; --surface3:#202020;
@@ -14,7 +15,7 @@
             --green:#00e676; --green-dim:rgba(0,230,118,0.1);
             --red:#ff4d4d; --red-dim:rgba(255,77,77,0.1);
             --orange:#ffa040; --orange-dim:rgba(255,160,64,0.1);
-            --purple:#a78bfa;
+            --purple:#a78bfa; --purple-dim:rgba(167,139,250,0.1);
             --btn-color:#000; --input-bg:#0a0a0a;
             --shadow:0 4px 24px rgba(0,0,0,0.5);
             --radius:14px; --radius-sm:9px;
@@ -26,135 +27,161 @@
             --green:#00875a; --green-dim:rgba(0,135,90,0.08);
             --red:#c0392b; --red-dim:rgba(192,57,43,0.08);
             --orange:#d35400; --orange-dim:rgba(211,84,0,0.08);
-            --purple:#7c3aed;
+            --purple:#7c3aed; --purple-dim:rgba(124,58,237,0.08);
             --btn-color:#f0ede5; --input-bg:#f5f2eb;
             --shadow:0 4px 24px rgba(0,0,0,0.08);
         }
-        *,*::before,*::after { box-sizing:border-box; font-family:'Cairo',sans-serif; transition:background 0.25s,color 0.25s,border-color 0.25s; }
-        body { margin:0; padding:0; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+        *,*::before,*::after{box-sizing:border-box;font-family:'Cairo',sans-serif;transition:background 0.25s,color 0.25s,border-color 0.25s;}
+        body{margin:0;padding:0;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
-        /* ── TOPBAR ── */
-        .topbar {
-            background:var(--surface); border-bottom:1px solid var(--border);
-            padding:0 20px; height:60px; display:flex; align-items:center;
-            justify-content:space-between; position:sticky; top:0; z-index:100;
-            box-shadow:var(--shadow); flex-shrink:0;
+        /* TOPBAR */
+        .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);flex-shrink:0;}
+        .topbar-left{display:flex;align-items:center;gap:12px;}
+        .topbar-right{display:flex;align-items:center;gap:8px;}
+        .store-title{font-size:16px;font-weight:800;}
+        .store-sub{font-size:11px;color:var(--text-muted);}
+        .version-chip{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800;}
+        .topbar-btn{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
+        .topbar-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+        /* LAYOUT */
+        .layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 60px);}
+
+        /* SIDEBAR */
+        .sidebar{width:230px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;flex-shrink:0;overflow-y:auto;}
+        .sidebar-label{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:2px;padding:4px 10px 12px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+        .nav-btn{display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;color:var(--text-muted);padding:11px 14px;border-radius:var(--radius-sm);margin-bottom:4px;cursor:pointer;text-align:right;width:100%;font-size:13px;font-weight:700;transition:all 0.2s;}
+        .nav-btn:hover{border-color:var(--border);color:var(--text);background:var(--surface2);}
+        .nav-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+        .sidebar-spacer{flex:1;}
+        .nav-btn-red{color:var(--red)!important;}
+        .nav-btn-red:hover{background:var(--red-dim)!important;border-color:var(--red)!important;}
+
+        /* MAIN */
+        .main-content{flex:1;overflow-y:auto;padding:24px;}
+
+        /* SECTIONS */
+        .section{display:none;animation:fadeIn 0.3s ease;}
+        .section.active{display:block;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        .page-header{margin-bottom:20px;}
+        .page-header h2{font-size:19px;font-weight:900;margin:0 0 4px;}
+        .page-header p{font-size:12px;color:var(--text-muted);margin:0;}
+
+        /* CARDS */
+        .setting-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:18px;box-shadow:var(--shadow);}
+        .card-title{font-size:14px;font-weight:800;color:var(--accent);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+        /* FORM */
+        .form-group{margin-bottom:14px;}
+        .form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:5px;font-weight:600;}
+        .form-group input,.form-group textarea,.form-group select{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;outline:none;}
+        .form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent);}
+        .form-group textarea{resize:vertical;min-height:70px;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+        /* TOGGLE ROW */
+        .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:10px;}
+        .toggle-row-info{display:flex;flex-direction:column;gap:2px;}
+        .toggle-row-label{font-size:13px;font-weight:700;}
+        .toggle-row-sub{font-size:11px;color:var(--text-muted);}
+        .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+        .toggle-switch input{opacity:0;width:0;height:0;}
+        .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border-radius:24px;border:1px solid var(--border);transition:0.3s;}
+        .toggle-slider:before{content:'';position:absolute;width:18px;height:18px;right:2px;top:2px;background:var(--text-muted);border-radius:50%;transition:0.3s;}
+        .toggle-switch input:checked+.toggle-slider{background:var(--accent-dim);border-color:var(--accent);}
+        .toggle-switch input:checked+.toggle-slider:before{transform:translateX(-20px);background:var(--accent);}
+
+        /* CHECK ROW */
+        .check-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-sm);cursor:pointer;margin-bottom:8px;border:1px solid var(--border);}
+        .check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+        .check-row label{font-size:13px;font-weight:700;cursor:pointer;flex:1;}
+        .check-row .check-sub{font-size:11px;color:var(--text-muted);}
+
+        /* BUTTONS */
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;white-space:nowrap;transition:opacity 0.2s,transform 0.15s;}
+        .btn:hover{opacity:0.85;transform:translateY(-1px);}
+        .btn:active{transform:translateY(0);}
+        .btn-accent{background:var(--accent);color:var(--btn-color);}
+        .btn-orange{background:var(--orange);color:#000;}
+        .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+        .btn-red{background:var(--red);color:#fff;}
+
+        /* INVOICE PREVIEW */
+        .preview-wrap{margin-top:16px;}
+        .preview-label{font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:10px;letter-spacing:1px;}
+        .preview-invoice{background:#fff;color:#000;padding:16px;border-radius:var(--radius-sm);width:100%;max-width:290px;font-size:12px;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.35);}
+        .preview-invoice .pi-center{text-align:center;}
+        .preview-invoice hr{border:none;border-top:1px dashed #999;margin:8px 0;}
+        .preview-invoice .pi-welcome{font-size:10px;color:#777;text-align:center;padding:4px 0;font-style:italic;}
+        .preview-invoice .pi-footer{font-size:11px;color:#555;text-align:center;margin-top:6px;}
+
+        /* TOAST */
+        #toast-container{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;}
+        .toast{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:1px solid;animation:toastIn 0.3s ease;cursor:pointer;display:flex;align-items:center;gap:8px;}
+        .toast-success{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+        .toast-error{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+        .toast-info{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+        @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        /* MOBILE */
+        @media(max-width:768px){
+            .layout{flex-direction:column;height:auto;overflow:visible;}
+            .sidebar{width:100%;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:10px 8px;height:auto;border-left:none;border-bottom:1px solid var(--border);}
+            .sidebar::-webkit-scrollbar{display:none;}
+            .sidebar-label,.sidebar-spacer{display:none;}
+            .nav-btn{padding:8px 12px;margin-bottom:0;margin-left:4px;white-space:nowrap;width:auto;flex-shrink:0;}
+            .main-content{padding:14px;height:auto;overflow:visible;}
+            .form-row,.form-row-3{grid-template-columns:1fr;}
+            .store-sub{display:none;}
         }
-        .topbar-left  { display:flex; align-items:center; gap:12px; }
-        .topbar-right { display:flex; align-items:center; gap:8px; }
-        .store-title  { font-size:16px; font-weight:800; }
-        .store-sub    { font-size:11px; color:var(--text-muted); }
-        .version-chip { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-size:11px; font-weight:800; }
-        .topbar-btn   { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
-        .topbar-btn:hover { border-color:var(--accent); color:var(--accent); }
-
-        /* ── LAYOUT ── */
-        .layout { display:flex; flex:1; overflow:hidden; height:calc(100vh - 60px); }
-
-        /* ── SIDEBAR ── */
-        .sidebar {
-            width:230px; background:var(--surface); border-left:1px solid var(--border);
-            display:flex; flex-direction:column; padding:16px 12px; flex-shrink:0; overflow-y:auto;
-        }
-        .sidebar-label { font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:2px; padding:4px 10px 12px; border-bottom:1px solid var(--border); margin-bottom:12px; }
-        .nav-btn {
-            display:flex; align-items:center; gap:10px;
-            background:transparent; border:1px solid transparent; color:var(--text-muted);
-            padding:11px 14px; border-radius:var(--radius-sm); margin-bottom:4px;
-            cursor:pointer; text-align:right; width:100%; font-size:13px; font-weight:700;
-            transition:all 0.2s;
-        }
-        .nav-btn:hover  { border-color:var(--border); color:var(--text); background:var(--surface2); }
-        .nav-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
-        .nav-icon       { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
-        .sidebar-spacer { flex:1; }
-        .nav-btn-red    { color:var(--red) !important; }
-        .nav-btn-red:hover { background:var(--red-dim) !important; border-color:var(--red) !important; }
-
-        /* ── MAIN ── */
-        .main-content { flex:1; overflow-y:auto; padding:24px; }
-
-        /* ── SECTIONS ── */
-        .section { display:none; animation:fadeIn 0.3s ease; }
-        .section.active { display:block; }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-
-        .page-header { margin-bottom:20px; }
-        .page-header h2 { font-size:19px; font-weight:900; margin:0 0 4px; }
-        .page-header p  { font-size:12px; color:var(--text-muted); margin:0; }
-
-        /* ── CARDS ── */
-        .setting-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:18px; box-shadow:var(--shadow); }
-        .card-title   { font-size:14px; font-weight:800; color:var(--accent); margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
-
-        /* ── FORM ── */
-        .form-group { margin-bottom:14px; }
-        .form-group label  { display:block; font-size:12px; color:var(--text-muted); margin-bottom:5px; font-weight:600; }
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width:100%; background:var(--input-bg); border:1px solid var(--border);
-            color:var(--text); padding:10px 12px; border-radius:var(--radius-sm);
-            font-family:'Cairo',sans-serif; font-size:13px; outline:none;
-        }
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus { border-color:var(--accent); }
-        .form-group textarea { resize:vertical; min-height:80px; }
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .check-row  { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--surface2); border-radius:var(--radius-sm); cursor:pointer; }
-        .check-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
-        .check-row label { font-size:13px; font-weight:700; cursor:pointer; }
-
-        /* ── BUTTONS ── */
-        .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-family:'Cairo',sans-serif; font-weight:700; font-size:13px; white-space:nowrap; transition:opacity 0.2s,transform 0.15s; }
-        .btn:hover   { opacity:0.85; transform:translateY(-1px); }
-        .btn:active  { transform:translateY(0); }
-        .btn-accent  { background:var(--accent); color:var(--btn-color); }
-        .btn-orange  { background:var(--orange); color:#000; }
-        .btn-ghost   { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-
-        /* ── INVOICE PREVIEW ── */
-        .preview-wrap   { margin-top:16px; }
-        .preview-label  { font-size:11px; color:var(--text-muted); font-weight:700; margin-bottom:10px; letter-spacing:1px; }
-        .preview-invoice {
-            background:#fff; color:#000; padding:16px; border-radius:var(--radius-sm);
-            width:100%; max-width:280px; font-size:12px; line-height:1.7;
-            box-shadow:0 4px 20px rgba(0,0,0,0.35);
-        }
-        .preview-invoice center { text-align:center; }
-        .preview-invoice hr { border:none; border-top:1px dashed #999; margin:8px 0; }
-
-        /* ── TOAST ── */
-        #toast-container { position:fixed; bottom:20px; left:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; max-width:300px; }
-        .toast { padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:700; border:1px solid; animation:toastIn 0.3s ease; cursor:pointer; display:flex; align-items:center; gap:8px; }
-        .toast-success { background:var(--green-dim); border-color:var(--green); color:var(--green); }
-        .toast-error   { background:var(--red-dim);   border-color:var(--red);   color:var(--red);   }
-        .toast-info    { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
-        @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-        /* ── MOBILE ── */
-        @media (max-width:768px) {
-            .layout { flex-direction:column; height:auto; overflow:visible; }
-            .sidebar {
-                width:100%; flex-direction:row; flex-wrap:nowrap;
-                overflow-x:auto; padding:10px 8px; height:auto;
-                border-left:none; border-bottom:1px solid var(--border);
-            }
-            .sidebar::-webkit-scrollbar { display:none; }
-            .sidebar-label, .sidebar-spacer { display:none; }
-            .nav-btn { padding:8px 12px; margin-bottom:0; margin-left:4px; white-space:nowrap; width:auto; flex-shrink:0; }
-            .main-content { padding:14px; height:auto; overflow:visible; }
-            .form-row { grid-template-columns:1fr; }
-            .store-sub { display:none; }
-        }
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
+        .sidebar-overlay.open{display:block;}
+        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
+        .sidebar.open{right:0;}
+        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
+        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
+        .sidebar-close:hover{color:var(--red);}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
+        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
+        .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
+        .sb-trigger:hover{border-color:var(--accent);}
     </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="main-sidebar">
+    <div class="sidebar-head">
+        <span class="sidebar-head-title">☰ القائمة</span>
+        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a class="sb-item" onclick="location.href='manager.html'"><span class="sb-icon">📊</span>لوحة المدير</a>
+        <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>الكاشير</a>
+        <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>المخزن</a>
+        <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
+        <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>التقارير</a>
+        <a class="sb-item" onclick="location.href='3dadat.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">⚙️</span>الإعدادات</a>
+        <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
+        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
+        <a class="sb-item" onclick="sessionStorage.clear();location.href='index.html'" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
+    </nav>
+    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
+</div>
+
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
+        <div class="sb-trigger" onclick="openSidebar()">☰</div>
         <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
         <div>
             <div class="store-title" id="store-name-display">Fateen OS</div>
@@ -173,8 +200,10 @@
     <div class="sidebar">
         <div class="sidebar-label">القائمة</div>
         <button class="nav-btn active" onclick="showSection('identity',this)"><span class="nav-icon">🆔</span> هوية المتجر</button>
-        <button class="nav-btn"        onclick="showSection('store',this)">   <span class="nav-icon">🔐</span> الأمان والنسخ</button>
-        <button class="nav-btn"        onclick="showSection('invoice',this)"> <span class="nav-icon">🧾</span> إعدادات الفاتورة</button>
+        <button class="nav-btn" onclick="showSection('security',this)"><span class="nav-icon">🔐</span> الأمان والنسخ</button>
+        <button class="nav-btn" onclick="showSection('permissions',this)"><span class="nav-icon">👥</span> الصلاحيات</button>
+        <button class="nav-btn" onclick="showSection('invoice',this)"><span class="nav-icon">🧾</span> إعدادات الفاتورة</button>
+        <button class="nav-btn" onclick="showSection('shift',this)"><span class="nav-icon">🕐</span> إعدادات الوردية</button>
         <div class="sidebar-spacer"></div>
         <button class="nav-btn nav-btn-red" onclick="location.href='manager.html'"><span class="nav-icon">⬅️</span> خروج للإدارة</button>
     </div>
@@ -182,14 +211,14 @@
     <!-- MAIN -->
     <div class="main-content">
 
-        <!-- هوية المتجر -->
+        <!-- ══════ 1. هوية المتجر ══════ -->
         <div id="identity" class="section active">
             <div class="page-header">
                 <h2>🆔 هوية المتجر</h2>
                 <p>بيانات المتجر الأساسية التي تظهر في الفواتير وسجلات النظام</p>
             </div>
             <div class="setting-card">
-                <div class="card-title">🏪 بيانات الهوية</div>
+                <div class="card-title">🏪 البيانات الأساسية</div>
                 <div class="form-group">
                     <label>اسم المتجر / المحل</label>
                     <input type="text" id="s-name" placeholder="مثلاً: محل فطين للبرمجيات">
@@ -208,6 +237,16 @@
                     <label>العنوان</label>
                     <input type="text" id="s-address" placeholder="العنوان بالتفصيل">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>إيميل المتجر</label>
+                        <input type="email" id="s-email" placeholder="store@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم واتساب (للتواصل)</label>
+                        <input type="text" id="s-whatsapp" placeholder="201xxxxxxxxx">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>رابط اللوجو (Logo URL)</label>
                     <input type="text" id="s-logo" placeholder="رابط صورة اللوجو">
@@ -216,102 +255,314 @@
             </div>
         </div>
 
-        <!-- الأمان والنسخ -->
-        <div id="store" class="section">
+        <!-- ══════ 2. الأمان والنسخ ══════ -->
+        <div id="security" class="section">
             <div class="page-header">
                 <h2>🔐 الأمان والنسخ الاحتياطي</h2>
                 <p>تحديث كلمات المرور وتحميل نسخة احتياطية من البيانات</p>
             </div>
             <div class="setting-card">
-                <div class="card-title">🔒 الحماية والأمان</div>
+                <div class="card-title">🔒 تغيير كلمة المرور</div>
                 <div class="form-group">
-                    <label>تغيير كلمة مرور المدير</label>
-                    <input type="password" id="m-pass" placeholder="أدخل كلمة المرور الجديدة">
+                    <label>كلمة المرور الجديدة</label>
+                    <input type="password" id="m-pass" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)">
                 </div>
+                <div class="form-group">
+                    <label>تأكيد كلمة المرور</label>
+                    <input type="password" id="m-pass-confirm" placeholder="أعد إدخال كلمة المرور">
+                </div>
+                <div id="pass-match-indicator" style="font-size:12px;margin-bottom:12px;display:none;"></div>
                 <div class="form-group">
                     <label>كود المحل (Store Key) — احذر عند التغيير</label>
                     <input type="text" id="m-key" placeholder="الكود الحالي">
                 </div>
-                <button class="btn btn-accent" onclick="updateSecurity()">🛡️ تحديث بيانات الأمان</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-accent" onclick="updateSecurity()">🛡️ تحديث بيانات الأمان</button>
+                    <button class="btn btn-red" onclick="logoutAllDevices()">🚫 تسجيل خروج من كل الأجهزة</button>
+                </div>
             </div>
             <div class="setting-card">
                 <div class="card-title">💾 النسخ الاحتياطي</div>
-                <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">قم بتحميل نسخة من كافة بياناتك (منتجات، مبيعات، موظفين) في ملف واحد.</p>
-                <button class="btn btn-orange" onclick="exportBackup()">📥 تحميل نسخة احتياطية (JSON)</button>
+                <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;">تحميل نسخة من كافة بياناتك (منتجات، مبيعات، موظفين، إعدادات).</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+                    <button class="btn btn-orange" onclick="exportBackup('json')">📥 تحميل JSON</button>
+                    <button class="btn btn-ghost" onclick="exportBackup('excel')">📗 تحميل Excel</button>
+                </div>
+                <p style="color:var(--text-muted);font-size:11px;margin:0;">Excel: منتجات / مبيعات / موظفين — كل قسم في شيت منفصل</p>
+            </div>
+            <div class="setting-card">
+                <div class="card-title">📤 استيراد البيانات</div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                        <div style="font-size:13px;font-weight:800;margin-bottom:6px;">🔄 استعادة نسخة احتياطية (JSON)</div>
+                        <p style="color:var(--text-muted);font-size:12px;margin:0 0 10px;">ارفع ملف JSON سبق تحميله — سيتم استيراد المنتجات والموظفين فقط</p>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <label class="btn btn-ghost" style="cursor:pointer;">📁 اختر ملف JSON<input type="file" id="json-restore-input" accept=".json" style="display:none;" onchange="handleJsonRestore(this)"></label>
+                            <span id="json-restore-name" style="font-size:12px;color:var(--text-muted);">لم يتم اختيار ملف</span>
+                        </div>
+                        <div id="json-restore-preview" style="display:none;margin-top:12px;"></div>
+                        <div id="json-restore-actions" style="display:none;margin-top:10px;display:flex;gap:8px;">
+                            <button class="btn btn-accent" onclick="confirmJsonRestore()">✅ تأكيد الاستيراد</button>
+                            <button class="btn btn-ghost" onclick="cancelJsonRestore()">إلغاء</button>
+                        </div>
+                    </div>
+                    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                        <div style="font-size:13px;font-weight:800;margin-bottom:6px;">📗 استيراد منتجات من Excel</div>
+                        <p style="color:var(--text-muted);font-size:12px;margin:0 0 8px;">الأعمدة المطلوبة: <b>name / price / category / quantity</b> (السطر الأول عناوين)</p>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                            <label class="btn btn-ghost" style="cursor:pointer;">📁 اختر Excel / CSV<input type="file" id="excel-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleExcelImport(this)"></label>
+                            <span id="excel-import-name" style="font-size:12px;color:var(--text-muted);">لم يتم اختيار ملف</span>
+                            <button class="btn btn-ghost" onclick="downloadImportTemplate()" style="font-size:11px;">⬇️ نموذج</button>
+                        </div>
+                        <div id="excel-import-preview" style="display:none;margin-top:10px;"></div>
+                        <div id="excel-import-actions" style="display:none;margin-top:10px;display:flex;gap:8px;">
+                            <button class="btn btn-accent" onclick="confirmExcelImport()">✅ استيراد المنتجات</button>
+                            <button class="btn btn-ghost" onclick="cancelExcelImport()">إلغاء</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- إعدادات الفاتورة -->
+        <!-- ══════ 3. الصلاحيات ══════ -->
+        <div id="permissions" class="section">
+            <div class="page-header">
+                <h2>👥 إدارة الصلاحيات</h2>
+                <p>تحكم في ما يستطيع الموظف فعله داخل النظام</p>
+            </div>
+            <div class="setting-card">
+                <div class="card-title">🛒 صلاحيات الكاشير</div>
+
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">↩️ المرتجعات</span>
+                        <span class="toggle-row-sub">السماح للموظف بإرجاع الفواتير</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="perm-returns" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">🏷️ الخصومات</span>
+                        <span class="toggle-row-sub">السماح للموظف بتطبيق الخصومات</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="perm-discounts" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+
+
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">📊 إظهار إحصائيات المبيعات</span>
+                        <span class="toggle-row-sub">عرض إجمالي مبيعات اليوم في شاشة الموظف</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="perm-show-stats" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-top:16px;">
+                    <button class="btn btn-accent" onclick="savePermissions()">✅ حفظ الصلاحيات</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════ 4. إعدادات الفاتورة ══════ -->
         <div id="invoice" class="section">
             <div class="page-header">
                 <h2>🧾 إعدادات الفاتورة</h2>
                 <p>تخصيص شكل ومحتوى الفاتورة المطبوعة</p>
             </div>
-            <div class="setting-card">
-                <div class="card-title">📄 تخصيص الفاتورة</div>
-                <div class="form-group">
-                    <label>رسالة أسفل الفاتورة</label>
-                    <textarea id="inv-footer" placeholder="مثلاً: البضاعة المباعة لا ترد ولا تستبدل.. شكراً لزيارتكم"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>حجم الورق</label>
-                    <select id="inv-size">
-                        <option value="80mm">طابعة حرارية (80mm)</option>
-                        <option value="58mm">طابعة حرارية (58mm)</option>
-                        <option value="A4">ورق عادي (A4)</option>
-                    </select>
-                </div>
-                <div class="check-row" onclick="document.getElementById('show-tax').click()">
-                    <input type="checkbox" id="show-tax" checked onclick="event.stopPropagation()">
-                    <label for="show-tax">إظهار الرقم الضريبي في الفاتورة</label>
-                </div>
-                <div style="margin-top:14px;">
-                    <button class="btn btn-accent" onclick="saveInvSettings()">💾 حفظ إعدادات الفاتورة</button>
-                </div>
-            </div>
-            <div class="preview-wrap">
-                <div class="preview-label">👁️ معاينة الفاتورة</div>
-                <div class="preview-invoice">
-                    <center>
-                        <strong id="pre-name" style="font-size:15px;">اسم المتجر</strong><br>
-                        <span id="pre-address" style="font-size:11px;color:#555;">العنوان هنا</span><br>
-                        <span id="pre-phone" style="font-size:11px;">010xxxxxxx</span>
-                    </center>
-                    <hr>
-                    <div style="font-size:12px;">
-                        <div>فاتورة مبيعات <b>#0001</b></div>
-                        <div>التاريخ: 2025-01-01</div>
+            <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+                <div>
+                    <div class="setting-card">
+                        <div class="card-title">📝 نصوص الفاتورة</div>
+                        <div class="form-group">
+                            <label>رسالة ترحيب (أعلى الفاتورة)</label>
+                            <input type="text" id="inv-welcome" placeholder="مثلاً: أهلاً بكم في محلنا 🌟" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>رسالة ختام (أسفل الفاتورة)</label>
+                            <textarea id="inv-footer" placeholder="مثلاً: البضاعة المباعة لا ترد ولا تستبدل.. شكراً لزيارتكم" oninput="updatePreview()"></textarea>
+                        </div>
                     </div>
-                    <hr>
-                    <div style="display:flex;justify-content:space-between;font-size:12px;">
-                        <span>صنف تجريبي × 2</span><span>100 ج.م</span>
+                    <div class="setting-card">
+                        <div class="card-title">⚙️ خيارات الطباعة</div>
+                        <div class="form-group">
+                            <label>حجم الورق</label>
+                            <select id="inv-size" onchange="updatePreview()">
+                                <option value="80mm">طابعة حرارية (80mm)</option>
+                                <option value="58mm">طابعة حرارية (58mm)</option>
+                                <option value="A4">ورق عادي (A4)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>عدد نسخ الطباعة الافتراضي</label>
+                            <select id="inv-copies">
+                                <option value="1">نسخة واحدة</option>
+                                <option value="2">نسختان</option>
+                                <option value="3">3 نسخ</option>
+                            </select>
+                        </div>
+                        <div class="check-row" onclick="toggle('inv-show-tax')">
+                            <input type="checkbox" id="inv-show-tax" checked onclick="event.stopPropagation()">
+                            <div style="flex:1;"><label for="inv-show-tax" style="display:block;font-size:13px;font-weight:700;cursor:pointer;">إظهار الرقم الضريبي</label></div>
+                        </div>
+                        <div class="check-row" onclick="toggle('inv-show-employee')">
+                            <input type="checkbox" id="inv-show-employee" checked onclick="event.stopPropagation()">
+                            <div style="flex:1;"><label for="inv-show-employee" style="display:block;font-size:13px;font-weight:700;cursor:pointer;">إظهار اسم الموظف</label><span class="check-sub">يظهر اسم الكاشير في الفاتورة</span></div>
+                        </div>
+                        <div class="check-row" onclick="toggle('inv-show-unit-price')">
+                            <input type="checkbox" id="inv-show-unit-price" checked onclick="event.stopPropagation()">
+                            <div style="flex:1;"><label for="inv-show-unit-price" style="display:block;font-size:13px;font-weight:700;cursor:pointer;">إظهار سعر الوحدة</label><span class="check-sub">عرض سعر القطعة الواحدة في جدول الأصناف</span></div>
+                        </div>
+                        <div style="margin-top:14px;">
+                            <button class="btn btn-accent" onclick="saveInvSettings()">💾 حفظ إعدادات الفاتورة</button>
+                        </div>
                     </div>
-                    <hr>
-                    <center><p id="pre-footer" style="font-size:11px;color:#555;margin:0;">شكراً لزيارتكم</p></center>
+                </div>
+
+                <!-- PREVIEW -->
+                <div style="position:sticky;top:20px;">
+                    <div class="preview-label">👁️ معاينة الفاتورة</div>
+                    <div class="preview-invoice">
+                        <div class="pi-center">
+                            <strong id="pre-name" style="font-size:15px;">اسم المتجر</strong><br>
+                            <span id="pre-address" style="font-size:10px;color:#555;">العنوان هنا</span><br>
+                            <span id="pre-phone" style="font-size:10px;">010xxxxxxx</span>
+                        </div>
+                        <div id="pre-welcome" class="pi-welcome" style="display:none;"></div>
+                        <hr>
+                        <div style="font-size:11px;">
+                            <div style="display:flex;justify-content:space-between;">
+                                <span>فاتورة مبيعات <b>#0001</b></span>
+                                <span>2025-01-01</span>
+                            </div>
+                            <div id="pre-employee" style="font-size:10px;color:#777;">البائع: الموظف</div>
+                        </div>
+                        <hr>
+                        <table style="width:100%;font-size:11px;border-collapse:collapse;">
+                            <thead><tr style="background:#f5f5f5;">
+                                <th style="text-align:right;padding:3px;">الصنف</th>
+                                <th style="text-align:center;padding:3px;">ك</th>
+                                <th id="pre-unit-col" style="text-align:center;padding:3px;">سعر</th>
+                                <th style="text-align:center;padding:3px;">إجمالي</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr><td style="padding:3px;">صنف تجريبي</td><td style="text-align:center;padding:3px;">2</td><td id="pre-unit-val" style="text-align:center;padding:3px;">50</td><td style="text-align:center;padding:3px;">100</td></tr>
+                            </tbody>
+                        </table>
+                        <hr>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;">
+                            <span>الإجمالي</span><span>100 ج.م</span>
+                        </div>
+                        <div id="pre-tax-row" style="font-size:10px;color:#777;margin-top:3px;">الرقم الضريبي: xxx-xxx-xxx</div>
+                        <hr>
+                        <div id="pre-footer" class="pi-footer">شكراً لزيارتكم</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-    </div>
-</div>
+        <!-- ══════ 5. إعدادات الوردية ══════ -->
+        <div id="shift" class="section">
+            <div class="page-header">
+                <h2>🕐 إعدادات الوردية</h2>
+                <p>تحديد أوقات الورديات وتنبيهات نهاية الدوام</p>
+            </div>
+            <div class="setting-card">
+                <div class="card-title">⏰ أوقات الوردية</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>وقت بداية الوردية</label>
+                        <input type="time" id="shift-start" value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label>وقت نهاية الوردية</label>
+                        <input type="time" id="shift-end" value="20:00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>مدة الوردية (محسوبة تلقائياً)</label>
+                    <div id="shift-duration" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:700;color:var(--accent);">— ساعة</div>
+                </div>
+                <button class="btn btn-accent" onclick="saveShiftSettings()">✅ حفظ أوقات الوردية</button>
+            </div>
+
+            <div class="setting-card">
+                <div class="card-title">🔔 تنبيهات الوردية</div>
+
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">🔔 تنبيه قرب نهاية الوردية</span>
+                        <span class="toggle-row-sub">يظهر تنبيه للموظف قبل نهاية الوردية</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="shift-alert-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-top:12px;">
+                    <label>التنبيه قبل النهاية بـ</label>
+                    <select id="shift-alert-before">
+                        <option value="15">15 دقيقة</option>
+                        <option value="30" selected>30 دقيقة</option>
+                        <option value="60">ساعة كاملة</option>
+                    </select>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">📊 طباعة تقرير الوردية تلقائياً</span>
+                        <span class="toggle-row-sub">يطلب طباعة تقرير عند إنهاء الوردية</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="shift-auto-report" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <button class="btn btn-accent" onclick="saveShiftAlerts()">✅ حفظ إعدادات التنبيهات</button>
+                </div>
+            </div>
+
+            <!-- عرض الوردية الحالية -->
+            <div class="setting-card">
+                <div class="card-title">📅 الوردية الحالية</div>
+                <div id="current-shift-info" style="text-align:center;padding:10px;color:var(--text-muted);font-size:13px;">جاري التحميل...</div>
+            </div>
+        </div>
+
+    </div><!-- end main-content -->
+</div><!-- end layout -->
 
 <div id="toast-container"></div>
 
 <script>
-    // ===== SECURITY CHECK =====
-    (function securityCheck(){
+    // SECURITY CHECK
+    (function(){
         const sk=sessionStorage.getItem('store_key');
         const un=sessionStorage.getItem('username');
         const role=sessionStorage.getItem('userRole');
         if(!sk||!un){location.replace('index.html');return;}
         if(role==='employee'){location.replace('pos.html');return;}
     })();
+
     const SUPABASE_URL='https://xyvxowlbvuqbggkslwqr.supabase.co';
     const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
     const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     const storeKey=sessionStorage.getItem('store_key');
-    if(!storeKey) location.href='index.html';
 
+    // TOAST
     function showToast(msg,type='info'){
         const icons={success:'✅',error:'❌',info:'ℹ️'};
         const c=document.getElementById('toast-container');
@@ -323,6 +574,12 @@
         setTimeout(()=>t.remove(),4000);
     }
 
+    // SIDEBAR
+    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
+    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSidebar();});
+
+    // THEME
     function toggleTheme(){
         const html=document.documentElement;
         const isLight=html.getAttribute('data-theme')==='light';
@@ -330,11 +587,12 @@
         localStorage.setItem('fateen_theme',isLight?'dark':'light');
         document.getElementById('theme-icon').innerText=isLight?'🌙':'☀️';
     }
-    function loadTheme(){
+    (function loadTheme(){
         const saved=localStorage.getItem('fateen_theme');
         if(saved==='light'){document.documentElement.setAttribute('data-theme','light');document.getElementById('theme-icon').innerText='☀️';}
-    }
+    })();
 
+    // SECTION SWITCH
     function showSection(id,btn){
         document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -342,35 +600,184 @@
         if(btn) btn.classList.add('active');
     }
 
+    // TOGGLE HELPER
+    function toggle(id){
+        const el=document.getElementById(id);
+        if(el) el.checked=!el.checked;
+        updatePreview();
+    }
+
+    // ══════════════════════════════
+    // LOAD SETTINGS
+    // ══════════════════════════════
     async function loadSettings(){
         try{
             const{data:store}=await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
             if(store){
-                document.getElementById('s-name').value=store.store_name||'';
-                document.getElementById('s-phone').value=store.phone||'';
-                document.getElementById('s-tax').value=store.tax_id||'';
-                document.getElementById('s-address').value=store.address||'';
-                document.getElementById('s-logo').value=store.logo_url||'';
-                document.getElementById('m-key').value=store.store_key||'';
-                if(store.invoice_footer) document.getElementById('inv-footer').value=store.invoice_footer;
+                // هوية
+                setVal('s-name',store.store_name||'');
+                setVal('s-phone',store.phone||'');
+                setVal('s-tax',store.tax_id||'');
+                setVal('s-address',store.address||'');
+                setVal('s-email',store.email||'');
+                setVal('s-whatsapp',store.whatsapp||'');
+                setVal('s-logo',store.logo_url||'');
+                setVal('m-key',store.store_key||'');
                 document.getElementById('store-name-display').innerText=store.store_name||'Fateen OS';
+                // فاتورة
+                setVal('inv-welcome',store.invoice_welcome||'');
+                setVal('inv-footer',store.invoice_footer||'');
+                if(store.invoice_size) setVal('inv-size',store.invoice_size);
+                if(store.invoice_copies) setVal('inv-copies',store.invoice_copies);
+                setCheck('inv-show-tax',store.invoice_show_tax!==false);
+                setCheck('inv-show-employee',store.invoice_show_employee!==false);
+                setCheck('inv-show-unit-price',store.invoice_show_unit_price!==false);
+                // صلاحيات
+                setCheck('perm-returns',store.perm_returns!==false);
+                setCheck('perm-discounts',store.perm_discounts!==false);
+
+                setCheck('perm-show-stats',store.perm_show_stats!==false);
+                // وردية
+                if(store.shift_start) setVal('shift-start',store.shift_start);
+                if(store.shift_end) setVal('shift-end',store.shift_end);
+                if(store.shift_alert_before) setVal('shift-alert-before',store.shift_alert_before);
+                setCheck('shift-alert-enabled',store.shift_alert_enabled!==false);
+                setCheck('shift-auto-report',store.shift_auto_report!==false);
+                // معاينة
                 document.getElementById('pre-name').innerText=store.store_name||'اسم المتجر';
-                document.getElementById('pre-address').innerText=store.address||'العنوان';
-                document.getElementById('pre-phone').innerText=store.phone||'';
-                if(store.invoice_footer) document.getElementById('pre-footer').innerText=store.invoice_footer;
+                document.getElementById('pre-address').innerText=store.address||'العنوان هنا';
+                document.getElementById('pre-phone').innerText=store.phone||'010xxxxxxx';
+                updatePreview();
+                updateShiftDuration();
+                updateCurrentShift(store);
             }
-        }catch(e){}
+        }catch(e){showToast('خطأ في تحميل الإعدادات','error');}
         try{
             const{data}=await _supabase.from('system_settings').select('value').eq('key','sys_version').single();
             if(data) document.getElementById('version-chip').innerText=data.value;
         }catch(e){}
-        // live preview
-        [['s-name','pre-name'],['s-address','pre-address'],['s-phone','pre-phone'],['inv-footer','pre-footer']].forEach(([src,dst])=>{
-            const el=document.getElementById(src);
-            if(el) el.addEventListener('input',()=>{const t=document.getElementById(dst);if(t&&el.value) t.innerText=el.value;});
+
+        // live listeners
+        ['s-name','s-address','s-phone','inv-welcome','inv-footer'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el) el.addEventListener('input',updatePreview);
+        });
+        ['inv-show-tax','inv-show-employee','inv-show-unit-price'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el) el.addEventListener('change',updatePreview);
+        });
+        document.getElementById('shift-start')?.addEventListener('input',updateShiftDuration);
+        document.getElementById('shift-end')?.addEventListener('input',updateShiftDuration);
+
+        // password match indicator
+        ['m-pass','m-pass-confirm'].forEach(id=>{
+            document.getElementById(id)?.addEventListener('input',checkPasswordMatch);
         });
     }
 
+    function setVal(id,val){const el=document.getElementById(id);if(el) el.value=val;}
+    function setCheck(id,val){const el=document.getElementById(id);if(el) el.checked=!!val;}
+
+    // ══════════════════════════════
+    // PREVIEW UPDATE
+    // ══════════════════════════════
+    function updatePreview(){
+        const name=document.getElementById('s-name')?.value||document.getElementById('pre-name')?.innerText||'اسم المتجر';
+        const addr=document.getElementById('s-address')?.value||'';
+        const phone=document.getElementById('s-phone')?.value||'';
+        const welcome=document.getElementById('inv-welcome')?.value||'';
+        const footer=document.getElementById('inv-footer')?.value||'';
+        const showTax=document.getElementById('inv-show-tax')?.checked;
+        const showEmp=document.getElementById('inv-show-employee')?.checked;
+        const showUnit=document.getElementById('inv-show-unit-price')?.checked;
+
+        const preNameEl=document.getElementById('pre-name');
+        if(preNameEl&&name) preNameEl.innerText=name;
+        const preAddrEl=document.getElementById('pre-address');
+        if(preAddrEl) preAddrEl.innerText=addr||'العنوان هنا';
+        const prePhoneEl=document.getElementById('pre-phone');
+        if(prePhoneEl) prePhoneEl.innerText=phone||'010xxxxxxx';
+
+        const welcomeEl=document.getElementById('pre-welcome');
+        if(welcomeEl){
+            welcomeEl.style.display=welcome?'block':'none';
+            welcomeEl.innerText=welcome;
+        }
+        const footerEl=document.getElementById('pre-footer');
+        if(footerEl) footerEl.innerText=footer||'شكراً لزيارتكم';
+
+        const taxRowEl=document.getElementById('pre-tax-row');
+        if(taxRowEl) taxRowEl.style.display=showTax?'block':'none';
+
+        const empEl=document.getElementById('pre-employee');
+        if(empEl) empEl.style.display=showEmp?'block':'none';
+
+        const unitColEl=document.getElementById('pre-unit-col');
+        const unitValEl=document.getElementById('pre-unit-val');
+        if(unitColEl) unitColEl.style.display=showUnit?'table-cell':'none';
+        if(unitValEl) unitValEl.style.display=showUnit?'table-cell':'none';
+    }
+
+    // ══════════════════════════════
+    // PASSWORD MATCH
+    // ══════════════════════════════
+    function checkPasswordMatch(){
+        const pass=document.getElementById('m-pass')?.value||'';
+        const confirm=document.getElementById('m-pass-confirm')?.value||'';
+        const indicator=document.getElementById('pass-match-indicator');
+        if(!indicator) return;
+        if(!pass&&!confirm){indicator.style.display='none';return;}
+        indicator.style.display='block';
+        if(pass.length<6){
+            indicator.style.color='var(--orange)';
+            indicator.innerText='⚠️ كلمة المرور أقل من 6 أحرف';
+        } else if(pass===confirm){
+            indicator.style.color='var(--green)';
+            indicator.innerText='✅ كلمات المرور متطابقة';
+        } else {
+            indicator.style.color='var(--red)';
+            indicator.innerText='❌ كلمات المرور غير متطابقة';
+        }
+    }
+
+    // ══════════════════════════════
+    // SHIFT DURATION
+    // ══════════════════════════════
+    function updateShiftDuration(){
+        const start=document.getElementById('shift-start')?.value;
+        const end=document.getElementById('shift-end')?.value;
+        const el=document.getElementById('shift-duration');
+        if(!start||!end||!el) return;
+        const [sh,sm]=start.split(':').map(Number);
+        const [eh,em]=end.split(':').map(Number);
+        let mins=(eh*60+em)-(sh*60+sm);
+        if(mins<0) mins+=24*60;
+        const h=Math.floor(mins/60);
+        const m=mins%60;
+        el.innerText=(h>0?h+' ساعة ':'')+( m>0?m+' دقيقة':'');
+    }
+
+    function updateCurrentShift(store){
+        const el=document.getElementById('current-shift-info');
+        if(!el) return;
+        const start=store?.shift_start||'08:00';
+        const end=store?.shift_end||'20:00';
+        const now=new Date();
+        const timeStr=now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+        const [sh,sm]=start.split(':').map(Number);
+        const [eh,em]=end.split(':').map(Number);
+        const nowMins=now.getHours()*60+now.getMinutes();
+        const startMins=sh*60+sm;
+        const endMins=eh*60+em;
+        const inShift=nowMins>=startMins&&nowMins<=endMins;
+        el.innerHTML='<div style="font-size:13px;margin-bottom:8px;">الوقت الحالي: <b style="color:var(--accent);">'+timeStr+'</b></div>'
+            +'<div style="font-size:13px;margin-bottom:8px;">الوردية: <b>'+start+'</b> ← <b>'+end+'</b></div>'
+            +'<div style="font-size:13px;"><span style="background:'+(inShift?'var(--green-dim)':'var(--red-dim)')+';color:'+(inShift?'var(--green)':'var(--red)')+';padding:3px 10px;border-radius:20px;font-weight:700;">'+(inShift?'✅ في وقت الوردية':'⏸ خارج وقت الوردية')+'</span></div>';
+    }
+
+    // ══════════════════════════════
+    // SAVE FUNCTIONS
+    // ══════════════════════════════
     async function saveIdentity(){
         try{
             const{error}=await _supabase.from('stores').update({
@@ -378,55 +785,337 @@
                 phone:document.getElementById('s-phone').value,
                 tax_id:document.getElementById('s-tax').value,
                 address:document.getElementById('s-address').value,
+                email:document.getElementById('s-email').value,
+                whatsapp:document.getElementById('s-whatsapp').value,
                 logo_url:document.getElementById('s-logo').value
             }).eq('store_key',storeKey);
             if(error) throw error;
             showToast('تم حفظ بيانات الهوية بنجاح','success');
-            loadSettings();
+            // تحديث الاسم في الـ topbar
+            document.getElementById('store-name-display').innerText=document.getElementById('s-name').value||'Fateen OS';
+            updatePreview();
         }catch(e){showToast('خطأ: '+e.message,'error');}
     }
 
     async function updateSecurity(){
+        const newPass=document.getElementById('m-pass').value;
+        const confirmPass=document.getElementById('m-pass-confirm').value;
+        const newKey=document.getElementById('m-key').value;
+        if(newPass){
+            if(newPass.length<6) return showToast('كلمة المرور أقل من 6 أحرف','error');
+            if(newPass!==confirmPass) return showToast('كلمات المرور غير متطابقة','error');
+        }
         try{
-            const newPass=document.getElementById('m-pass').value;
-            const newKey=document.getElementById('m-key').value;
-            if(newPass) await _supabase.from('users').update({password:newPass}).eq('store_key',storeKey).eq('role','manager');
+            if(newPass){
+                const{error}=await _supabase.from('users').update({password:newPass}).eq('store_key',storeKey).eq('role','manager');
+                if(error) throw error;
+            }
             if(newKey&&newKey!==storeKey){
-                if(confirm('تغيير كود المحل سيخرجك من النظام، هل أنت متأكد؟')){
-                    await _supabase.from('stores').update({store_key:newKey}).eq('store_key',storeKey);
-                    await _supabase.from('users').update({store_key:newKey}).eq('store_key',storeKey);
-                    sessionStorage.clear();location.href='index.html';
+                if(!confirm('تغيير كود المحل سيخرجك من النظام. هل أنت متأكد؟')) return;
+                await _supabase.from('stores').update({store_key:newKey}).eq('store_key',storeKey);
+                await _supabase.from('users').update({store_key:newKey}).eq('store_key',storeKey);
+                sessionStorage.clear();
+                location.href='index.html';
+                return;
+            }
+            showToast('تم تحديث بيانات الأمان بنجاح','success');
+            document.getElementById('m-pass').value='';
+            document.getElementById('m-pass-confirm').value='';
+            document.getElementById('pass-match-indicator').style.display='none';
+        }catch(e){showToast('خطأ: '+e.message,'error');}
+    }
+
+    function logoutAllDevices(){
+        if(!confirm('هل أنت متأكد من تسجيل الخروج من كل الأجهزة؟')) return;
+        sessionStorage.clear();
+        localStorage.removeItem('fateen_theme');
+        showToast('تم تسجيل الخروج من كل الأجهزة','success');
+        setTimeout(()=>location.href='index.html',1000);
+    }
+
+    // ══════════════════════════════
+    // EXPORT BACKUP
+    // ══════════════════════════════
+    async function exportBackup(format){
+        showToast('جاري تحضير النسخة الاحتياطية...','info');
+        try{
+            const[{data:products},{data:sales},{data:users},{data:store}]=await Promise.all([
+                _supabase.from('products').select('*').eq('store_key',storeKey),
+                _supabase.from('sales').select('*').eq('store_key',storeKey).order('created_at',{ascending:false}),
+                _supabase.from('users').select('id,username,role,store_key,created_at').eq('store_key',storeKey),
+                _supabase.from('stores').select('*').eq('store_key',storeKey).single()
+            ]);
+            const dateStr=new Date().toISOString().split('T')[0];
+
+            if(format==='json'){
+                const blob=new Blob([JSON.stringify({
+                    products:products||[],
+                    sales:sales||[],
+                    users:users||[],
+                    store:store||{},
+                    export_date:new Date().toISOString(),
+                    store_key:storeKey,
+                    version:'FateenOS-Backup-v1'
+                },null,2)],{type:'application/json'});
+                const a=document.createElement('a');
+                a.href=URL.createObjectURL(blob);
+                a.download='FateenOS_Backup_'+storeKey+'_'+dateStr+'.json';
+                a.click();
+                showToast('تم تحميل النسخة الاحتياطية JSON ✅','success');
+
+            } else {
+                // EXCEL — 3 sheets
+                const wb=XLSX.utils.book_new();
+
+                // Sheet 1 — المنتجات
+                const prodRows=(products||[]).map(p=>({
+                    'الاسم':p.name||'',
+                    'السعر':p.price||0,
+                    'سعر الشراء':p.purchase_price||0,
+                    'الكمية':p.quantity||0,
+                    'الفئة':p.category||'',
+                    'الباركود':p.barcode||'',
+                    'وحدة القياس':p.unit||'',
+                    'الحد الأدنى':p.min_stock||0,
+                    'متاح':p.is_active===false?'لا':'نعم'
+                }));
+                const ws1=XLSX.utils.json_to_sheet(prodRows.length?prodRows:[{'الاسم':'لا توجد منتجات'}]);
+                XLSX.utils.book_append_sheet(wb,ws1,'المنتجات');
+
+                // Sheet 2 — المبيعات
+                const salesRows=(sales||[]).map(s=>({
+                    'رقم الفاتورة':String(s.id).slice(-6),
+                    'التاريخ':s.created_at?new Date(s.created_at).toLocaleDateString('ar-EG'):'',
+                    'البائع':s.seller_name||'',
+                    'المبلغ':s.total_amount||0,
+                    'طريقة الدفع':s.payment_method||'كاش',
+                    'النوع':s.type==='sale'?'بيع':'مرتجع',
+                    'عدد الأصناف':s.items_count||0
+                }));
+                const ws2=XLSX.utils.json_to_sheet(salesRows.length?salesRows:[{'رقم الفاتورة':'لا توجد مبيعات'}]);
+                XLSX.utils.book_append_sheet(wb,ws2,'المبيعات');
+
+                // Sheet 3 — الموظفين
+                const usersRows=(users||[]).map(u=>({
+                    'اسم المستخدم':u.username||'',
+                    'الدور':u.role||'',
+                    'تاريخ الإنشاء':u.created_at?new Date(u.created_at).toLocaleDateString('ar-EG'):''
+                }));
+                const ws3=XLSX.utils.json_to_sheet(usersRows.length?usersRows:[{'اسم المستخدم':'لا يوجد موظفين'}]);
+                XLSX.utils.book_append_sheet(wb,ws3,'الموظفين');
+
+                XLSX.writeFile(wb,'FateenOS_Backup_'+storeKey+'_'+dateStr+'.xlsx');
+                showToast('تم تحميل Excel بنجاح ✅','success');
+            }
+        }catch(e){showToast('خطأ في النسخ الاحتياطي: '+e.message,'error');}
+    }
+
+    // ══════════════════════════════
+    // JSON RESTORE
+    // ══════════════════════════════
+    let jsonRestoreData=null;
+
+    function handleJsonRestore(input){
+        const file=input.files[0];
+        if(!file) return;
+        document.getElementById('json-restore-name').innerText=file.name;
+        const reader=new FileReader();
+        reader.onload=function(e){
+            try{
+                const data=JSON.parse(e.target.result);
+                if(!data.version||!data.version.startsWith('FateenOS')){
+                    showToast('الملف غير صالح — تأكد أنه ملف Fateen OS','error');
+                    return;
                 }
-            }else{ showToast('تم تحديث الأمان بنجاح','success'); }
+                jsonRestoreData=data;
+                const prods=(data.products||[]).length;
+                const emps=(data.users||[]).length;
+                const expDate=data.export_date?new Date(data.export_date).toLocaleDateString('ar-EG'):'غير معروف';
+                document.getElementById('json-restore-preview').style.display='block';
+                document.getElementById('json-restore-preview').innerHTML=
+                    '<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;">'
+                    +'<div style="margin-bottom:4px;"><b>📦 منتجات:</b> '+prods+' صنف</div>'
+                    +'<div style="margin-bottom:4px;"><b>👥 موظفين:</b> '+emps+' موظف</div>'
+                    +'<div><b>📅 تاريخ النسخة:</b> '+expDate+'</div>'
+                    +'<div style="margin-top:8px;color:var(--orange);font-size:11px;">⚠️ المنتجات والموظفين الحاليين سيبقوا — سيتم إضافة الناقص فقط</div>'
+                    +'</div>';
+                document.getElementById('json-restore-actions').style.display='flex';
+            }catch(err){
+                showToast('خطأ في قراءة الملف','error');
+                jsonRestoreData=null;
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    async function confirmJsonRestore(){
+        if(!jsonRestoreData) return;
+        if(!confirm('هل أنت متأكد من استيراد البيانات؟')) return;
+        showToast('جاري الاستيراد...','info');
+        let imported=0;
+        try{
+            // استيراد المنتجات — upsert بالاسم
+            const products=(jsonRestoreData.products||[]).map(p=>({...p,store_key:storeKey,id:undefined}));
+            if(products.length){
+                // حذف الـ id عشان Supabase يعمل insert
+                const cleanProds=products.map(({id,...rest})=>({...rest,store_key:storeKey}));
+                const{error}=await _supabase.from('products').upsert(cleanProds,{onConflict:'name,store_key',ignoreDuplicates:true});
+                if(!error) imported+=cleanProds.length;
+            }
+            showToast('تم استيراد '+imported+' منتج بنجاح ✅','success');
+            cancelJsonRestore();
+        }catch(e){showToast('خطأ في الاستيراد: '+e.message,'error');}
+    }
+
+    function cancelJsonRestore(){
+        jsonRestoreData=null;
+        document.getElementById('json-restore-name').innerText='لم يتم اختيار ملف';
+        document.getElementById('json-restore-preview').style.display='none';
+        document.getElementById('json-restore-actions').style.display='none';
+        document.getElementById('json-restore-input').value='';
+    }
+
+    // ══════════════════════════════
+    // EXCEL IMPORT (منتجات)
+    // ══════════════════════════════
+    let excelImportRows=[];
+
+    function downloadImportTemplate(){
+        const wb=XLSX.utils.book_new();
+        const ws=XLSX.utils.json_to_sheet([
+            {name:'صنف تجريبي',price:100,purchase_price:70,category:'عام',quantity:50,barcode:'',unit:'قطعة',min_stock:5}
+        ]);
+        XLSX.utils.book_append_sheet(wb,ws,'منتجات');
+        XLSX.writeFile(wb,'FateenOS_Import_Template.xlsx');
+    }
+
+    function handleExcelImport(input){
+        const file=input.files[0];
+        if(!file) return;
+        document.getElementById('excel-import-name').innerText=file.name;
+        const reader=new FileReader();
+        reader.onload=function(e){
+            try{
+                const wb=XLSX.read(e.target.result,{type:'binary'});
+                const ws=wb.Sheets[wb.SheetNames[0]];
+                const rows=XLSX.utils.sheet_to_json(ws);
+                if(!rows.length) return showToast('الملف فارغ','error');
+
+                // تطبيع الأعمدة — يقبل عربي وإنجليزي
+                excelImportRows=rows.map(r=>({
+                    name: r.name||r['الاسم']||r['اسم المنتج']||'',
+                    price: parseFloat(r.price||r['السعر']||r['سعر البيع']||0),
+                    purchase_price: parseFloat(r.purchase_price||r['سعر الشراء']||0),
+                    category: r.category||r['الفئة']||r['القسم']||'عام',
+                    quantity: parseInt(r.quantity||r['الكمية']||0),
+                    barcode: String(r.barcode||r['الباركود']||''),
+                    unit: r.unit||r['وحدة القياس']||'قطعة',
+                    min_stock: parseInt(r.min_stock||r['الحد الأدنى']||0),
+                    store_key: storeKey,
+                    is_active: true
+                })).filter(r=>r.name);
+
+                if(!excelImportRows.length) return showToast('لم يتم العثور على منتجات — تحقق من أسماء الأعمدة','error');
+
+                document.getElementById('excel-import-preview').style.display='block';
+                document.getElementById('excel-import-preview').innerHTML=
+                    '<div style="background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;margin-bottom:8px;">'
+                    +'<b>✅ '+excelImportRows.length+' منتج جاهز للاستيراد</b>'
+                    +'</div>'
+                    +'<div style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">'
+                    +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+                    +'<thead><tr style="background:var(--surface3);"><th style="padding:6px 8px;text-align:right;">الاسم</th><th style="padding:6px 8px;">السعر</th><th style="padding:6px 8px;">الكمية</th><th style="padding:6px 8px;">الفئة</th></tr></thead>'
+                    +'<tbody>'+excelImportRows.slice(0,50).map(r=>'<tr><td style="padding:5px 8px;">'+r.name+'</td><td style="padding:5px 8px;text-align:center;">'+r.price+'</td><td style="padding:5px 8px;text-align:center;">'+r.quantity+'</td><td style="padding:5px 8px;text-align:center;">'+r.category+'</td></tr>').join('')
+                    +(excelImportRows.length>50?'<tr><td colspan="4" style="text-align:center;padding:6px;color:var(--text-muted);">... و '+(excelImportRows.length-50)+' منتج آخر</td></tr>':'')
+                    +'</tbody></table></div>';
+                document.getElementById('excel-import-actions').style.display='flex';
+            }catch(err){
+                showToast('خطأ في قراءة Excel: '+err.message,'error');
+                excelImportRows=[];
+            }
+        };
+        reader.readAsBinaryString(file);
+    }
+
+    async function confirmExcelImport(){
+        if(!excelImportRows.length) return;
+        if(!confirm('سيتم إضافة '+excelImportRows.length+' منتج. المنتجات بنفس الاسم ستُحدَّث. هل أنت متأكد؟')) return;
+        showToast('جاري استيراد المنتجات...','info');
+        try{
+            // upsert على دفعات 50
+            const batchSize=50;
+            let done=0;
+            for(let i=0;i<excelImportRows.length;i+=batchSize){
+                const batch=excelImportRows.slice(i,i+batchSize);
+                const{error}=await _supabase.from('products').upsert(batch,{onConflict:'name,store_key'});
+                if(error) throw error;
+                done+=batch.length;
+            }
+            showToast('تم استيراد '+done+' منتج بنجاح ✅','success');
+            cancelExcelImport();
+        }catch(e){showToast('خطأ في الاستيراد: '+e.message,'error');}
+    }
+
+    function cancelExcelImport(){
+        excelImportRows=[];
+        document.getElementById('excel-import-name').innerText='لم يتم اختيار ملف';
+        document.getElementById('excel-import-preview').style.display='none';
+        document.getElementById('excel-import-actions').style.display='none';
+        document.getElementById('excel-import-input').value='';
+    }
+
+    async function savePermissions(){
+        try{
+            const{error}=await _supabase.from('stores').update({
+                perm_returns:document.getElementById('perm-returns').checked,
+                perm_discounts:document.getElementById('perm-discounts').checked,
+                perm_show_stats:document.getElementById('perm-show-stats').checked
+            }).eq('store_key',storeKey);
+            if(error) throw error;
+            showToast('تم حفظ الصلاحيات بنجاح','success');
         }catch(e){showToast('خطأ: '+e.message,'error');}
     }
 
     async function saveInvSettings(){
         try{
-            const footer=document.getElementById('inv-footer').value;
-            const{error}=await _supabase.from('stores').update({invoice_footer:footer}).eq('store_key',storeKey);
+            const{error}=await _supabase.from('stores').update({
+                invoice_welcome:document.getElementById('inv-welcome').value,
+                invoice_footer:document.getElementById('inv-footer').value,
+                invoice_size:document.getElementById('inv-size').value,
+                invoice_copies:document.getElementById('inv-copies').value,
+                invoice_show_tax:document.getElementById('inv-show-tax').checked,
+                invoice_show_employee:document.getElementById('inv-show-employee').checked,
+                invoice_show_unit_price:document.getElementById('inv-show-unit-price').checked
+            }).eq('store_key',storeKey);
             if(error) throw error;
-            document.getElementById('pre-footer').innerText=footer||'شكراً لزيارتكم';
             showToast('تم حفظ إعدادات الفاتورة','success');
         }catch(e){showToast('خطأ: '+e.message,'error');}
     }
 
-    async function exportBackup(){
-        showToast('جاري تحضير النسخة الاحتياطية...','info');
+    async function saveShiftSettings(){
         try{
-            const{data:products}=await _supabase.from('products').select('*').eq('store_key',storeKey);
-            const{data:sales}=await _supabase.from('sales').select('*').eq('store_key',storeKey);
-            const{data:users}=await _supabase.from('users').select('*').eq('store_key',storeKey);
-            const blob=new Blob([JSON.stringify({products,sales,users,export_date:new Date(),store_key:storeKey},null,2)],{type:'application/json'});
-            const a=document.createElement('a');
-            a.href=URL.createObjectURL(blob);
-            a.download='FateenOS_Backup_'+storeKey+'_'+new Date().toISOString().split('T')[0]+'.json';
-            a.click();
-            showToast('تم تحميل النسخة الاحتياطية','success');
-        }catch(e){showToast('خطأ في النسخ الاحتياطي','error');}
+            const{error}=await _supabase.from('stores').update({
+                shift_start:document.getElementById('shift-start').value,
+                shift_end:document.getElementById('shift-end').value
+            }).eq('store_key',storeKey);
+            if(error) throw error;
+            showToast('تم حفظ أوقات الوردية','success');
+            updateShiftDuration();
+        }catch(e){showToast('خطأ: '+e.message,'error');}
     }
 
-    loadTheme();
+    async function saveShiftAlerts(){
+        try{
+            const{error}=await _supabase.from('stores').update({
+                shift_alert_enabled:document.getElementById('shift-alert-enabled').checked,
+                shift_alert_before:document.getElementById('shift-alert-before').value,
+                shift_auto_report:document.getElementById('shift-auto-report').checked
+            }).eq('store_key',storeKey);
+            if(error) throw error;
+            showToast('تم حفظ إعدادات التنبيهات','success');
+        }catch(e){showToast('خطأ: '+e.message,'error');}
+    }
+
     loadSettings();
 </script>
 </body>
