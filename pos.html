@@ -234,46 +234,14 @@
             .target-box{display:none;}
             main{flex-direction:column;}
         }
-        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
-        .sidebar-overlay.open{display:block;}
-        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
-        .sidebar.open{right:0;}
-        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
-        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
-        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
-        .sidebar-close:hover{color:var(--red);}
-        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
-        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
-        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
-        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
-        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
-        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
     </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
-<div class="sidebar" id="main-sidebar">
-    <div class="sidebar-head">
-        <span class="sidebar-head-title">☰ القائمة</span>
-        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
-    </div>
-    <nav class="sidebar-nav">
-        <a class="sb-item" onclick="location.href='pos.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">🖥️</span>الكاشير</a>
-        <a class="sb-item" onclick="location.href='employeesite.html'"><span class="sb-icon">👤</span>ملفي الشخصي</a>
-        <a class="sb-item" onclick="openReturnModal();closeSidebar()"><span class="sb-icon">↩️</span>مرتجع</a>
-        <a class="sb-item" onclick="openShiftModal();closeSidebar()"><span class="sb-icon">⏹️</span>إنهاء الوردية</a>
-        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
-        <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
-        <a class="sb-item" onclick="endShift()" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
-    </nav>
-    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
-</div>
-
 <!-- HEADER -->
 <header>
     <div class="user-info">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;" onclick="openSidebar()">☰</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
         <div>
             <div class="user-name" id="display-emp-name">الموظف</div>
             <div class="user-role" id="display-store-name">المتجر</div>
@@ -293,9 +261,13 @@
     </div>
 
     <div class="header-btns">
+        <!-- زر الإرجاع -->
         <button class="hbtn" onclick="openReturnModal()">↩️ مرتجع</button>
+        <!-- انهاء الوردية -->
         <button class="hbtn hbtn-red" onclick="openShiftModal()">⏹️ إنهاء الوردية</button>
+        <!-- ثيم -->
         <button class="hbtn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+        <!-- الملف الشخصي -->
         <button class="hbtn" onclick="location.href='employeesite.html'">⚙️</button>
     </div>
 </header>
@@ -326,17 +298,6 @@
             <div class="total-row">
                 <span class="total-label">الإجمالي</span>
                 <span class="total-amount" id="total-price">0.00 ج.م</span>
-            </div>
-            <!-- خصم -->
-            <div id="discount-row" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:var(--surface2);border-radius:var(--radius-sm);padding:7px 10px;border:1px solid var(--border);">
-                <span style="font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap;">🏷️ خصم</span>
-                <input type="number" id="discount-val" min="0" placeholder="0" oninput="renderCart()"
-                    style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:13px;outline:none;">
-                <select id="discount-type" onchange="renderCart()"
-                    style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
-                    <option value="amount">ج.م</option>
-                    <option value="percent">%</option>
-                </select>
             </div>
             <div class="pay-methods">
                 <div id="m-cash" class="method-btn active" onclick="setPayment('كاش')">💵 كاش</div>
@@ -433,11 +394,6 @@
         setTimeout(()=>t.remove(),3500);
     }
 
-    // ===== SIDEBAR =====
-    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
-    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.target.matches('input')) closeSidebar();});
-
     // ===== THEME =====
     function toggleTheme(){
         const html=document.documentElement;
@@ -454,11 +410,6 @@
     // ===== INIT =====
     async function init(){
         if(!storeKey) return location.href='index.html';
-        // موبايل → scan.html
-        const isMobile=/Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            || (navigator.userAgent.includes('Mobile'))
-            || window.innerWidth<=768;
-        if(isMobile){ location.replace('scan.html'); return; }
         loadTheme();
         try{
             const{data:store}=await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
@@ -571,37 +522,14 @@
 
     // filterProducts يستخدم p-search
 
-    // ===== EFFECTIVE PRICE (تطبيق الخصم التلقائي) =====
-    function getEffectivePrice(p){
-        if(!p.discount_price || p.discount_price>=p.price) return p.price;
-        if(p.discount_end_date){
-            const today=new Date().toISOString().split('T')[0];
-            if(today>p.discount_end_date){
-                // انتهى الخصم — امسحه من الـ cache
-                p.discount_price=null;
-                p.discount_end_date=null;
-                return p.price;
-            }
-        }
-        return p.discount_price;
-    }
-
     // ===== CART =====
-    function getDiscount(subtotal){
-        const val=parseFloat(document.getElementById('discount-val')?.value)||0;
-        const type=document.getElementById('discount-type')?.value||'amount';
-        if(!val) return 0;
-        return type==='percent'?Math.min(subtotal*(val/100),subtotal):Math.min(val,subtotal);
-    }
-
     function addToCart(p){
-        const effectivePrice=getEffectivePrice(p);
         const exist=cart.find(i=>i.id===p.id);
         if(exist){
             if(exist.qty>=p.stock){showToast('وصلت للحد الأقصى من المخزون','error');return;}
             exist.qty++;
         } else {
-            cart.push({...p,price:effectivePrice,originalPrice:p.price,qty:1});
+            cart.push({...p,qty:1});
         }
         renderCart();
     }
@@ -635,15 +563,8 @@
                     <span class="cart-remove" onclick="removeFromCart(${idx})">✕</span>
                 </div>`).join('');
         }
-        const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
-        const discount=getDiscount(subtotal);
-        const total=subtotal-discount;
-        const totalEl=document.getElementById('total-price');
-        if(discount>0){
-            totalEl.innerHTML=`<span style="font-size:14px;color:var(--red);text-decoration:line-through;display:block;">${subtotal.toFixed(2)} ج.م</span>${total.toFixed(2)} ج.م`;
-        } else {
-            totalEl.innerText=total.toFixed(2)+' ج.م';
-        }
+        const total=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+        document.getElementById('total-price').innerText=total.toFixed(2)+' ج.م';
         document.getElementById('cart-count').innerText=cart.reduce((s,i)=>s+i.qty,0);
     }
 
@@ -681,9 +602,7 @@
         checkoutInProgress=true;
         const btn=document.querySelector('.btn-checkout');
         if(btn){btn.disabled=true;btn.innerText='⏳ جاري الحفظ...';}
-        const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
-        const discount=getDiscount(subtotal);
-        const total=subtotal-discount;
+        const total=cart.reduce((s,i)=>s+(i.price*i.qty),0);
         try{
             const slimItems=cart.map(i=>({id:i.id,product_name:i.product_name,price:i.price,qty:i.qty}));
             const{data:saleData,error}=await _supabase.from('sales').insert([{
@@ -691,19 +610,15 @@
                 payment_method:paymentMethod,seller_name:currentUser,type:'sale'
             }]).select().single();
             if(error) throw error;
-            // تحديث المخزون بـ Promise.all بدل sequential loop
-            await Promise.all(cart.map(async item=>{
-                const cached=allProducts.find(p=>p.id===item.id);
-                const currentStock=cached?cached.stock:item.stock;
-                await _supabase.from('products').update({stock:Math.max(0,currentStock-item.qty)}).eq('id',item.id);
-            }));
+            for(let item of cart){
+                const{data:p}=await _supabase.from('products').select('stock').eq('id',item.id).single();
+                if(p) await _supabase.from('products').update({stock:p.stock-item.qty}).eq('id',item.id);
+            }
             shiftSalesData.push({...saleData,type:'sale'});
             showToast('تم البيع بنجاح ✅','success');
-            if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total,discount,subtotal);
+            if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total);
             updateLocalStock(cart);
             cart=[];
-            const dv=document.getElementById('discount-val');
-            if(dv) dv.value='';
             renderCart();
             updateTargetDisplay();
         }catch(e){showToast('خطأ في الشبكة: '+e.message,'error');}
@@ -715,7 +630,7 @@
     }
 
     // ===== PRINT RECEIPT =====
-    function printReceipt(saleData,items,total,discount,subtotal){
+    function printReceipt(saleData,items,total){
         const s=storeSettings;
         const paperW=s.invoice_size==='58mm'?'58mm':s.invoice_size==='A4'?'210mm':'80mm';
         const showEmployee=s.invoice_show_employee!==false;
@@ -728,8 +643,6 @@
         const address=s.address||'';
         const copies=parseInt(s.invoice_copies||1);
         const now=new Date();
-        const disc=discount||0;
-        const sub=subtotal||(total+disc);
 
         const buildReceipt=()=>`
             ${welcome?`<div style="text-align:center;font-size:12px;color:#666;font-style:italic;padding:4px 0 6px;">${welcome}</div>`:''}
@@ -762,13 +675,6 @@
                 </tr>`).join('')}</tbody>
             </table>
             <hr style="border:none;border-top:1px dashed #aaa;margin:6px 0;">
-            ${disc>0?`
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;">
-                <span>المجموع:</span><span>${sub.toFixed(0)} ج.م</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;color:#c0392b;">
-                <span>الخصم:</span><span>- ${disc.toFixed(0)} ج.م</span>
-            </div>`:''}
             <div style="display:flex;border:2px solid #000;border-radius:6px;overflow:hidden;margin-top:8px;">
                 <div style="flex:1;background:#111;color:#fff;padding:10px;text-align:center;font-size:14px;font-weight:800;">صافي المبلغ</div>
                 <div style="flex:1;padding:10px;text-align:center;font-size:20px;font-weight:900;">${total.toFixed(0)} ج.م</div>
@@ -777,6 +683,7 @@
             <div style="text-align:center;margin-top:12px;font-size:12px;color:#555;border-top:1px dashed #ccc;padding-top:8px;">${footer}</div>
             <div style="text-align:center;font-size:10px;color:#aaa;margin-top:4px;">Fateen OS</div>`;
 
+        // طباعة بعدد النسخ
         let allCopies='';
         for(let i=0;i<copies;i++){
             allCopies+=`<div style="page-break-after:${i<copies-1?'always':'avoid'}">${buildReceipt()}</div>`;
@@ -795,26 +702,6 @@
 
         const w=window.open('','_blank',`width=${paperW==='210mm'?700:400},height=650`);
         if(w){w.document.write(receiptHTML);w.document.close();}
-        // فتح درج الخزنة عبر ESC/POS
-        openCashDrawer();
-    }
-
-    // ===== درج الخزنة ESC/POS =====
-    function openCashDrawer(){
-        try{
-            // أمر ESC/POS لفتح الدرج: ESC p 0 25 250
-            const escPos=[0x1B,0x70,0x00,0x19,0xFA];
-            // محاولة عبر Web Serial API (Chrome/Edge)
-            if('serial' in navigator){
-                navigator.serial.requestPort().then(port=>{
-                    port.open({baudRate:9600}).then(()=>{
-                        const writer=port.writable.getWriter();
-                        writer.write(new Uint8Array(escPos));
-                        writer.releaseLock();
-                    });
-                }).catch(()=>{});
-            }
-        }catch(e){}
     }
 
     // ===== RETURN =====

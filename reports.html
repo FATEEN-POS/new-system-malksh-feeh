@@ -153,50 +153,13 @@
             .filter-bar{padding:8px 10px;}
             .col-hide{display:none;}
         }
-        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
-        .sidebar-overlay.open{display:block;}
-        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
-        .sidebar.open{right:0;}
-        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
-        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
-        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
-        .sidebar-close:hover{color:var(--red);}
-        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
-        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
-        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
-        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
-        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
-        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
-        .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
-        .sb-trigger:hover{border-color:var(--accent);}
     </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
-<div class="sidebar" id="main-sidebar">
-    <div class="sidebar-head">
-        <span class="sidebar-head-title">☰ القائمة</span>
-        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
-    </div>
-    <nav class="sidebar-nav">
-        <a class="sb-item" onclick="location.href='manager.html'"><span class="sb-icon">📊</span>لوحة المدير</a>
-        <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>الكاشير</a>
-        <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>المخزن</a>
-        <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
-        <a class="sb-item" onclick="location.href='reports.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">📋</span>التقارير</a>
-        <a class="sb-item" onclick="location.href='3dadat.html'"><span class="sb-icon">⚙️</span>الإعدادات</a>
-        <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
-        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
-        <a class="sb-item" onclick="sessionStorage.clear();location.href='index.html'" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
-    </nav>
-    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
-</div>
-
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
-        <div class="sb-trigger" onclick="openSidebar()">☰</div>
         <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
         <div>
             <div class="store-name" id="store-name-display">Fateen OS</div>
@@ -609,11 +572,6 @@
     const money=n=>Number(n||0).toLocaleString()+' ج.م';
     const fmt=dt=>new Date(dt).toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit',year:'2-digit'});
 
-    // SIDEBAR
-    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
-    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
-    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSidebar();});
-
     // THEME
     function toggleTheme(){
         const html=document.documentElement;
@@ -711,20 +669,15 @@
 
     function printInvoice(s){
         const items=typeof s.items==='string'?JSON.parse(s.items):(s.items||[]);
-        const st=storeSettings;
-        const paperW=st.invoice_size==='58mm'?'58mm':st.invoice_size==='A4'?'210mm':'80mm';
-        const showEmp=st.invoice_show_employee!==false;
-        const showUnit=st.invoice_show_unit_price!==false;
-        const showTax=st.invoice_show_tax===true&&st.tax_id;
-        const footer=st.invoice_footer||'شكراً لزيارتكم 🌟';
-        const welcome=st.invoice_welcome||'';
-        const w=window.open('','_blank',`width=${paperW==='210mm'?700:400},height=650`);
+        const w=window.open('','_blank','width=400,height=600');
         w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
         <style>
             *{margin:0;padding:0;box-sizing:border-box;}
-            body{width:${paperW};margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
+            body{width:80mm;margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
+            .center{text-align:center;}
             .store{font-size:20px;font-weight:900;text-align:center;}
+            .sub{font-size:12px;text-align:center;color:#555;}
             hr{border:none;border-top:1px dashed #000;margin:8px 0;}
             .info{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
             table{width:100%;border-collapse:collapse;margin:6px 0;}
@@ -735,22 +688,18 @@
             .total-lbl{flex:1;background:#111;color:#fff;padding:8px;text-align:center;font-size:13px;font-weight:800;}
             .total-val{flex:1;padding:8px;text-align:center;font-size:18px;font-weight:900;}
             .footer{text-align:center;margin-top:10px;font-size:11px;color:#777;border-top:1px dashed #ccc;padding-top:6px;}
-            @media print{@page{margin:0;size:${paperW} auto;}body{padding:8px;}}
+            @media print{@page{margin:0;size:80mm auto;}body{padding:8px;}}
         </style></head><body>
-        ${welcome?`<div style="text-align:center;font-size:11px;color:#666;padding:4px 0 6px;font-style:italic;">${welcome}</div>`:''}
         <div class="store">${storeName}</div>
-        ${st.address?`<div style="font-size:11px;color:#555;text-align:center;">${st.address}</div>`:''}
-        ${st.phone?`<div style="font-size:11px;text-align:center;">${st.phone}</div>`:''}
-        <div style="font-size:11px;text-align:center;color:#888;">فاتورة مبيعات</div>
+        <div class="sub">فاتورة مبيعات</div>
         <hr>
         <div class="info"><span>رقم: #${String(s.id).slice(-6)}</span><span>${fmt(s.created_at)}</span></div>
-        ${showEmp?`<div class="info"><span>البائع: ${s.seller_name||'---'}</span><span>الدفع: ${s.payment_method||'كاش'}</span></div>`:`<div class="info"><span>الدفع: ${s.payment_method||'كاش'}</span></div>`}
+        <div class="info"><span>البائع: ${s.seller_name||'---'}</span><span>الدفع: ${s.payment_method||'كاش'}</span></div>
         <hr>
-        <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>`<tr><td class="name">${i.product_name}</td><td>${i.qty}</td>${showUnit?`<td>${i.price}</td>`:''}<td>${(i.qty*i.price).toFixed(0)}</td></tr>`).join('')}</tbody></table>
+        <table><thead><tr><th>الصنف</th><th>ك</th><th>سعر</th><th>إجمالي</th></tr></thead>
+        <tbody>${items.map(i=>`<tr><td class="name">${i.product_name}</td><td>${i.qty}</td><td>${i.price}</td><td>${(i.qty*i.price).toFixed(0)}</td></tr>`).join('')}</tbody></table>
         <div class="total"><div class="total-lbl">الإجمالي</div><div class="total-val">${parseFloat(s.total_amount).toFixed(0)} ج.م</div></div>
-        ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${st.tax_id}</div>`:''}
-        <div class="footer">${footer}</div>
+        <div class="footer">شكراً لزيارتكم 🌟 — Fateen OS</div>
         <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
         </body></html>`);
         w.document.close();
@@ -1149,52 +1098,27 @@
 
     function doPDF(section){
         try{
+            const{jsPDF}=window.jspdf;
+            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+            doc.setFillColor(17,17,17);doc.rect(0,0,297,22,'F');
+            doc.setTextColor(0,242,254);doc.setFontSize(14);doc.setFont('helvetica','bold');
+            doc.text(`Fateen OS — ${storeName}`,148,10,{align:'center'});
+            doc.setFontSize(9);doc.setTextColor(180,180,180);
+            doc.text(`${section} Report — ${new Date().toLocaleDateString('en-EG')}`,148,18,{align:'center'});
+            // جمع بيانات من الجدول الحالي
             const activeSection=document.getElementById('sec-'+section);
             const table=activeSection?.querySelector('table');
-            if(!table) return showToast('لا توجد بيانات للتصدير','error');
-
-            const headCells=[]; const bodyRows=[];
-            table.querySelectorAll('thead tr th').forEach(th=>headCells.push(th.innerText.trim()));
-            table.querySelectorAll('tbody tr').forEach(tr=>{
-                const row=[];
-                tr.querySelectorAll('td').forEach(td=>row.push(td.innerText.trim()));
-                if(row.length) bodyRows.push(row);
-            });
-
-            const headHTML=headCells.map(h=>`<th>${h}</th>`).join('');
-            const bodyHTML=bodyRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
-            const sectionNames={sales:'المبيعات',returns:'المرتجعات',inventory:'المخزون',items:'الأصناف',waste:'الهالك',deficit:'العجز',employees:'الموظفين',suppliers:'الموردين',purchases:'المشتريات',profit:'الأرباح',general:'التقرير العام'};
-            const sectionLabel=sectionNames[section]||section;
-
-            const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-            <style>
-                *{margin:0;padding:0;box-sizing:border-box;}
-                body{font-family:'Cairo',sans-serif;padding:20px;color:#000;background:#fff;}
-                .header{background:#004643;color:#fff;padding:14px 18px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
-                .header h1{font-size:18px;font-weight:900;}
-                .header .meta{font-size:11px;color:#ccc;text-align:left;}
-                table{width:100%;border-collapse:collapse;font-size:12px;}
-                th{background:#004643;color:#fff;padding:8px 6px;text-align:center;}
-                td{padding:7px 6px;border-bottom:1px solid #eee;text-align:center;}
-                tr:nth-child(even){background:#f9f9f9;}
-                .footer{text-align:center;margin-top:12px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:6px;}
-                @media print{@page{margin:10mm;size:A4 landscape;}body{padding:0;}}
-            </style></head><body>
-            <div class="header">
-                <h1>📊 تقرير ${sectionLabel} — ${storeName}</h1>
-                <div class="meta">${new Date().toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
-            </div>
-            <table>
-                <thead><tr>${headHTML}</tr></thead>
-                <tbody>${bodyHTML}</tbody>
-            </table>
-            <div class="footer">Fateen OS — إجمالي السجلات: ${bodyRows.length}</div>
-            <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
-            </body></html>`;
-
-            const w=window.open('','_blank','width=1000,height=700');
-            if(w){w.document.write(html);w.document.close();}
+            if(table){
+                const head=[],body=[];
+                table.querySelectorAll('thead tr th').forEach(th=>head.push(th.innerText));
+                table.querySelectorAll('tbody tr').forEach(tr=>{
+                    const row=[];
+                    tr.querySelectorAll('td').forEach(td=>row.push(td.innerText.trim()));
+                    if(row.length) body.push(row);
+                });
+                doc.autoTable({startY:26,head:[head],body,styles:{fontSize:8,halign:'center'},headStyles:{fillColor:[0,70,67],textColor:[255,255,255]},alternateRowStyles:{fillColor:[245,245,245]},margin:{left:8,right:8}});
+            }
+            doc.save(`تقرير_${section}_${today()}.pdf`);
             showToast('تم تصدير PDF بنجاح','success');
         }catch(e){showToast('خطأ في PDF: '+e.message,'error');}
     }
@@ -1330,13 +1254,11 @@
     // MISC
     function emptyRow(cols){return`<tr><td colspan="${cols}" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</td></tr>`;}
 
-    let storeSettings = {};
-
     // INIT
     async function init(){
         try{
-            const{data:store}=await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
-            if(store){storeName=store.store_name;storeSettings=store;setText('store-name-display',storeName+' — التقارير');}
+            const{data:store}=await _supabase.from('stores').select('store_name').eq('store_key',storeKey).single();
+            if(store){storeName=store.store_name;setText('store-name-display',storeName+' — التقارير');}
             const{data:ver}=await _supabase.from('system_settings').select('value').eq('key','sys_version').single();
             if(ver) setText('version-chip',ver.value);
         }catch(e){}

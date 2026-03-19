@@ -864,51 +864,32 @@
         sortSales();
     }
 
-    async function printManagerReceipt(sale) {
+    function printManagerReceipt(sale) {
         const items = typeof sale.items==='string' ? JSON.parse(sale.items) : (sale.items||[]);
         const total = parseFloat(sale.total_amount)||0;
         const now = new Date(sale.created_at);
-        // جلب إعدادات المتجر
-        let s = {};
-        try {
-            const {data} = await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
-            if(data) s = data;
-        } catch(e) {}
-        const paperW = s.invoice_size==='58mm'?'58mm':s.invoice_size==='A4'?'210mm':'80mm';
-        const showEmp = s.invoice_show_employee!==false;
-        const showUnit = s.invoice_show_unit_price!==false;
-        const showTax = s.invoice_show_tax===true && s.tax_id;
-        const footer = s.invoice_footer||'شكراً لزيارتكم 🌟';
-        const welcome = s.invoice_welcome||'';
-        const storeName2 = s.store_name||'المتجر';
-        const w = window.open('','_blank',`width=${paperW==='210mm'?700:400},height=650`);
+        const w = window.open('','_blank','width=400,height=600');
         w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-        <style>*{margin:0;padding:0;box-sizing:border-box;}body{width:${paperW};margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;font-weight:700;}
+        <style>*{margin:0;padding:0;box-sizing:border-box;}body{width:80mm;margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;font-weight:700;}
         .c{text-align:center;}.sn{font-size:18px;font-weight:900;}.hr{border:none;border-top:1px dashed #999;margin:7px 0;}
         table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#111;color:#fff;padding:5px;}td{padding:5px;border-bottom:1px solid #eee;}
         .tot{display:flex;border:2px solid #000;border-radius:6px;overflow:hidden;margin-top:8px;}.tl{flex:1;background:#111;color:#fff;padding:8px;text-align:center;font-size:13px;font-weight:800;}.tv{flex:1;padding:8px;text-align:center;font-size:18px;font-weight:900;}
-        @media print{@page{margin:0;size:${paperW} auto;}body{padding:8px;}}</style></head><body>
-        ${welcome?`<div style="text-align:center;font-size:11px;color:#666;padding:4px 0 6px;font-style:italic;">${welcome}</div>`:''}
-        <div class="c"><div class="sn">${storeName2}</div>
-        ${s.address?`<div style="font-size:11px;color:#555;">${s.address}</div>`:''}
-        ${s.phone?`<div style="font-size:11px;">${s.phone}</div>`:''}
-        <div style="font-size:11px;color:#888;">إعادة طباعة فاتورة</div></div>
+        @media print{@page{margin:0;size:80mm auto;}body{padding:8px;}}</style></head><body>
+        <div class="c"><div class="sn" id="sn">—</div><div style="font-size:12px;color:#555;">إعادة طباعة فاتورة</div></div>
         <hr class="hr">
         <div style="font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:5px;">
             <span>التاريخ: <b>${now.toLocaleDateString('ar-EG')}</b></span>
             <span>رقم: <b>#${String(sale.id).slice(-6)}</b></span>
-            ${showEmp?`<span>البائع: <b>${sale.seller_name||'---'}</b></span>`:''}
+            <span>البائع: <b>${sale.seller_name||'---'}</b></span>
             <span>الدفع: <b>${sale.payment_method||'كاش'}</b></span>
         </div>
         <hr class="hr">
-        <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>`<tr><td>${i.product_name}</td><td>${i.qty}</td>${showUnit?`<td>${i.price}</td>`:''}<td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody></table>
+        <table><thead><tr><th>الصنف</th><th>ك</th><th>سعر</th><th>إجمالي</th></tr></thead>
+        <tbody>${items.map(i=>`<tr><td>${i.product_name}</td><td>${i.qty}</td><td>${i.price}</td><td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody></table>
         <div class="tot"><div class="tl">الإجمالي</div><div class="tv">${total.toFixed(0)} ج.م</div></div>
-        ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${s.tax_id}</div>`:''}
-        <div style="text-align:center;margin-top:10px;font-size:11px;color:#555;border-top:1px dashed #ccc;padding-top:6px;">${footer}</div>
-        <div style="text-align:center;font-size:9px;color:#aaa;margin-top:3px;">Fateen OS</div>
-        <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
+        <div style="text-align:center;font-size:10px;color:#aaa;margin-top:8px;">Fateen OS</div>
+        <script>document.getElementById('sn').innerText=window.opener?.storeName||'المتجر';window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
         </body></html>`);
         w.document.close();
     }
@@ -1264,26 +1245,16 @@
         } catch(e) { showToast('خطأ في التقرير اليومي: '+e.message,'error'); }
     }
 
-    async function printDailyReport() {
+    function printDailyReport() {
         if(!drData) return showToast('حمّل التقرير أولاً','info');
         const d = drData;
         const money = n => Number(n).toLocaleString() + ' ج.م';
-        // جلب إعدادات المتجر
-        let s = {};
-        try {
-            const {data} = await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
-            if(data) s = data;
-        } catch(e) {}
-        const paperW = s.invoice_size==='58mm'?'58mm':s.invoice_size==='A4'?'210mm':'90mm';
-        const storeName2 = s.store_name||'المتجر';
-        const footer = s.invoice_footer||'Fateen OS';
-        const showTax = s.invoice_show_tax===true && s.tax_id;
-        const w = window.open('','_blank',`width=${paperW==='210mm'?700:500},height=720`);
+        const w = window.open('','_blank','width=500,height=720');
         w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
         <style>
             *{margin:0;padding:0;box-sizing:border-box;}
-            body{width:${paperW};margin:0 auto;padding:14px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
+            body{width:90mm;margin:0 auto;padding:14px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
             .hd{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:12px;}
             .store{font-size:18px;font-weight:900;}
             .title{font-size:13px;color:#444;margin-top:2px;}
@@ -1296,12 +1267,10 @@
             .net .lbl{font-size:11px;color:#00875a;}
             .net .val{font-size:22px;font-weight:900;color:#00875a;}
             .ft{text-align:center;margin-top:12px;font-size:10px;color:#aaa;border-top:1px dashed #ccc;padding-top:8px;}
-            @media print{@page{margin:0;size:${paperW} auto;}body{padding:10px;}}
+            @media print{@page{margin:0;size:90mm auto;}body{padding:10px;}}
         </style></head><body>
         <div class="hd">
-            <div class="store">${storeName2}</div>
-            ${s.address?`<div style="font-size:11px;color:#555;">${s.address}</div>`:''}
-            ${s.phone?`<div style="font-size:11px;">${s.phone}</div>`:''}
+            <div class="store" id="pr-store">—</div>
             <div class="title">التقرير اليومي</div>
             <div class="date">${new Date(d.date).toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
         </div>
@@ -1312,13 +1281,17 @@
         <div class="sec">💳 طرق الدفع</div>
         <div class="row"><span class="lbl">💵 كاش</span><span class="val">${money(d.cash)}</span></div>
         <div class="row"><span class="lbl">💳 فيزا</span><span class="val">${money(d.visa)}</span></div>
-        <div class="sec">🏆 الأكثر مبيعاً</div>
-        <div class="row"><span class="lbl">🏆 أعلى منتج</span><span class="val">${d.topProd?d.topProd[0]+' ('+d.topProd[1]+')':'—'}</span></div>
+        <div class="sec">🏆 الأكثر</div>
+        <div class="row"><span class="lbl">🏆 أعلى منتج</span><span class="val">${d.topProd?d.topProd[0]+'('+d.topProd[1]+')':'—'}</span></div>
         <div class="row"><span class="lbl">⏱️ أكثر ساعة</span><span class="val">${d.peakHour?d.peakHour[0]+':00':'—'}</span></div>
         <div class="net"><div class="lbl">📊 صافي اليوم</div><div class="val">${money(d.net)}</div></div>
-        ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-bottom:6px;">الرقم الضريبي: ${s.tax_id}</div>`:''}
-        <div class="ft">${footer} — ${new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
-        <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
+        <div class="ft">Fateen OS — ${new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+        <script>
+            fetch('').catch(()=>{});
+            const sn=document.getElementById('pr-store');
+            if(sn) sn.innerText=window.opener?.storeName||'المتجر';
+            window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}
+        <\/script>
         </body></html>`);
         w.document.close();
     }

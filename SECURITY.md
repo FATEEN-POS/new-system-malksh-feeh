@@ -54,4 +54,4 @@ We take the security of our users' data (especially in the Egyptian retail secto
 
 ---
 > **"Securing Fateen OS is securing the trust of every merchant in Egypt."**
-> **"تأمين نظام فطين هو تأمين لثقة كل تاجر في مصر."**
+> **"تأمين نظام فطين هو تأمين لثقة كل تاجر في مصر."***

@@ -138,50 +138,13 @@
             .form-row,.form-row-3{grid-template-columns:1fr;}
             .store-sub{display:none;}
         }
-        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
-        .sidebar-overlay.open{display:block;}
-        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
-        .sidebar.open{right:0;}
-        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
-        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
-        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
-        .sidebar-close:hover{color:var(--red);}
-        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
-        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
-        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
-        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
-        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
-        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
-        .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
-        .sb-trigger:hover{border-color:var(--accent);}
     </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
-<div class="sidebar" id="main-sidebar">
-    <div class="sidebar-head">
-        <span class="sidebar-head-title">☰ القائمة</span>
-        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
-    </div>
-    <nav class="sidebar-nav">
-        <a class="sb-item" onclick="location.href='manager.html'"><span class="sb-icon">📊</span>لوحة المدير</a>
-        <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>الكاشير</a>
-        <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>المخزن</a>
-        <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
-        <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>التقارير</a>
-        <a class="sb-item" onclick="location.href='3dadat.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">⚙️</span>الإعدادات</a>
-        <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
-        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
-        <a class="sb-item" onclick="sessionStorage.clear();location.href='index.html'" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
-    </nav>
-    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
-</div>
-
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
-        <div class="sb-trigger" onclick="openSidebar()">☰</div>
         <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
         <div>
             <div class="store-title" id="store-name-display">Fateen OS</div>
@@ -265,7 +228,7 @@
                 <div class="card-title">🔒 تغيير كلمة المرور</div>
                 <div class="form-group">
                     <label>كلمة المرور الجديدة</label>
-                    <input type="password" id="m-pass" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)">
+                    <input type="password" id="m-pass" placeholder="أدخل كلمة المرور الجديدة (8 أحرف على الأقل)">
                 </div>
                 <div class="form-group">
                     <label>تأكيد كلمة المرور</label>
@@ -355,7 +318,16 @@
                     </label>
                 </div>
 
-
+                <div class="toggle-row">
+                    <div class="toggle-row-info">
+                        <span class="toggle-row-label">👁️ إظهار الأسعار للموظف</span>
+                        <span class="toggle-row-sub">عرض سعر الشراء / التكلفة في شاشة الكاشير</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="perm-show-prices">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
 
                 <div class="toggle-row">
                     <div class="toggle-row-info">
@@ -574,11 +546,6 @@
         setTimeout(()=>t.remove(),4000);
     }
 
-    // SIDEBAR
-    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
-    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
-    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSidebar();});
-
     // THEME
     function toggleTheme(){
         const html=document.documentElement;
@@ -635,7 +602,7 @@
                 // صلاحيات
                 setCheck('perm-returns',store.perm_returns!==false);
                 setCheck('perm-discounts',store.perm_discounts!==false);
-
+                setCheck('perm-show-prices',store.perm_show_prices===true);
                 setCheck('perm-show-stats',store.perm_show_stats!==false);
                 // وردية
                 if(store.shift_start) setVal('shift-start',store.shift_start);
@@ -728,9 +695,9 @@
         if(!indicator) return;
         if(!pass&&!confirm){indicator.style.display='none';return;}
         indicator.style.display='block';
-        if(pass.length<6){
+        if(pass.length<8){
             indicator.style.color='var(--orange)';
-            indicator.innerText='⚠️ كلمة المرور أقل من 6 أحرف';
+            indicator.innerText='⚠️ كلمة المرور أقل من 8 أحرف';
         } else if(pass===confirm){
             indicator.style.color='var(--green)';
             indicator.innerText='✅ كلمات المرور متطابقة';
@@ -802,7 +769,7 @@
         const confirmPass=document.getElementById('m-pass-confirm').value;
         const newKey=document.getElementById('m-key').value;
         if(newPass){
-            if(newPass.length<6) return showToast('كلمة المرور أقل من 6 أحرف','error');
+            if(newPass.length<8) return showToast('كلمة المرور أقل من 8 أحرف','error');
             if(newPass!==confirmPass) return showToast('كلمات المرور غير متطابقة','error');
         }
         try{
@@ -1069,6 +1036,7 @@
             const{error}=await _supabase.from('stores').update({
                 perm_returns:document.getElementById('perm-returns').checked,
                 perm_discounts:document.getElementById('perm-discounts').checked,
+                perm_show_prices:document.getElementById('perm-show-prices').checked,
                 perm_show_stats:document.getElementById('perm-show-stats').checked
             }).eq('store_key',storeKey);
             if(error) throw error;
