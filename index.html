@@ -478,10 +478,15 @@
             sessionStorage.setItem('userRole', user.role);
             sessionStorage.setItem('store_key', currentStore.store_key);
 
-            if (user.role === 'developer') location.href = 'developer.html';
-            else if (user.role === 'marketer') location.href = 'marketer.html';
-            else if (user.role === 'manager') location.href = 'manager.html';
-            else location.href = 'pos.html';
+            const _roleMap = {
+                'developer':         'developer.html',
+                'marketer':          'marketer.html',
+                'manager':           'manager.html',
+                'employee':          'pos.html',
+                'accounts_manager':  'accounting.html',
+                'inventory_manager': 'inventory.html'
+            };
+            location.href = _roleMap[user.role] || 'pos.html';
         }
 
         function goBack() {
@@ -499,7 +504,7 @@
 
         // ===== PWA Service Worker =====
         if('serviceWorker' in navigator){
-            navigator.serviceWorker.register('/sw.js').then(reg=>{
+            navigator.serviceWorker.register('./sw.js').then(reg=>{
                 console.log('Fateen OS SW registered:', reg.scope);
             }).catch(e=>{
                 console.log('SW registration failed:', e);
