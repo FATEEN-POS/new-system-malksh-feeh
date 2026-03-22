@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة المدير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -890,7 +890,57 @@
         <div style="text-align:center;margin-top:10px;font-size:11px;color:#555;border-top:1px dashed #ccc;padding-top:6px;">${footer}</div>
         <div style="text-align:center;font-size:9px;color:#aaa;margin-top:3px;">Fateen OS</div>
         <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
-        </body></html>`);
+        
+    <!-- NET STATUS + OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        // 1. إلغاء الزوم
+        var vp = document.querySelector('meta[name=viewport]');
+        if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+
+        // 2. Status bar
+        var bar = document.createElement('div');
+        bar.id = '_net_bar';
+        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;height:28px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;transition:background .3s,color .3s;';
+        var dot = document.createElement('span');
+        dot.id = '_net_dot';
+        dot.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;';
+        var txt = document.createElement('span');
+        txt.id = '_net_txt';
+        bar.appendChild(dot);
+        bar.appendChild(txt);
+        document.body.appendChild(bar);
+
+        function setOnline(){
+            bar.style.background = 'rgba(0,230,118,0.15)';
+            bar.style.borderTop = '1px solid rgba(0,230,118,0.3)';
+            bar.style.color = '#00e676';
+            dot.style.background = '#00e676';
+            txt.innerText = 'الإنترنت متصل';
+        }
+        function setOffline(){
+            bar.style.background = 'rgba(255,77,77,0.15)';
+            bar.style.borderTop = '1px solid rgba(255,77,77,0.3)';
+            bar.style.color = '#ff4d4d';
+            dot.style.background = '#ff4d4d';
+            txt.innerText = 'لا يوجد إنترنت';
+        }
+
+        // 3. Redirect to no-internet
+        function goOffline(){
+            setOffline();
+            sessionStorage.setItem('_from_page', window.location.pathname.split('/').pop()||'index.html');
+            setTimeout(function(){
+                if(!navigator.onLine) window.location.href = 'no-internet.html';
+            }, 2000);
+        }
+
+        navigator.onLine ? setOnline() : setOffline();
+        window.addEventListener('online',  function(){ setOnline(); });
+        window.addEventListener('offline', function(){ goOffline(); });
+    })();
+    </script>
+</body></html>`);
         w.document.close();
     }
 
