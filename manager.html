@@ -348,10 +348,11 @@
         <span class="sidebar-close" onclick="closeSidebar()">✕</span>
     </div>
     <nav class="sidebar-nav">
+        <a class="sb-item" onclick="scrollToSales();closeSidebar()"><span class="sb-icon">💰</span>مبيعات اليوم</a>
         <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>صفحة الكاشير</a>
         <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>إدارة التقارير</a>
         <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>إدارة المخزن</a>
-        <a class="sb-item" onclick="location.href='hr.html'"><span class="sb-icon">👥</span>إدارة الموظفين</a>
+        <a class="sb-item" onclick="openUserModal();closeSidebar()"><span class="sb-icon">👥</span>إدارة الموظفين</a>
         <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
         <a class="sb-item" onclick="location.href='guide.html'"><span class="sb-icon">📖</span>كيفية الاستخدام</a>
         <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
@@ -529,11 +530,6 @@
             </div>
         </div>
 
-        <!-- Footer bar (right under nav) -->
-        <div class="d-footer">
-            <span class="copy">جميع الحقوق محفوظة لفطين 2026 &nbsp;|&nbsp; V <span id="d-version-footer2">1.0.0</span></span>
-        </div>
-
         <!-- مبيعات اليوم -->
         <div class="section-card" id="sales-section">
             <div class="section-header">
@@ -561,16 +557,22 @@
             </div>
         </div>
 
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن (≤ 5)</h3>
+        <!-- الموظفين + النواقص (جنب بجنب) -->
+        <div class="d-two-col">
+
+<!-- النواقص -->
+            <div class="section-card" style="margin-top:0;">
+                <div class="section-header">
+                    <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن (≤ 5)</h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>اسم المنتج</th><th>الكمية المتبقية</th></tr></thead>
+                        <tbody id="low-stock-list"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:16px;">جاري التحميل...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead><tr><th>اسم المنتج</th><th>الكمية المتبقية</th></tr></thead>
-                    <tbody id="low-stock-list"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:16px;">جاري التحميل...</td></tr></tbody>
-                </table>
-            </div>
+
         </div>
 
         <!-- Chart -->
@@ -594,6 +596,11 @@
                 <input class="text-input" type="text" id="feedback-input" placeholder="اكتب ملاحظاتك هنا...">
                 <button class="btn btn-primary" onclick="sendFeedback('d')">إرسال</button>
             </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="d-footer">
+            <span class="copy">جميع الحقوق محفوظة لفطين 2026 &nbsp;|&nbsp; V <span id="d-version-footer2">1.0.0</span></span>
         </div>
 
     </div>
@@ -1304,7 +1311,6 @@
     init();
 </script>
 
-<div id="_sb" style="position:fixed;bottom:10px;right:12px;z-index:9999;background:var(--surface,#111);border:1px solid var(--border,#252525);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;font-family:Cairo,sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><span id="_sd" style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00e676;"></span><span id="_st">&#x645;&#x62a;&#x635;&#x644;</span></div>
-<script>(function(){function _u(){var d=document.getElementById("_sd"),t=document.getElementById("_st");if(!d||!t)return;if(navigator.onLine){d.style.background="#00e676";t.innerText="متصل";}else{d.style.background="#ff4d4d";t.innerText="لا يوجد نت";}}window.addEventListener("online",_u);window.addEventListener("offline",_u);if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_u);}else{_u();}})();</script>
+<div id="_sb" style="position:fixed;bottom:10px;right:12px;z-index:9999;background:var(--surface,#111);border:1px solid var(--border,#252525);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;font-family:Cairo,sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><span id="_sd" style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00e676;"></span><span id="_st">&#x645;&#x62a;&#x635;&#x644;</span></div><script>(function(){function _u(){var d=document.getElementById("_sd"),t=document.getElementById("_st");if(!d||!t)return;if(navigator.onLine){d.style.background="#00e676";t.innerText="متصل";}else{d.style.background="#ff4d4d";t.innerText="لا يوجد نت";}}function _go(){sessionStorage.setItem("_fp",(window.location.pathname.split("/").pop()||"index.html"));setTimeout(function(){if(!navigator.onLine)window.location.href="no-internet.html";},1500);}window.addEventListener("online",_u);window.addEventListener("offline",function(){_u();_go();});if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_u);}else{_u();}})();</script>
 </body>
 </html>
