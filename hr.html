@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة الموظفين - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080808; --surface: #111111; --surface2: #181818; --surface3: #202020;
+            --accent: #00f2fe; --accent-dim: rgba(0,242,254,0.1);
+            --border: #252525; --border-light: #2e2e2e;
+            --text: #f0f0f0; --text-muted: #777; --text-faint: #444;
+            --green: #00e676; --green-dim: rgba(0,230,118,0.1);
+            --red: #ff4d4d; --red-dim: rgba(255,77,77,0.1);
+            --orange: #ffa040; --orange-dim: rgba(255,160,64,0.1);
+            --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.1);
+            --btn-color: #000; --input-bg: #0a0a0a; --footer-bg: #0d0d0d;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --radius: 14px; --radius-sm: 9px;
+        }
+        [data-theme="light"] {
+            --bg: #f0ede5; --surface: #ffffff; --surface2: #f5f2eb; --surface3: #eae7df;
+            --accent: #004643; --accent-dim: rgba(0,70,67,0.08);
+            --border: #ddd8cf; --border-light: #e5e1d8;
+            --text: #1a1a1a; --text-muted: #888; --text-faint: #bbb;
+            --green: #00875a; --green-dim: rgba(0,135,90,0.08);
+            --red: #c0392b; --red-dim: rgba(192,57,43,0.08);
+            --orange: #d35400; --orange-dim: rgba(211,84,0,0.08);
+            --purple: #7c3aed; --purple-dim: rgba(124,58,237,0.08);
+            --btn-color: #f0ede5; --input-bg: #f5f2eb; --footer-bg: #004643;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        *,*::before,*::after{box-sizing:border-box;font-family:"Cairo",sans-serif;transition:background .25s,color .25s,border-color .25s;}
+        body{margin:0;padding:0;background:var(--bg);color:var(--text);min-height:100vh;}
+        .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+        .topbar-left{display:flex;align-items:center;gap:12px;}
+        .topbar-right{display:flex;align-items:center;gap:8px;}
+        .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;}
+        .sb-trigger:hover{border-color:var(--accent);}
+        .store-title{font-size:15px;font-weight:800;}
+        .version-chip{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800;}
+        .topbar-btn{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
+        .topbar-btn:hover{border-color:var(--accent);color:var(--accent);}
+        .topbar-btn.accent{background:var(--accent);color:var(--btn-color);border-color:var(--accent);}
+        .topbar-btn.accent:hover{opacity:.85;}
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
+        .sidebar-overlay.open{display:block;}
+        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
+        .sidebar.open{right:0;}
+        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
+        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
+        .sidebar-close:hover{color:var(--red);}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
+        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+        .sb-item.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
+        .tabs-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;position:sticky;top:60px;z-index:90;}
+        .tabs-bar::-webkit-scrollbar{display:none;}
+        .tab-btn{padding:14px 18px;border:none;background:transparent;color:var(--text-muted);font-family:"Cairo",sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
+        .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+        .tab-btn:hover:not(.active){color:var(--text);}
+        .page{max-width:1100px;margin:0 auto;padding:24px 20px;}
+        .tab-section{display:none;}.tab-section.active{display:block;}
+        .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:24px;}
+        .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;border-bottom:3px solid var(--accent);}
+        .kpi-card.green{border-bottom-color:var(--green);}.kpi-card.orange{border-bottom-color:var(--orange);}.kpi-card.purple{border-bottom-color:var(--purple);}.kpi-card.red{border-bottom-color:var(--red);}
+        .kpi-label{font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:700;}
+        .kpi-val{font-size:26px;font-weight:900;color:var(--accent);}
+        .kpi-card.green .kpi-val{color:var(--green);}.kpi-card.orange .kpi-val{color:var(--orange);}.kpi-card.purple .kpi-val{color:var(--purple);}.kpi-card.red .kpi-val{color:var(--red);}
+        .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+        .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+        .section-title{font-size:15px;font-weight:800;color:var(--accent);margin:0;}
+        .table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);}
+        .data-table{width:100%;border-collapse:collapse;}
+        .data-table th{background:var(--surface2);padding:11px 14px;text-align:right;color:var(--text-muted);font-size:12px;font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;}
+        .data-table td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);}
+        .data-table tbody tr:last-child td{border-bottom:none;}
+        .data-table tbody tr:hover{background:var(--surface2);}
+        .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+        .badge-accent{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);}
+        .badge-green{background:var(--green-dim);color:var(--green);}
+        .badge-orange{background:var(--orange-dim);color:var(--orange);}
+        .badge-purple{background:var(--purple-dim);color:var(--purple);}
+        .badge-red{background:var(--red-dim);color:var(--red);}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:"Cairo",sans-serif;font-weight:700;font-size:13px;transition:opacity .2s,transform .15s;text-decoration:none;}
+        .btn:hover{opacity:.85;transform:translateY(-1px);}
+        .btn-primary{background:var(--accent);color:var(--btn-color);}
+        .btn-ghost{background:var(--surface3);color:var(--text);border:1px solid var(--border);}
+        .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid var(--red);}
+        .btn-sm{padding:5px 10px;font-size:12px;}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;padding:16px;}
+        .modal.open{display:flex;}
+        .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:480px;max-width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow);}
+        .modal-title{font-size:16px;font-weight:800;color:var(--accent);margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+        .modal-close{cursor:pointer;color:var(--text-muted);font-size:18px;}
+        .modal-close:hover{color:var(--red);}
+        .field-group{margin-bottom:13px;}
+        .field-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:5px;font-weight:600;}
+        .text-input{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:"Cairo",sans-serif;font-size:13px;outline:none;}
+        .text-input:focus{border-color:var(--accent);}
+        .btn-row{display:flex;gap:10px;margin-top:16px;}
+        .btn-full{width:100%;justify-content:center;padding:12px;font-size:14px;}
+        .progress-bg{background:var(--surface2);border-radius:20px;height:7px;overflow:hidden;border:1px solid var(--border);}
+        .progress-fill{height:100%;border-radius:20px;transition:width .5s ease;}
+        .emp-perf-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;gap:16px;align-items:center;}
+        .emp-avatar{width:48px;height:48px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+        .emp-info{flex:1;min-width:0;}
+        .emp-name{font-size:14px;font-weight:800;margin-bottom:4px;}
+        .emp-stats{display:flex;gap:16px;font-size:12px;margin-bottom:8px;flex-wrap:wrap;}
+        .emp-stat-label{color:var(--text-muted);}
+        .emp-stat-val{font-weight:800;}
+        .emp-pct{font-size:24px;font-weight:900;flex-shrink:0;}
+        .salary-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+        .sal-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;}
+        .sal-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;font-weight:700;}
+        .sal-val{font-size:18px;font-weight:800;color:var(--accent);}
+        #toast-wrap{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;}
+        .toast{padding:11px 15px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:1px solid;cursor:pointer;animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;}
+        .toast-success{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+        .toast-error{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+        .toast-info{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+        @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:768px){.page{padding:14px 12px;}.kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;}.kpi-val{font-size:20px;}.emp-perf-card{flex-direction:column;align-items:flex-start;}.emp-pct{align-self:flex-end;}.hide-m{display:none;}}
+    </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
+</head>
+<body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
+
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="main-sidebar">
+    <div class="sidebar-head">
+        <span class="sidebar-head-title">☰ القائمة</span>
+        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a class="sb-item" onclick="location.href='manager.html'"><span class="sb-icon">📊</span>لوحة المدير</a>
+        <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>الكاشير</a>
+        <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>المخزن</a>
+        <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
+        <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>التقارير</a>
+        <a class="sb-item active"><span class="sb-icon">👥</span>الموظفين</a>
+        <a class="sb-item" onclick="location.href='3dadat.html'"><span class="sb-icon">⚙️</span>الإعدادات</a>
+        <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
+        <a class="sb-item" onclick="logout()" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
+    </nav>
+    <div class="sidebar-footer"><span class="copy">Fateen OS 2026</span></div>
+</div>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="sb-trigger" onclick="openSidebar()">☰</div>
+        <div class="store-title" id="store-name-display">Fateen OS</div>
+        <span class="version-chip" id="version-chip">V1.0</span>
+    </div>
+    <div class="topbar-right">
+        <button class="topbar-btn accent" onclick="openModal('addEmpModal')">➕ موظف جديد</button>
+        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+    </div>
+</div>
+
+<div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('employees',this)">👥 الموظفين</button>
+    <button class="tab-btn" onclick="switchTab('performance',this)">📈 الأداء</button>
+    <button class="tab-btn" onclick="switchTab('salaries',this)">💰 المرتبات</button>
+</div>
+
+<div class="tab-section active" id="tab-employees">
+<div class="page">
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">اجمالي الموظفين</div><div class="kpi-val" id="kpi-total">0</div></div>
+        <div class="kpi-card green"><div class="kpi-label">كاشير</div><div class="kpi-val" id="kpi-cashier">0</div></div>
+        <div class="kpi-card orange"><div class="kpi-label">مدير فرع</div><div class="kpi-val" id="kpi-manager">0</div></div>
+        <div class="kpi-card purple"><div class="kpi-label">مدير مخزن</div><div class="kpi-val" id="kpi-inv">0</div></div>
+        <div class="kpi-card red"><div class="kpi-label">مدير حسابات</div><div class="kpi-val" id="kpi-acc">0</div></div>
+    </div>
+    <div class="section-card">
+        <div class="section-header">
+            <span class="section-title">👥 قائمة الموظفين</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="emp-search" class="text-input" placeholder="بحث..." oninput="filterEmps()" style="width:180px;">
+                <select id="filter-role" class="text-input" onchange="filterEmps()" style="width:145px;">
+                    <option value="">كل الادوار</option>
+                    <option value="employee">كاشير</option>
+                    <option value="manager">مدير فرع</option>
+                    <option value="inventory_manager">مدير مخزن</option>
+                    <option value="accounts_manager">مدير حسابات</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>الموظف</th><th>الدور</th><th>مبيعات الشهر</th><th>التارجت</th><th>الانجاز</th><th>اجراءات</th></tr></thead>
+                <tbody id="emp-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px;">جاري التحميل...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="tab-section" id="tab-performance">
+<div class="page">
+    <div class="section-card">
+        <div class="section-header">
+            <span class="section-title">📈 أداء الموظفين — الشهر الحالي</span>
+            <span id="perf-month" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+        <div id="perf-list" style="display:grid;gap:12px;"><div style="text-align:center;color:var(--text-muted);padding:30px;">جاري التحميل...</div></div>
+    </div>
+</div>
+</div>
+
+<div class="tab-section" id="tab-salaries">
+<div class="page">
+    <div class="salary-summary">
+        <div class="sal-item"><div class="sal-label">اجمالي المرتبات</div><div class="sal-val" id="sal-total">0 ج.م</div></div>
+        <div class="sal-item"><div class="sal-label">متوسط المرتب</div><div class="sal-val" id="sal-avg" style="color:var(--green);">0 ج.م</div></div>
+        <div class="sal-item"><div class="sal-label">اجمالي التارجت</div><div class="sal-val" id="sal-target" style="color:var(--orange);">0 ج.م</div></div>
+        <div class="sal-item"><div class="sal-label">اجمالي المبيعات</div><div class="sal-val" id="sal-sales" style="color:var(--purple);">0 ج.م</div></div>
+    </div>
+    <div class="section-card">
+        <div class="section-header"><span class="section-title">💰 جدول المرتبات</span></div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>الموظف</th><th>الدور</th><th>المرتب</th><th>التارجت</th><th>المبيعات</th><th>الانجاز</th><th>اجراء</th></tr></thead>
+                <tbody id="salary-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">جاري التحميل...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+<div id="addEmpModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-title">اضافة موظف جديد <span class="modal-close" onclick="closeModal('addEmpModal')">✕</span></div>
+        <div class="field-group"><label>اسم المستخدم *</label><input type="text" id="add-username" class="text-input" placeholder="اسم المستخدم"></div>
+        <div class="field-group"><label>كلمة المرور * (8 احرف على الاقل)</label><input type="password" id="add-pass" class="text-input" placeholder="password"></div>
+        <div class="field-group"><label>الدور</label>
+            <select id="add-role" class="text-input">
+                <option value="employee">موظف كاشير</option>
+                <option value="manager">مدير فرع</option>
+                <option value="inventory_manager">مدير مخزن</option>
+                <option value="accounts_manager">مدير حسابات</option>
+            </select>
+        </div>
+        <div class="field-group"><label>الاسم الكامل (اختياري)</label><input type="text" id="add-fullname" class="text-input"></div>
+        <div class="field-group"><label>رقم الهاتف (اختياري)</label><input type="text" id="add-phone" class="text-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field-group"><label>المرتب الاساسي (ج.م)</label><input type="number" id="add-salary" class="text-input" value="0"></div>
+            <div class="field-group"><label>التارجت الشهري (ج.م)</label><input type="number" id="add-target" class="text-input" value="0"></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary btn-full" onclick="addEmployee()">✅ حفظ الموظف</button>
+            <button class="btn btn-ghost btn-full" onclick="closeModal('addEmpModal')">الغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="editEmpModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-title">تعديل بيانات الموظف <span class="modal-close" onclick="closeModal('editEmpModal')">✕</span></div>
+        <input type="hidden" id="edit-username">
+        <div class="field-group"><label>اسم المستخدم</label><input type="text" id="edit-uname-show" class="text-input" disabled style="opacity:.5;"></div>
+        <div class="field-group"><label>كلمة المرور الجديدة (اتركها فارغة للابقاء)</label><input type="password" id="edit-pass" class="text-input"></div>
+        <div class="field-group"><label>الدور</label>
+            <select id="edit-role" class="text-input">
+                <option value="employee">موظف كاشير</option>
+                <option value="manager">مدير فرع</option>
+                <option value="inventory_manager">مدير مخزن</option>
+                <option value="accounts_manager">مدير حسابات</option>
+            </select>
+        </div>
+        <div class="field-group"><label>الاسم الكامل</label><input type="text" id="edit-fullname" class="text-input"></div>
+        <div class="field-group"><label>رقم الهاتف</label><input type="text" id="edit-phone" class="text-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field-group"><label>المرتب الاساسي</label><input type="number" id="edit-salary" class="text-input" value="0"></div>
+            <div class="field-group"><label>التارجت الشهري</label><input type="number" id="edit-target" class="text-input" value="0"></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary btn-full" onclick="saveEdit()">💾 حفظ التعديلات</button>
+            <button class="btn btn-ghost btn-full" onclick="closeModal('editEmpModal')">الغاء</button>
+        </div>
+        <button class="btn btn-danger btn-full" style="margin-top:10px;width:100%;" onclick="deleteEmp()">🗑️ حذف الموظف</button>
+    </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SURL="https://xyvxowlbvuqbggkslwqr.supabase.co";
+    const SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo";
+    const _sb=supabase.createClient(SURL,SKEY);
+    const storeKey=sessionStorage.getItem("store_key");
+    let allEmps=[],salesMap={};
+
+    function toast(msg,type="info"){
+        const c=document.getElementById("toast-wrap");
+        const t=document.createElement("div");
+        t.className="toast toast-"+type;
+        t.innerHTML="<span>"+(type=="success"?"ok":type=="error"?"err":"i")+"</span><span>"+msg+"</span>";
+        t.onclick=()=>t.remove(); c.appendChild(t);
+        setTimeout(()=>t.remove(),4000);
+    }
+    function openModal(id){document.getElementById(id).classList.add("open");}
+    function closeModal(id){document.getElementById(id).classList.remove("open");}
+    document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));});
+    function openSidebar(){document.getElementById("main-sidebar").classList.add("open");document.getElementById("sb-overlay").classList.add("open");}
+    function closeSidebar(){document.getElementById("main-sidebar").classList.remove("open");document.getElementById("sb-overlay").classList.remove("open");}
+    function toggleTheme(){const h=document.documentElement;const l=h.getAttribute("data-theme")==="light";h.setAttribute("data-theme",l?"":"light");localStorage.setItem("fateen_theme",l?"dark":"light");document.getElementById("theme-icon").innerText=l?"moon":"sun";}
+    (function(){const s=localStorage.getItem("fateen_theme");if(s==="light"){document.documentElement.setAttribute("data-theme","light");document.getElementById("theme-icon").innerText="sun";}})();
+    function logout(){sessionStorage.clear();location.href="index.html";}
+    function switchTab(id,btn){document.querySelectorAll(".tab-section").forEach(t=>t.classList.remove("active"));document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));document.getElementById("tab-"+id).classList.add("active");if(btn)btn.classList.add("active");}
+    const rLabel=r=>({employee:"موظف كاشير",manager:"مدير فرع",inventory_manager:"مدير مخزن",accounts_manager:"مدير حسابات"}[r]||r);
+    const rBadge=r=>({employee:"badge-accent",manager:"badge-orange",inventory_manager:"badge-purple",accounts_manager:"badge-green"}[r]||"badge-accent");
+
+    async function init(){
+        if(!storeKey){location.href="index.html";return;}
+        try{
+            const{data:store}=await _sb.from("stores").select("store_name").eq("store_key",storeKey).single();
+            if(store)document.getElementById("store-name-display").innerText=store.store_name;
+            const{data:ver}=await _sb.from("system_settings").select("value").eq("key","sys_version").single();
+            if(ver)document.getElementById("version-chip").innerText=ver.value;
+        }catch(e){}
+        await loadAll();
+    }
+
+    async function loadAll(){
+        try{
+            const{data:emps}=await _sb.from("users").select("*").eq("store_key",storeKey).in("role",["employee","manager","inventory_manager","accounts_manager"]);
+            allEmps=emps||[];
+            const ms=new Date();ms.setDate(1);ms.setHours(0,0,0,0);
+            const{data:sales}=await _sb.from("sales").select("seller_name,total_amount").eq("store_key",storeKey).eq("type","sale").gte("created_at",ms.toISOString());
+            salesMap={};
+            (sales||[]).forEach(s=>{salesMap[s.seller_name]=(salesMap[s.seller_name]||0)+(parseFloat(s.total_amount)||0);});
+            renderKPIs();renderTable(allEmps);renderPerf(allEmps);renderSalaries(allEmps);
+        }catch(e){toast("خطا في التحميل: "+e.message,"error");}
+    }
+
+    function renderKPIs(){
+        document.getElementById("kpi-total").innerText=allEmps.length;
+        document.getElementById("kpi-cashier").innerText=allEmps.filter(e=>e.role==="employee").length;
+        document.getElementById("kpi-manager").innerText=allEmps.filter(e=>e.role==="manager").length;
+        document.getElementById("kpi-inv").innerText=allEmps.filter(e=>e.role==="inventory_manager").length;
+        document.getElementById("kpi-acc").innerText=allEmps.filter(e=>e.role==="accounts_manager").length;
+    }
+
+    function renderTable(list){
+        const tb=document.getElementById("emp-tbody");
+        if(!list.length){tb.innerHTML="<tr><td colspan=6 style=text-align:center;color:var(--text-muted);padding:30px>لا يوجد موظفين</td></tr>";return;}
+        tb.innerHTML=list.map(e=>{
+            const s=salesMap[e.username]||0;const t=parseFloat(e.monthly_target||0);
+            const p=t>0?Math.min(Math.round(s/t*100),100):0;
+            const c=p>=100?"var(--green)":p>=70?"var(--orange)":"var(--red)";
+            return "<tr><td><div style=font-weight:800>"+e.username+"</div>"+(e.full_name?"<div style=font-size:11px;color:var(--text-muted)>"+e.full_name+"</div>":"")+"</td><td><span class=badge "+rBadge(e.role)+">"+rLabel(e.role)+"</span></td><td style=color:var(--green);font-weight:700>"+s.toLocaleString()+" ج.م</td><td style=color:var(--text-muted)>"+t.toLocaleString()+" ج.م</td><td style=min-width:100px><div style=font-size:11px;font-weight:700;color:"+c+";margin-bottom:4px>"+p+"%</div><div class=progress-bg><div class=progress-fill style=width:"+p+"%;background:"+c+"></div></div></td><td><button class='btn btn-ghost btn-sm' onclick='openEdit("+JSON.stringify(e)+")'>تعديل</button></td></tr>";
+        }).join("");
+    }
+
+    function filterEmps(){
+        const q=document.getElementById("emp-search").value.toLowerCase();
+        const r=document.getElementById("filter-role").value;
+        renderTable(allEmps.filter(e=>(!q||e.username.toLowerCase().includes(q)||(e.full_name||"").toLowerCase().includes(q))&&(!r||e.role===r)));
+    }
+
+    function renderPerf(list){
+        const el=document.getElementById("perf-list");
+        const now=new Date();
+        document.getElementById("perf-month").innerText=now.toLocaleDateString("ar-EG",{month:"long",year:"numeric"});
+        if(!list.length){el.innerHTML="<div style=text-align:center;color:var(--text-muted);padding:30px>لا يوجد موظفين</div>";return;}
+        const sorted=[...list].sort((a,b)=>(salesMap[b.username]||0)-(salesMap[a.username]||0));
+        const medals=["first","second","third"];
+        el.innerHTML=sorted.map((e,i)=>{
+            const s=salesMap[e.username]||0;const t=parseFloat(e.monthly_target||0);
+            const p=t>0?Math.min(Math.round(s/t*100),100):0;
+            const c=p>=100?"var(--green)":p>=70?"var(--orange)":"var(--accent)";
+            return "<div class=emp-perf-card><div class=emp-avatar>"+(medals[i]||"user")+"</div><div class=emp-info><div class=emp-name>"+e.username+(e.full_name?" <span style=font-size:12px;color:var(--text-muted);font-weight:400>("+e.full_name+")</span>":"")+"</div><div style=margin-bottom:8px><span class='badge "+rBadge(e.role)+"'>"+rLabel(e.role)+"</span></div><div class=emp-stats><div><div class=emp-stat-label>المبيعات</div><div class=emp-stat-val style=color:var(--green)>"+s.toLocaleString()+" ج.م</div></div><div><div class=emp-stat-label>التارجت</div><div class=emp-stat-val>"+t.toLocaleString()+" ج.م</div></div><div><div class=emp-stat-label>الفارق</div><div class=emp-stat-val style=color:"+(s>=t?"var(--green)":"var(--red)")+">"+((s-t)<0?"-":"+")+(Math.abs(s-t)).toLocaleString()+" ج.م</div></div></div><div class=progress-bg><div class=progress-fill style=width:"+p+"%;background:"+c+"></div></div></div><div class=emp-pct style=color:"+c+">"+p+"%</div></div>";
+        }).join("");
+    }
+
+    function renderSalaries(list){
+        const tb=document.getElementById("salary-tbody");
+        const tSal=list.reduce((s,e)=>s+parseFloat(e.salary||0),0);
+        const tTarget=list.reduce((s,e)=>s+parseFloat(e.monthly_target||0),0);
+        const tSales=list.reduce((s,e)=>s+(salesMap[e.username]||0),0);
+        document.getElementById("sal-total").innerText=tSal.toLocaleString()+" ج.م";
+        document.getElementById("sal-avg").innerText=(list.length?Math.round(tSal/list.length):0).toLocaleString()+" ج.م";
+        document.getElementById("sal-target").innerText=tTarget.toLocaleString()+" ج.م";
+        document.getElementById("sal-sales").innerText=tSales.toLocaleString()+" ج.م";
+        if(!list.length){tb.innerHTML="<tr><td colspan=7 style=text-align:center;color:var(--text-muted);padding:30px>لا يوجد موظفين</td></tr>";return;}
+        tb.innerHTML=list.map(e=>{
+            const s=salesMap[e.username]||0;const t=parseFloat(e.monthly_target||0);const sal=parseFloat(e.salary||0);
+            const p=t>0?Math.min(Math.round(s/t*100),100):0;const c=p>=100?"var(--green)":p>=70?"var(--orange)":"var(--red)";
+            return "<tr><td style=font-weight:800>"+e.username+"</td><td><span class='badge "+rBadge(e.role)+"'>"+rLabel(e.role)+"</span></td><td style=color:var(--accent);font-weight:700>"+sal.toLocaleString()+" ج.م</td><td>"+t.toLocaleString()+" ج.م</td><td style=color:var(--green);font-weight:700>"+s.toLocaleString()+" ج.م</td><td><span style=color:"+c+";font-weight:800>"+p+"%</span></td><td><button class='btn btn-ghost btn-sm' onclick='openEdit("+JSON.stringify(e)+")'>تعديل</button></td></tr>";
+        }).join("");
+    }
+
+    async function addEmployee(){
+        const u=document.getElementById("add-username").value.trim();
+        const p=document.getElementById("add-pass").value;
+        const r=document.getElementById("add-role").value;
+        const fn=document.getElementById("add-fullname").value.trim();
+        const ph=document.getElementById("add-phone").value.trim();
+        const sal=parseFloat(document.getElementById("add-salary").value)||0;
+        const tgt=parseFloat(document.getElementById("add-target").value)||0;
+        if(!u)return toast("اسم المستخدم مطلوب","error");
+        if(!p||p.length<8)return toast("كلمة المرور اقل من 8 احرف","error");
+        const{error}=await _sb.from("users").insert([{username:u,password:p,role:r,store_key:storeKey,full_name:fn||null,phone:ph||null,salary:sal,monthly_target:tgt}]);
+        if(!error){toast("تم اضافة الموظف","success");closeModal("addEmpModal");loadAll();}
+        else if(error.message.includes("duplicate"))toast("اسم المستخدم موجود بالفعل","error");
+        else toast("خطا: "+error.message,"error");
+    }
+
+    function openEdit(e){
+        document.getElementById("edit-username").value=e.username;
+        document.getElementById("edit-uname-show").value=e.username;
+        document.getElementById("edit-role").value=e.role;
+        document.getElementById("edit-fullname").value=e.full_name||"";
+        document.getElementById("edit-phone").value=e.phone||"";
+        document.getElementById("edit-salary").value=e.salary||0;
+        document.getElementById("edit-target").value=e.monthly_target||0;
+        document.getElementById("edit-pass").value="";
+        openModal("editEmpModal");
+    }
+
+    async function saveEdit(){
+        const u=document.getElementById("edit-username").value;
+        const p=document.getElementById("edit-pass").value;
+        const r=document.getElementById("edit-role").value;
+        const fn=document.getElementById("edit-fullname").value.trim();
+        const ph=document.getElementById("edit-phone").value.trim();
+        const sal=parseFloat(document.getElementById("edit-salary").value)||0;
+        const tgt=parseFloat(document.getElementById("edit-target").value)||0;
+        if(p&&p.length<8)return toast("كلمة المرور اقل من 8 احرف","error");
+        const upd={role:r,full_name:fn||null,phone:ph||null,salary:sal,monthly_target:tgt};
+        if(p)upd.password=p;
+        const{error}=await _sb.from("users").update(upd).eq("username",u).eq("store_key",storeKey);
+        if(!error){toast("تم تحديث بيانات الموظف","success");closeModal("editEmpModal");loadAll();}
+        else toast("خطا: "+error.message,"error");
+    }
+
+    async function deleteEmp(){
+        const u=document.getElementById("edit-username").value;
+        if(!confirm("حذف الموظف "+u+" نهائيا؟"))return;
+        await _sb.from("users").delete().eq("username",u).eq("store_key",storeKey);
+        toast("تم حذف الموظف","success");closeModal("editEmpModal");loadAll();
+    }
+
+    init();
+</script>
+</body>
+</html>

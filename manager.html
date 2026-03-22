@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة المدير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -335,8 +335,50 @@
             .d-nav{grid-template-columns:repeat(4,1fr);}
         }
     </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
 
 <!-- ===== SIDEBAR OVERLAY ===== -->
 <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
@@ -352,7 +394,7 @@
         <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>صفحة الكاشير</a>
         <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>إدارة التقارير</a>
         <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>إدارة المخزن</a>
-        <a class="sb-item" onclick="openUserModal();closeSidebar()"><span class="sb-icon">👥</span>إدارة الموظفين</a>
+        <a class="sb-item" onclick="location.href='hr.html'"><span class="sb-icon">👥</span>إدارة الموظفين</a>
         <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
         <a class="sb-item" onclick="location.href='guide.html'"><span class="sb-icon">📖</span>كيفية الاستخدام</a>
         <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
@@ -363,6 +405,12 @@
     <div class="sidebar-footer">
         <span class="copy">جميع الحقوق محفوظة لفطين 2026</span>
     </div>
+</div>
+
+<!-- STATUS BOX -->
+<div id="sys-status-box" style="position:fixed;bottom:12px;left:12px;z-index:8000;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:5px 10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow);">
+    <span id="sys-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+    <span id="sys-status-text">النظام يعمل بشكل جيد</span>
 </div>
 
 <!-- ================================================
@@ -446,18 +494,6 @@
             </div>
         </div>
 
-        <!-- Chart -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title">📊 آخر 7 أيام</h3>
-                <div style="display:flex; gap:6px;">
-                    <button id="m-chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:11px; padding:5px 12px;">💰 مبيعات</button>
-                    <button id="m-chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:11px; padding:5px 12px;">↩ مرتجع</button>
-                </div>
-            </div>
-            <canvas id="m-sales-chart" height="120"></canvas>
-        </div>
-
         <!-- النواقص -->
         <div class="section-card">
             <div class="section-header">
@@ -484,7 +520,7 @@
 
         <!-- Footer -->
         <div class="m-footer">
-            <span class="copy">جميع الحقوق محفوظة لفطين 2026</span>
+            <span class="copy">جميع الحقوق محفوظة لفطين 2026 &nbsp;|&nbsp; V <span id="footer-ver">1.0.0</span></span>
             <span class="ver" id="m-version-footer">V0.5</span>
         </div>
 
@@ -533,8 +569,7 @@
 
         <!-- Footer bar (right under nav) -->
         <div class="d-footer">
-            <span class="copy">جميع الحقوق محفوظة لفطين 2026</span>
-            <span class="ver" id="d-version-footer">V0.5</span>
+            <span class="copy">جميع الحقوق محفوظة لفطين 2026 &nbsp;|&nbsp; V <span id="d-version-footer2">1.0.0</span></span>
         </div>
 
         <!-- مبيعات اليوم -->
@@ -605,18 +640,6 @@
 
         </div>
 
-        <!-- Chart -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title">📊 مبيعات آخر 7 أيام</h3>
-                <div style="display:flex; gap:8px;">
-                    <button id="chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:12px; padding:6px 16px;">💰 مبيعات</button>
-                    <button id="chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:12px; padding:6px 16px;">↩ مرتجع</button>
-                </div>
-            </div>
-            <canvas id="sales-chart" height="80"></canvas>
-        </div>
-
         <!-- Feedback -->
         <div class="section-card">
             <div class="section-header">
@@ -682,6 +705,14 @@
         <input type="hidden" id="edit-un">
         <div class="field-group"><label>اسم المستخدم</label><input class="text-input" type="text" id="u-username" placeholder="اسم المستخدم"></div>
         <div class="field-group"><label>كلمة المرور</label><input class="text-input" type="password" id="u-pass" placeholder="كلمة المرور"></div>
+        <div class="field-group"><label>الدور</label>
+            <select class="text-input" id="u-role">
+                <option value="employee">موظف كاشير</option>
+                <option value="manager">مدير فرع</option>
+                <option value="inventory_manager">مدير مخزن</option>
+                <option value="accounts_manager">مدير حسابات</option>
+            </select>
+        </div>
         <div class="field-group"><label>رقم الهاتف</label><input class="text-input" type="text" id="u-phone" placeholder="رقم الهاتف"></div>
         <div class="field-group"><label>التارجت الشهري</label><input class="text-input" type="number" id="u-target" placeholder="0"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -796,7 +827,7 @@
             const { data, error } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
             if(error) throw error;
             if(data) {
-                ['m-version','d-version','d-version-footer','m-version-footer'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = data.value; });
+                ['m-version','d-version','d-version-footer','m-version-footer','d-version-footer2'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = data.value; });
             }
         } catch(e) { showToast('خطأ في تحميل الإصدار: ' + e.message, 'error'); }
     }
@@ -864,32 +895,57 @@
         sortSales();
     }
 
-    function printManagerReceipt(sale) {
-        const items = typeof sale.items==='string' ? JSON.parse(sale.items) : (sale.items||[]);
+    async function printManagerReceipt(sale) {
+        const rawItems = typeof sale.items==='string' ? JSON.parse(sale.items) : (sale.items||[]);
+        // دعم الـ keys القديمة والجديدة
+        const items = rawItems.map(i=>({
+            product_name: i.n||i.product_name||'—',
+            price: i.p||i.price||0,
+            qty: i.q||i.qty||1
+        }));
         const total = parseFloat(sale.total_amount)||0;
         const now = new Date(sale.created_at);
-        const w = window.open('','_blank','width=400,height=600');
+        // جلب إعدادات المتجر
+        let s = {};
+        try {
+            const {data} = await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
+            if(data) s = data;
+        } catch(e) {}
+        const paperW = s.invoice_size==='58mm'?'58mm':s.invoice_size==='A4'?'210mm':'80mm';
+        const showEmp = s.invoice_show_employee!==false;
+        const showUnit = s.invoice_show_unit_price!==false;
+        const showTax = s.invoice_show_tax===true && s.tax_id;
+        const footer = s.invoice_footer||'شكراً لزيارتكم 🌟';
+        const welcome = s.invoice_welcome||'';
+        const storeName2 = s.store_name||'المتجر';
+        const w = window.open('','_blank',`width=${paperW==='210mm'?700:400},height=650`);
         w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-        <style>*{margin:0;padding:0;box-sizing:border-box;}body{width:80mm;margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;font-weight:700;}
+        <style>*{margin:0;padding:0;box-sizing:border-box;}body{width:${paperW};margin:0 auto;padding:12px;font-family:'Cairo',sans-serif;color:#000;background:#fff;font-weight:700;}
         .c{text-align:center;}.sn{font-size:18px;font-weight:900;}.hr{border:none;border-top:1px dashed #999;margin:7px 0;}
         table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#111;color:#fff;padding:5px;}td{padding:5px;border-bottom:1px solid #eee;}
         .tot{display:flex;border:2px solid #000;border-radius:6px;overflow:hidden;margin-top:8px;}.tl{flex:1;background:#111;color:#fff;padding:8px;text-align:center;font-size:13px;font-weight:800;}.tv{flex:1;padding:8px;text-align:center;font-size:18px;font-weight:900;}
-        @media print{@page{margin:0;size:80mm auto;}body{padding:8px;}}</style></head><body>
-        <div class="c"><div class="sn" id="sn">—</div><div style="font-size:12px;color:#555;">إعادة طباعة فاتورة</div></div>
+        @media print{@page{margin:0;size:${paperW} auto;}body{padding:8px;}}</style></head><body>
+        ${welcome?`<div style="text-align:center;font-size:11px;color:#666;padding:4px 0 6px;font-style:italic;">${welcome}</div>`:''}
+        <div class="c"><div class="sn">${storeName2}</div>
+        ${s.address?`<div style="font-size:11px;color:#555;">${s.address}</div>`:''}
+        ${s.phone?`<div style="font-size:11px;">${s.phone}</div>`:''}
+        <div style="font-size:11px;color:#888;">إعادة طباعة فاتورة</div></div>
         <hr class="hr">
         <div style="font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:5px;">
             <span>التاريخ: <b>${now.toLocaleDateString('ar-EG')}</b></span>
             <span>رقم: <b>#${String(sale.id).slice(-6)}</b></span>
-            <span>البائع: <b>${sale.seller_name||'---'}</b></span>
+            ${showEmp?`<span>البائع: <b>${sale.seller_name||'---'}</b></span>`:''}
             <span>الدفع: <b>${sale.payment_method||'كاش'}</b></span>
         </div>
         <hr class="hr">
-        <table><thead><tr><th>الصنف</th><th>ك</th><th>سعر</th><th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>`<tr><td>${i.product_name}</td><td>${i.qty}</td><td>${i.price}</td><td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody></table>
+        <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
+        <tbody>${items.map(i=>`<tr><td>${i.product_name}</td><td>${i.qty}</td>${showUnit?`<td>${i.price}</td>`:''}<td>${(i.price*i.qty).toFixed(0)}</td></tr>`).join('')}</tbody></table>
         <div class="tot"><div class="tl">الإجمالي</div><div class="tv">${total.toFixed(0)} ج.م</div></div>
-        <div style="text-align:center;font-size:10px;color:#aaa;margin-top:8px;">Fateen OS</div>
-        <script>document.getElementById('sn').innerText=window.opener?.storeName||'المتجر';window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
+        ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${s.tax_id}</div>`:''}
+        <div style="text-align:center;margin-top:10px;font-size:11px;color:#555;border-top:1px dashed #ccc;padding-top:6px;">${footer}</div>
+        <div style="text-align:center;font-size:9px;color:#aaa;margin-top:3px;">Fateen OS</div>
+        <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
         </body></html>`);
         w.document.close();
     }
@@ -953,7 +1009,7 @@
     let allUsers = [];
     async function loadUsers() {
         try {
-            const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).in('role', ['employee','manager']);
+            const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).in('role', ['employee','manager','inventory_manager','accounts_manager']);
             if(error) throw error;
             // حساب مبيعات الشهر الحالي من جدول sales لكل موظف
             const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
@@ -1023,7 +1079,7 @@
             const eid = document.getElementById('edit-un').value;
             const userData = eid
                 ? { username:uName, phone:uPhone, monthly_target:uTarget, store_key:storeKey }
-                : { username:uName, phone:uPhone, monthly_target:uTarget, role:'employee', store_key:storeKey };
+                : { username:uName, phone:uPhone, monthly_target:uTarget, role:document.getElementById('u-role')?.value||'employee', store_key:storeKey };
             if(uPass) userData.password = uPass;
             if(eid) {
                 const { error } = await _supabase.from('users').update(userData).eq('username',eid).eq('store_key',storeKey);
@@ -1245,16 +1301,26 @@
         } catch(e) { showToast('خطأ في التقرير اليومي: '+e.message,'error'); }
     }
 
-    function printDailyReport() {
+    async function printDailyReport() {
         if(!drData) return showToast('حمّل التقرير أولاً','info');
         const d = drData;
         const money = n => Number(n).toLocaleString() + ' ج.م';
-        const w = window.open('','_blank','width=500,height=720');
+        // جلب إعدادات المتجر
+        let s = {};
+        try {
+            const {data} = await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
+            if(data) s = data;
+        } catch(e) {}
+        const paperW = s.invoice_size==='58mm'?'58mm':s.invoice_size==='A4'?'210mm':'80mm';
+        const storeName2 = s.store_name||'المتجر';
+        const footer = s.invoice_footer||'Fateen OS';
+        const showTax = s.invoice_show_tax===true && s.tax_id;
+        const w = window.open('','_blank',`width=${paperW==='210mm'?700:420},height=720`);
         w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
         <style>
             *{margin:0;padding:0;box-sizing:border-box;}
-            body{width:90mm;margin:0 auto;padding:14px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
+            body{width:${paperW};margin:0 auto;padding:14px;font-family:'Cairo',sans-serif;color:#000;background:#fff;}
             .hd{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:12px;}
             .store{font-size:18px;font-weight:900;}
             .title{font-size:13px;color:#444;margin-top:2px;}
@@ -1267,10 +1333,12 @@
             .net .lbl{font-size:11px;color:#00875a;}
             .net .val{font-size:22px;font-weight:900;color:#00875a;}
             .ft{text-align:center;margin-top:12px;font-size:10px;color:#aaa;border-top:1px dashed #ccc;padding-top:8px;}
-            @media print{@page{margin:0;size:90mm auto;}body{padding:10px;}}
+            @media print{@page{margin:0;size:${paperW} auto;}body{padding:10px;}}
         </style></head><body>
         <div class="hd">
-            <div class="store" id="pr-store">—</div>
+            <div class="store">${storeName2}</div>
+            ${s.address?`<div style="font-size:11px;color:#555;">${s.address}</div>`:''}
+            ${s.phone?`<div style="font-size:11px;">${s.phone}</div>`:''}
             <div class="title">التقرير اليومي</div>
             <div class="date">${new Date(d.date).toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
         </div>
@@ -1281,22 +1349,22 @@
         <div class="sec">💳 طرق الدفع</div>
         <div class="row"><span class="lbl">💵 كاش</span><span class="val">${money(d.cash)}</span></div>
         <div class="row"><span class="lbl">💳 فيزا</span><span class="val">${money(d.visa)}</span></div>
-        <div class="sec">🏆 الأكثر</div>
-        <div class="row"><span class="lbl">🏆 أعلى منتج</span><span class="val">${d.topProd?d.topProd[0]+'('+d.topProd[1]+')':'—'}</span></div>
+        <div class="sec">🏆 الأكثر مبيعاً</div>
+        <div class="row"><span class="lbl">🏆 أعلى منتج</span><span class="val">${d.topProd?d.topProd[0]+' ('+d.topProd[1]+')':'—'}</span></div>
         <div class="row"><span class="lbl">⏱️ أكثر ساعة</span><span class="val">${d.peakHour?d.peakHour[0]+':00':'—'}</span></div>
         <div class="net"><div class="lbl">📊 صافي اليوم</div><div class="val">${money(d.net)}</div></div>
-        <div class="ft">Fateen OS — ${new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
-        <script>
-            fetch('').catch(()=>{});
-            const sn=document.getElementById('pr-store');
-            if(sn) sn.innerText=window.opener?.storeName||'المتجر';
-            window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}
-        <\/script>
+        ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-bottom:6px;">الرقم الضريبي: ${s.tax_id}</div>`:''}
+        <div class="ft">${footer} — ${new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+        <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
         </body></html>`);
         w.document.close();
     }
 
     init();
+    (function(){
+        function _ns(){const on=navigator.onLine;const d=document.getElementById('sys-status-dot');const t=document.getElementById('sys-status-text');if(d)d.style.background=on?'var(--green)':'var(--red)';if(t)t.innerText=on?'النظام يعمل بشكل جيد':'لا يوجد إنترنت';}
+        window.addEventListener('online',_ns);window.addEventListener('offline',_ns);_ns();
+    })();
 </script>
 </body>
 </html>

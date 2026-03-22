@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة الماركتر - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -110,8 +110,50 @@
             .store-title { font-size:14px; }
         }
     </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -197,15 +239,26 @@
         </div>
         <div class="field-group"><label>اسم المتجر</label><input class="text-input" type="text" id="st-name" placeholder="اسم المتجر"></div>
         <div class="field-group"><label>رقم الهاتف</label><input class="text-input" type="text" id="st-phone" placeholder="010xxxxxxxx"></div>
-        <div class="field-group"><label>سعر الاشتراك (ج.م)</label><input class="text-input" type="number" id="st-price" placeholder="0"></div>
         <div class="field-group">
-            <label>مدة الاشتراك</label>
-            <select class="text-input" id="st-duration">
-                <option value="1">شهر تجريبي</option>
-                <option value="3">ربع سنوي (3 شهور)</option>
-                <option value="6">نص سنة (6 شهور)</option>
-                <option value="12">سنة كاملة</option>
+            <label>نوع الاشتراك</label>
+            <select class="text-input" id="st-plan" onchange="updatePlanPrice()">
+                <option value="trial">تجريبي (مجاني)</option>
+                <option value="year">سنة كاملة — 7,000 ج.م</option>
+                <option value="two_years">سنتان — 10,000 ج.م</option>
             </select>
+        </div>
+        <div id="trial-days-wrap" class="field-group">
+            <label>عدد أيام التجربة</label>
+            <input class="text-input" type="number" id="st-trial-days" placeholder="30" value="30" min="1" max="365">
+        </div>
+        <div class="field-group" style="background:var(--accent-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;">
+            <div style="font-size:12px;color:var(--text-muted);">سعر الاشتراك</div>
+            <div id="plan-price-display" style="font-size:20px;font-weight:900;color:var(--accent);">مجاني</div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:14px;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:10px;">👤 بيانات المدير (اختياري)</div>
+            <div class="field-group"><label>اسم مستخدم المدير</label><input class="text-input" type="text" id="st-mgr-user" placeholder="manager_name"></div>
+            <div class="field-group"><label>كلمة مرور المدير</label><input class="text-input" type="password" id="st-mgr-pass" placeholder="8 أحرف على الأقل"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="saveNewStore()">✅ حفظ المتجر</button>
@@ -325,32 +378,103 @@
         } catch(e) { showToast('خطأ في تحميل البيانات: ' + e.message, 'error'); }
     }
 
+    function updatePlanPrice() {
+        const plan = document.getElementById('st-plan').value;
+        const trialWrap = document.getElementById('trial-days-wrap');
+        const priceDisplay = document.getElementById('plan-price-display');
+        if(plan === 'trial') {
+            trialWrap.style.display = 'block';
+            priceDisplay.innerText = 'مجاني';
+        } else if(plan === 'year') {
+            trialWrap.style.display = 'none';
+            priceDisplay.innerText = '7,000 ج.م';
+        } else {
+            trialWrap.style.display = 'none';
+            priceDisplay.innerText = '10,000 ج.م';
+        }
+    }
+
     async function saveNewStore() {
         const name = document.getElementById('st-name').value.trim();
         const phone = document.getElementById('st-phone').value.trim();
-        const price = document.getElementById('st-price').value;
-        const duration = parseInt(document.getElementById('st-duration').value);
+        const plan = document.getElementById('st-plan').value;
+        const mgrUser = document.getElementById('st-mgr-user')?.value.trim();
+        const mgrPass = document.getElementById('st-mgr-pass')?.value.trim();
         if(!name) return showToast('اسم المتجر مطلوب','error');
+        if(mgrUser && mgrPass && mgrPass.length < 8) return showToast('كلمة مرور المدير أقل من 8 أحرف','error');
+
+        const planPrices = { trial: 0, year: 7000, two_years: 10000 };
+        const price = planPrices[plan] || 0;
 
         const expiry = new Date();
-        expiry.setMonth(expiry.getMonth() + duration);
-        const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
+        if(plan === 'trial') {
+            const days = parseInt(document.getElementById('st-trial-days').value) || 30;
+            expiry.setDate(expiry.getDate() + days);
+        } else if(plan === 'year') {
+            expiry.setFullYear(expiry.getFullYear() + 1);
+        } else {
+            expiry.setFullYear(expiry.getFullYear() + 2);
+        }
 
+        const key = 'FS' + Math.floor(Math.random() * 9000 + 1000);
         try {
             const { error } = await _supabase.from('stores').insert([{
                 store_key: key,
                 store_name: name,
                 phone: phone,
-                subscription_price: parseFloat(price) || 0,
+                subscription_price: price,
                 expiry_date: expiry.toISOString().split('T')[0],
                 is_active: true,
                 marketer_id: currentUser
             }]);
             if(error) throw error;
-            showToast(`تم إضافة المتجر بنجاح — الكود: ${key}`, 'success');
+            if(mgrUser && mgrPass) {
+                await _supabase.from('users').insert([{
+                    username: mgrUser,
+                    password: mgrPass,
+                    store_key: key,
+                    role: 'manager'
+                }]);
+            }
+            // إضافة الربح لإجمالي الإيرادات (يظهر للمطور)
+            if(price > 0) {
+                const {data:devData} = await _supabase.from('system_settings').select('value').eq('key','total_revenue').single();
+                const currentRev = parseFloat(devData?.value||0);
+                await _supabase.from('system_settings').upsert([{key:'total_revenue', value: String(currentRev+price)}]);
+            }
+            // إضافة الربح للمطور
+            if(price > 0){
+                try{
+                    const{data:rd}=await _supabase.from('system_settings').select('value').eq('key','total_revenue').single();
+                    const curr=parseFloat(rd?.value||0);
+                    await _supabase.from('system_settings').upsert([{key:'total_revenue',value:String(curr+price)}],{onConflict:'key'}).catch(()=>{
+                        _supabase.from('system_settings').update({value:String(curr+price)}).eq('key','total_revenue').then(()=>{});
+                    });
+                }catch(e){}
+            }
+            showToast(`تم إضافة المتجر — الكود: ${key} | السعر: ${price.toLocaleString()} ج.م`, 'success');
             closeModal('addStoreModal');
             loadStores();
         } catch(e) { showToast('خطأ في إضافة المتجر: ' + e.message, 'error'); }
+    }
+
+    async function editSubscription(key, name, currentPrice) {
+        const choice = prompt(`تعديل اشتراك: ${name}\nالسعر الحالي: ${currentPrice} ج.م\n\n0 = تجريبي (أيام مخصصة)\n1 = سنة (7,000 ج.م)\n2 = سنتان (10,000 ج.م)\n\nأدخل الرقم:`,'1');
+        if(choice===null) return;
+        const prices={0:0,1:7000,2:10000};
+        const newPrice=prices[parseInt(choice)];
+        if(newPrice===undefined){showToast('اختيار غير صحيح','error');return;}
+        const expiry=new Date();
+        if(parseInt(choice)===0){const d=parseInt(prompt('عدد أيام التجربة:','30')||'30');expiry.setDate(expiry.getDate()+d);}
+        else if(parseInt(choice)===1) expiry.setFullYear(expiry.getFullYear()+1);
+        else expiry.setFullYear(expiry.getFullYear()+2);
+        const{error}=await _supabase.from('stores').update({subscription_price:newPrice,expiry_date:expiry.toISOString().split('T')[0],is_active:true}).eq('store_key',key);
+        if(!error){
+            if(newPrice>0){
+                try{const{data:rd}=await _supabase.from('system_settings').select('value').eq('key','total_revenue').single();const c=parseFloat(rd?.value||0);await _supabase.from('system_settings').update({value:String(c+newPrice)}).eq('key','total_revenue');}catch(e){}
+            }
+            showToast(`تم تحديث اشتراك ${name} — ${newPrice.toLocaleString()} ج.م`,'success');loadStores();
+        }else showToast('خطأ: '+error.message,'error');
     }
 
     init();

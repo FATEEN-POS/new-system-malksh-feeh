@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تواصل معانا - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -135,8 +135,50 @@
             .links-row .btn { justify-content:center; }
         }
     </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -218,28 +260,34 @@
     const chatContent=document.getElementById('chat-content');
     const userInput=document.getElementById('user-input');
 
-    const botResponses={
-        "السعر":"نظام Fateen يوفر باقات مرنة تناسب مشروعك الصغير أو الكبير، تواصل مع الدعم عبر الواتساب للحصول على عرض سعر مناسب.",
-        "المميزات":"يتميز النظام بدعم الباركود، تقارير أرباح دقيقة، إدارة مخازن احترافية، ودعم فني متاح على مدار الساعة.",
-        "واتساب":"يمكنك الضغط على زر 'تواصل عبر واتساب' بالأعلى للتحدث مع الإدارة مباشرة.",
-        "تجربة":"نعم! يمكنك تجربة النسخة التجريبية من خلال موقعنا الرسمي.",
-        "default":"شكراً لسؤالك! لخدمة أفضل بخصوص هذا الموضوع، يفضل التواصل مع المطور مباشرة عبر الواتساب."
-    };
+    const botResponses=[
+        {keys:["بكام","كام","سعر","اشتراك","تكلفة"], r:"السنة بـ 7,000 ج.م والسنتين بـ 10,000 ج.م — وفيه نسخة تجريبية مجانية! تواصل معانا على الواتساب وهنفعّلها ليك."},
+        {keys:["تجريبي","تجربة","اجرب","مجاني","مجانا"], r:"آه! عندنا نسخة تجريبية مجانية — تواصل معانا على الواتساب وهنفعّلها على طول 🎉"},
+        {keys:["مميزات","بيعمل","فيه إيه","فيه ايه","مزايا"], r:"فطين بيعمل: كاشير سريع، إدارة مخزون، تقارير مبيعات، محاسبة كاملة، إدارة موظفين، وفواتير طباعة. كل حاجة في نظام واحد!"},
+        {keys:["باركود","سكان","barcode"], r:"آه، بيدعم الباركود كامل — سكان أو كتابة، وبيطبع بطاقات باركود للمنتجات 📦"},
+        {keys:["مخزن","جرد","توريد","منتجات"], r:"إدارة مخزون احترافية — بتتابع الكميات، تنبيهات النقص، الهالك، التوريد التلقائي، والجرد المفصل 📊"},
+        {keys:["تقارير","تقرير","احصائيات","إحصائيات"], r:"عندنا 12 نوع تقرير: مبيعات، مرتجعات، مخزون، أرباح، موردين، موظفين، ضرائب وأكتر!"},
+        {keys:["ضريبة","ضرايب","vat","فاتورة إلكترونية"], r:"فطين جاهز للضريبة المصرية 14% — بيعرض الرقم الضريبي على الفاتورة ومتوافق مع منظومة الفاتورة الإلكترونية ✅"},
+        {keys:["موبايل","تليفون","اندرويد","ايفون","فون"], r:"آه! فطين بيشتغل على الموبايل والتابلت واللابتوب — وتقدر تنزله كـ App مباشرة من المتصفح 📱"},
+        {keys:["واتساب","رقم","تواصل","اتصل"], r:"ابعتنا على الواتساب من الزر اللي فوق — هنرد عليك بسرعة! 💬"},
+        {keys:["دعم","مشكلة","مساعدة","خطأ","خطا"], r:"أي مشكلة؟ تواصل معانا على الواتساب وهنحلهالك في أسرع وقت 🔧"},
+        {keys:["كاشير","بيع","مبيعات"], r:"كاشير فطين سريع جداً — بتبيع بالباركود أو الاسم، وبتطبع الفاتورة على 58mm أو 80mm ⚡"},
+        {keys:["موظف","موظفين","فريق"], r:"بتقدر تضيف موظفين بصلاحيات مخصصة وتارجت شهري وتتابع أداء كل واحد 👥"},
+    ];
 
     function sendMessage(){
         const text=userInput.value.trim();
         if(!text) return;
         addMessage(text,'user');
         userInput.value='';
-        // typing indicator
         const typingEl=addMessage('...','bot typing');
         setTimeout(()=>{
             typingEl.remove();
-            let response=botResponses.default;
-            if(text.includes("سعر")||text.includes("كام")) response=botResponses["السعر"];
-            else if(text.includes("ميزة")||text.includes("بيعمل")) response=botResponses["المميزات"];
-            else if(text.includes("واتساب")||text.includes("رقم")) response=botResponses["واتساب"];
-            else if(text.includes("تجربة")||text.includes("اجرب")) response=botResponses["تجربة"];
+            const t=text.toLowerCase();
+            let response="شكراً لسؤالك! تواصل معانا على الواتساب وهنجاوب على كل أسئلتك 💬 أو اسأل عن: السعر، المميزات، الباركود، التقارير، الموبايل...";
+            for(const item of botResponses){
+                if(item.keys.some(k=>t.includes(k))){response=item.r;break;}
+            }
             addMessage(response,'bot');
         },700);
     }

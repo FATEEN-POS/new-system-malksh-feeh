@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fateen POS - تسجيل الدخول</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -288,8 +288,56 @@
         .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fateen OS">
+    <meta name="theme-color" content="#00f2fe">
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
 
     <!-- SPLASH -->
     <div id="splash">
@@ -361,12 +409,15 @@
 
         </div>
 
-        <div style="text-align:center;margin-bottom:8px;display:flex;flex-direction:column;align-items:center;gap:10px;">
-            <a href="guide.html" style="color:var(--accent);font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--accent);padding:8px 20px;border-radius:20px;">
-                📖 دليل الاستخدام
+        <div style="text-align:center;margin-bottom:12px;display:flex;flex-direction:row;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;">
+            <a href="guide.html" style="color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--accent);padding:8px 16px;border-radius:20px;">
+                📖 الدليل
             </a>
-            <a href="https://wa.me/201273929303" target="_blank" style="color:#25d366;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                💬 نسيت كود المتجر أو إنشاء حساب؟ تواصل معنا
+            <a href="about.html" style="color:var(--text);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);padding:8px 16px;border-radius:20px;">
+                📞 تواصل معنا
+            </a>
+            <a href="https://wa.me/201273929303" target="_blank" style="color:#25d366;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:#0a2e1a;border:1px solid #25d366;padding:8px 16px;border-radius:20px;">
+                💬 واتساب
             </a>
         </div>
         <div class="footer-text">جميع الحقوق محفوظة &copy; 2026 Fateen POS</div>
@@ -408,6 +459,17 @@
 
         // ======= SPLASH =======
         async function loadSplash() {
+            // لو عنده session صالحة يروح مباشرة
+            if(window._fateenAuth){
+                const s=window._fateenAuth.getSession();
+                if(s&&s.store_key){
+                    if(s.userRole==='developer') location.replace('developer.html');
+                    else if(s.userRole==='marketer') location.replace('marketer.html');
+                    else if(s.userRole==='manager') location.replace('manager.html');
+                    else location.replace('pos.html');
+                    return;
+                }
+            }
             const { data } = await _supabase.from('system_settings').select('value').eq('key', 'sys_version').single();
             if (data) document.getElementById('splash-version').innerText = data.value;
         }
@@ -476,6 +538,12 @@
             sessionStorage.setItem('userRole', user.role);
             sessionStorage.setItem('store_key', currentStore.store_key);
 
+            // حفظ الجلسة 8 ساعات
+            if(window._fateenAuth) window._fateenAuth.saveSession({
+                store_key: currentStore.store_key,
+                username: user.username,
+                userRole: user.role
+            });
             if (user.role === 'developer') location.href = 'developer.html';
             else if (user.role === 'marketer') location.href = 'marketer.html';
             else if (user.role === 'manager') location.href = 'manager.html';
@@ -494,6 +562,15 @@
         loadTheme();
         loadSplash();
         setTimeout(hideSplash, 2200);
+
+        // ===== PWA Service Worker =====
+        if('serviceWorker' in navigator){
+            navigator.serviceWorker.register('/sw.js').then(reg=>{
+                console.log('Fateen OS SW registered:', reg.scope);
+            }).catch(e=>{
+                console.log('SW registration failed:', e);
+            });
+        }
     </script>
 </body>
 </html>

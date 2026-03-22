@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>المحاسبة — Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -150,34 +150,105 @@
             .stats{grid-template-columns:repeat(2,1fr);}
             .stat p{font-size:16px;}
         }
+            .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
+        .sidebar-overlay.open{display:block;}
+        .sidebar{position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:600;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:-8px 0 40px rgba(0,0,0,0.4);}
+        .sidebar.open{right:0;}
+        .sidebar-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .sidebar-head-title{font-size:15px;font-weight:800;color:var(--accent);}
+        .sidebar-close{cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:4px;}
+        .sidebar-close:hover{color:var(--red);}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+        .sb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all 0.2s;text-decoration:none;user-select:none;}
+        .sb-item:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+        .sb-item .sb-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+        .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+        .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
+        .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
+        .sb-trigger:hover{border-color:var(--accent);}
     </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
+
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="main-sidebar">
+    <div class="sidebar-head">
+        <span class="sidebar-head-title">☰ القائمة</span>
+        <span class="sidebar-close" onclick="closeSidebar()">✕</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a class="sb-item" onclick="switchTab('overview');closeSidebar()"><span class="sb-icon">📊</span>نظرة عامة</a>
+        <a class="sb-item" onclick="switchTab('sales');closeSidebar()"><span class="sb-icon">💰</span>مبيعات</a>
+        <a class="sb-item" onclick="switchTab('sales-returns');closeSidebar()"><span class="sb-icon">↩️</span>مرتجع مبيعات</a>
+        <a class="sb-item" onclick="switchTab('purchases');closeSidebar()"><span class="sb-icon">🛒</span>مشتريات</a>
+        <a class="sb-item" onclick="switchTab('pur-returns');closeSidebar()"><span class="sb-icon">🔄</span>مرتجع مشتريات</a>
+        <a class="sb-item" onclick="switchTab('expenses');closeSidebar()"><span class="sb-icon">💸</span>مصروفات</a>
+        <a class="sb-item" onclick="switchTab('profit');closeSidebar()"><span class="sb-icon">📈</span>أرباح وخسائر</a>
+        <a class="sb-item" onclick="switchTab('statement');closeSidebar()"><span class="sb-icon">📋</span>كشف حساب</a>
+        <a class="sb-item" onclick="switchTab('tax');closeSidebar()"><span class="sb-icon">🧾</span>ضرائب</a>
+        <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
+        <a class="sb-item" onclick="location.href='manager.html'" style="color:var(--red);"><span class="sb-icon">⬅️</span>رجوع للمدير</a>
+    </nav>
+    <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
+</div>
+
 
 <div class="topbar">
     <div class="topbar-left">
+        <div class="sb-trigger" onclick="openSidebar()">☰</div>
         <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
         <img src="لوجو_فطين_ابيض.png" id="topbar-logo" style="height:30px;object-fit:contain;" onerror="this.style.display='none'">
         <div class="store-title" id="store-name-display">المحاسبة</div>
         <span class="version-chip" id="version-chip">V0.5</span>
     </div>
     <div class="topbar-right">
-        <button class="topbar-btn" onclick="doExport('excel')">📗 Excel</button>
-        <button class="topbar-btn" onclick="doExport('pdf')">📕 PDF</button>
         <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
     </div>
 </div>
 
-<!-- TABS -->
-<div class="tabs">
-    <div class="tab active"  onclick="switchTab('overview')">📊 نظرة عامة</div>
-    <div class="tab" onclick="switchTab('sales')">💰 مبيعات</div>
-    <div class="tab" onclick="switchTab('sales-returns')">↩️ مرتجع مبيعات</div>
-    <div class="tab" onclick="switchTab('purchases')">🛒 مشتريات</div>
-    <div class="tab" onclick="switchTab('pur-returns')">🔄 مرتجع مشتريات</div>
-    <div class="tab" onclick="switchTab('expenses')">💸 مصروفات</div>
-    <div class="tab" onclick="switchTab('profit')">📈 أرباح وخسائر</div>
-    <div class="tab" onclick="switchTab('statement')">📋 كشف حساب</div>
     <div class="tab" onclick="switchTab('tax')">🧾 ضرائب</div>
 </div>
 
@@ -569,6 +640,10 @@
     function monthStart(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1).toISOString().split('T')[0];}
 
     // THEME
+    function openSidebar(){document.getElementById('main-sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
+    function closeSidebar(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSidebar();});
+
     function toggleTheme(){
         const html=document.documentElement;
         const isLight=html.getAttribute('data-theme')==='light';

@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>الإعدادات - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -139,8 +139,50 @@
             .store-sub{display:none;}
         }
     </style>
+
+    <!-- FATEEN AUTH + OFFLINE -->
+    <script>
+    (function(){
+        const TIMEOUT_MS = 8*60*60*1000;
+        const PAGE = window.location.pathname.split('/').pop()||'index.html';
+        const PUBLIC = ['index.html','guide.html','about.html',''];
+        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
+        function getSession(){
+            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
+            if(!s)return null;
+            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
+            return s;}catch(e){return null;}
+        }
+        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
+        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
+        if(!PUBLIC.includes(PAGE)){
+            const s=getSession();
+            if(!s||!s.store_key){window.location.replace('index.html');return;}
+            sessionStorage.setItem('store_key',s.store_key);
+            sessionStorage.setItem('username',s.username);
+            sessionStorage.setItem('userRole',s.userRole);
+        }
+        window._fateenAuth={saveSession,getSession,clearSession};
+    })();
+    </script>
 </head>
 <body>
+<!-- OFFLINE BAR -->
+<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
+    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
+</div>
+<script>
+(function(){
+    function _updateNet(){
+        const b=document.getElementById('offline-bar');
+        if(b) b.style.display=navigator.onLine?'none':'block';
+    }
+    window.addEventListener('online',_updateNet);
+    window.addEventListener('offline',_updateNet);
+    document.addEventListener('DOMContentLoaded',_updateNet);
+    _updateNet();
+})();
+</script>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -166,7 +208,6 @@
         <button class="nav-btn" onclick="showSection('security',this)"><span class="nav-icon">🔐</span> الأمان والنسخ</button>
         <button class="nav-btn" onclick="showSection('permissions',this)"><span class="nav-icon">👥</span> الصلاحيات</button>
         <button class="nav-btn" onclick="showSection('invoice',this)"><span class="nav-icon">🧾</span> إعدادات الفاتورة</button>
-        <button class="nav-btn" onclick="showSection('shift',this)"><span class="nav-icon">🕐</span> إعدادات الوردية</button>
         <div class="sidebar-spacer"></div>
         <button class="nav-btn nav-btn-red" onclick="location.href='manager.html'"><span class="nav-icon">⬅️</span> خروج للإدارة</button>
     </div>
@@ -332,7 +373,7 @@
                 <div class="toggle-row">
                     <div class="toggle-row-info">
                         <span class="toggle-row-label">📊 إظهار إحصائيات المبيعات</span>
-                        <span class="toggle-row-sub">عرض إجمالي مبيعات اليوم في شاشة الموظف</span>
+                        <span class="toggle-row-sub">عرض إجمالي مبيعات اليوم وتفاصيل الفواتير في شاشة الموظف</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="perm-show-stats" checked>
@@ -443,8 +484,8 @@
             </div>
         </div>
 
-        <!-- ══════ 5. إعدادات الوردية ══════ -->
-        <div id="shift" class="section">
+        <!-- ══════ 5. إعدادات الوردية (مخفي) ══════ -->
+        <div id="shift" class="section" style="display:none!important;" hidden>
             <div class="page-header">
                 <h2>🕐 إعدادات الوردية</h2>
                 <p>تحديد أوقات الورديات وتنبيهات نهاية الدوام</p>
@@ -781,8 +822,7 @@
                 if(!confirm('تغيير كود المحل سيخرجك من النظام. هل أنت متأكد؟')) return;
                 await _supabase.from('stores').update({store_key:newKey}).eq('store_key',storeKey);
                 await _supabase.from('users').update({store_key:newKey}).eq('store_key',storeKey);
-                sessionStorage.clear();
-                location.href='index.html';
+                if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); location.href='index.html';
                 return;
             }
             showToast('تم تحديث بيانات الأمان بنجاح','success');
