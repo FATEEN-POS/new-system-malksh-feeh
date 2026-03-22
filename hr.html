@@ -284,7 +284,6 @@
         <div class="field-group"><label>الدور</label>
             <select id="add-role" class="text-input">
                 <option value="employee">موظف كاشير</option>
-                <option value="manager">مدير فرع</option>
                 <option value="inventory_manager">مدير مخزن</option>
                 <option value="accounts_manager">مدير حسابات</option>
             </select>
@@ -311,7 +310,6 @@
         <div class="field-group"><label>الدور</label>
             <select id="edit-role" class="text-input">
                 <option value="employee">موظف كاشير</option>
-                <option value="manager">مدير فرع</option>
                 <option value="inventory_manager">مدير مخزن</option>
                 <option value="accounts_manager">مدير حسابات</option>
             </select>
@@ -448,8 +446,13 @@
         const ph=document.getElementById("add-phone").value.trim();
         const sal=parseFloat(document.getElementById("add-salary").value)||0;
         const tgt=parseFloat(document.getElementById("add-target").value)||0;
-        if(!u)return toast("اسم المستخدم مطلوب","error");
-        if(!p||p.length<8)return toast("كلمة المرور اقل من 8 احرف","error");
+        if(!u) return toast("اسم المستخدم مطلوب","error");
+        if(!/^[a-zA-Z0-9_؀-ۿ]+$/.test(u)) return toast("اسم المستخدم: حروف وأرقام فقط بدون مسافات","error");
+        if(!p||p.length<8) return toast("كلمة المرور أقل من 8 أحرف","error");
+        if(!r) return toast("الدور مطلوب","error");
+        if(sal<0) return toast("المرتب لا يمكن أن يكون سالباً","error");
+        if(tgt<0) return toast("التارجت لا يمكن أن يكون سالباً","error");
+        if(r==="manager") return toast("لا يمكن إضافة مدير فرع من هنا","error");
         const{error}=await _sb.from("users").insert([{username:u,password:p,role:r,store_key:storeKey,full_name:fn||null,phone:ph||null,salary:sal,monthly_target:tgt}]);
         if(!error){toast("تم اضافة الموظف","success");closeModal("addEmpModal");loadAll();}
         else if(error.message.includes("duplicate"))toast("اسم المستخدم موجود بالفعل","error");
