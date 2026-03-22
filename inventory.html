@@ -1243,17 +1243,7 @@
             </table>
             <div class="footer">Fateen OS — تم الإنشاء: ${today}</div>
             <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
-            
-    <!-- OFFLINE REDIRECT -->
-    <script>
-    (function(){
-        window.addEventListener('offline', function(){
-            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
-            window.location.href = 'no-internet.html';
-        });
-    })();
-    </script>
-</body></html>`;
+            </body></html>`;
 
             const w=window.open('','_blank','width=1000,height=700');
             if(w){w.document.write(html);w.document.close();}
