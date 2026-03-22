@@ -449,7 +449,13 @@
     }
 
     function handleBarcode(code){
-        // بحث بالباركود
+        // لو مفتوحة جوه modal في pos.html - ابعت الباركود لـ parent
+        if(window.parent && window.parent !== window){
+            window.parent.postMessage({type:'barcode',value:code},'*');
+            setScanStatus('✅ تم إرسال الباركود',false);
+            return;
+        }
+        // بحث بالباركود (standalone mode)
         const product=allProducts.find(p=>p.barcode&&p.barcode===code);
         if(product){
             addToCart(product);

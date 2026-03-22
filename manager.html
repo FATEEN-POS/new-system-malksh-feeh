@@ -348,11 +348,10 @@
         <span class="sidebar-close" onclick="closeSidebar()">✕</span>
     </div>
     <nav class="sidebar-nav">
-        <a class="sb-item" onclick="scrollToSales();closeSidebar()"><span class="sb-icon">💰</span>مبيعات اليوم</a>
         <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>صفحة الكاشير</a>
         <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>إدارة التقارير</a>
         <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>إدارة المخزن</a>
-        <a class="sb-item" onclick="openUserModal();closeSidebar()"><span class="sb-icon">👥</span>إدارة الموظفين</a>
+        <a class="sb-item" onclick="location.href='hr.html'"><span class="sb-icon">👥</span>إدارة الموظفين</a>
         <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
         <a class="sb-item" onclick="location.href='guide.html'"><span class="sb-icon">📖</span>كيفية الاستخدام</a>
         <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
@@ -444,18 +443,6 @@
                     <tbody id="m-users-list"></tbody>
                 </table>
             </div>
-        </div>
-
-        <!-- Chart -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title">📊 آخر 7 أيام</h3>
-                <div style="display:flex; gap:6px;">
-                    <button id="m-chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:11px; padding:5px 12px;">💰 مبيعات</button>
-                    <button id="m-chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:11px; padding:5px 12px;">↩ مرتجع</button>
-                </div>
-            </div>
-            <canvas id="m-sales-chart" height="120"></canvas>
         </div>
 
         <!-- النواقص -->
@@ -557,37 +544,26 @@
             </div>
         </div>
 
-        <!-- الموظفين + النواقص (جنب بجنب) -->
-        <div class="d-two-col">
-
-<!-- النواقص -->
-            <div class="section-card" style="margin-top:0;">
-                <div class="section-header">
-                    <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن (≤ 5)</h3>
-                </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>اسم المنتج</th><th>الكمية المتبقية</th></tr></thead>
-                        <tbody id="low-stock-list"><tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:16px;">جاري التحميل...</td></tr></tbody>
-                    </table>
-                </div>
+        <!-- نواقص بالمخزن -->
+        <div class="section-card" id="low-stock-section">
+            <div class="section-header">
+                <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن (≤ 5)</h3>
+                <select class="select-input" onchange="filterLowStock(this.value)" style="font-size:12px;padding:5px 10px;">
+                    <option value="5">≤ 5</option>
+                    <option value="10">≤ 10</option>
+                    <option value="0">نفد فقط</option>
+                </select>
             </div>
-
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>اسم المنتج</th><th>القسم</th><th>الكمية المتبقية</th></tr></thead>
+                    <tbody id="low-stock-list"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Chart -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title">📊 مبيعات آخر 7 أيام</h3>
-                <div style="display:flex; gap:8px;">
-                    <button id="chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:12px; padding:6px 16px;">💰 مبيعات</button>
-                    <button id="chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:12px; padding:6px 16px;">↩ مرتجع</button>
-                </div>
-            </div>
-            <canvas id="sales-chart" height="80"></canvas>
-        </div>
-
-        <!-- Feedback -->
+                <!-- Feedback -->
         <div class="section-card">
             <div class="section-header">
                 <h3 class="section-title">📩 ملاحظة للمطور</h3>
