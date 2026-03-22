@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>تواصل معانا - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -218,7 +218,15 @@
                 <span class="chat-header-status"><span class="dot-pulse"></span> متصل</span>
             </div>
             <div class="chat-messages" id="chat-content">
-                <div class="msg bot">مرحباً بك! 👋 أنا مساعدك الذكي، كيف يمكنني مساعدتك اليوم بخصوص نظام Fateen؟</div>
+                <div class="msg bot">مرحباً بك! 👋 أنا مساعد فطين الذكي.<br><br>
+اسألني عن أي حاجة، مثلاً:<br>
+📌 <b>السعر</b> — بكام الاشتراك؟<br>
+📌 <b>تجريبي</b> — هل في نسخة مجانية؟<br>
+📌 <b>مميزات</b> — النظام بيعمل إيه؟<br>
+📌 <b>باركود</b> — بيدعم الباركود؟<br>
+📌 <b>موبايل</b> — بيشتغل على التليفون؟<br>
+📌 <b>تقارير</b> — إيه أنواع التقارير؟<br>
+📌 <b>واتساب</b> — رقم التواصل</div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="user-input" placeholder="اسأل المساعد الذكي..." onkeydown="if(event.key==='Enter') sendMessage()">
@@ -300,6 +308,21 @@
         chatContent.scrollTop=chatContent.scrollHeight;
         return div;
     }
+</script>
+<div id="_sb" style="position:fixed;bottom:10px;right:12px;z-index:9999;background:var(--surface,#111);border:1px solid var(--border,#252525);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;font-family:Cairo,sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><span id="_sd" style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00e676;"></span><span id="_st">متصل</span></div>
+<script>
+(function(){
+  function _u(){
+    var d=document.getElementById('_sd'),t=document.getElementById('_st');
+    if(!d||!t)return;
+    if(navigator.onLine){d.style.background='#00e676';t.innerText='متصل';}
+    else{d.style.background='#ff4d4d';t.innerText='لا يوجد نت';}
+  }
+  window.addEventListener('online',_u);
+  window.addEventListener('offline',_u);
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',_u);}
+  else{_u();}
+})();
 </script>
 </body>
 </html>

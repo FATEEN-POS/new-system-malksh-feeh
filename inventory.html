@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>إدارة المخزن - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -195,19 +195,6 @@
 </div>
 
 <!-- كل الأزرار جنب بعض -->
-<div class="action-bar">
-    <button class="btn btn-accent" onclick="openAddModal()">✨ صنف جديد</button>
-    <button class="btn btn-green"  onclick="openOrderModal()">📦 توريد فاتورة</button>
-    <button class="btn btn-orange" onclick="openExportChoice()">📊 جرد مفصل</button>
-    <button class="btn btn-purple" onclick="exportBackup()">💾 Back-Up</button>
-    <button class="btn" id="fav-filter-btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);" onclick="toggleFavFilter()">⭐ المفضلة</button>
-    <button class="btn btn-white"  onclick="openImportChoice()">📥 Back-In</button>
-    <button class="btn" style="background:var(--red-dim);border:1px solid var(--red);color:var(--red);" onclick="openDeficitModal()">⚠️ عجز</button>
-    <button class="btn" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);" onclick="openSettlementModal()">🔧 تسوية</button>
-    <button class="btn" style="background:var(--orange-dim);border:1px solid var(--orange);color:var(--orange);" onclick="openDiscountModal()">🏷️ خصومات</button>
-    <button class="btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);" onclick="openTransferModal()">🔄 تحويل <span style="font-size:9px;background:var(--orange);color:#000;padding:1px 5px;border-radius:4px;margin-right:2px;">تجريبي</span></button>
-</div>
-
 <div class="page">
     <div class="search-wrap">
         <span class="icon">🔍</span>
@@ -934,7 +921,7 @@
             `سعر: ${p.price} ج.م | مخزون: ${p.stock} ${p.unit||'قطعة'} | ${p.category||'بدون قسم'}`;
         document.getElementById('productActionsModal').classList.add('open');
     }
-    function pa_edit()   { closeModal('productActionsModal'); editProduct(_paProduct); }
+    function pa_edit()   { closeModal('productActionsModal'); openEditModal(_paProduct.id); }
     function pa_supply() { closeModal('productActionsModal'); addToOrderFromPA(_paProduct); }
     function pa_wasted() { closeModal('productActionsModal'); openWastedModal(_paProduct.id, _paProduct.product_name, _paProduct.stock); }
     function pa_discount(){ closeModal('productActionsModal'); openDiscountModal(_paProduct.id); }
@@ -1243,7 +1230,22 @@
             </table>
             <div class="footer">Fateen OS — تم الإنشاء: ${today}</div>
             <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
-            </body></html>`;
+            <div id="_sb" style="position:fixed;bottom:10px;right:12px;z-index:9999;background:var(--surface,#111);border:1px solid var(--border,#252525);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;font-family:Cairo,sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><span id="_sd" style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00e676;"></span><span id="_st">متصل</span></div>
+<script>
+(function(){
+  function _u(){
+    var d=document.getElementById('_sd'),t=document.getElementById('_st');
+    if(!d||!t)return;
+    if(navigator.onLine){d.style.background='#00e676';t.innerText='متصل';}
+    else{d.style.background='#ff4d4d';t.innerText='لا يوجد نت';}
+  }
+  window.addEventListener('online',_u);
+  window.addEventListener('offline',_u);
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',_u);}
+  else{_u();}
+})();
+</script>
+</body></html>`;
 
             const w=window.open('','_blank','width=1000,height=700');
             if(w){w.document.write(html);w.document.close();}
