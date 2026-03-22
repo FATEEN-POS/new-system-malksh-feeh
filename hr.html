@@ -284,12 +284,13 @@
         <div class="field-group"><label>الدور</label>
             <select id="add-role" class="text-input">
                 <option value="employee">موظف كاشير</option>
+                <option value="manager">مدير فرع</option>
                 <option value="inventory_manager">مدير مخزن</option>
                 <option value="accounts_manager">مدير حسابات</option>
             </select>
         </div>
-        <div class="field-group"><label>الاسم الكامل (اختياري)</label><input type="text" id="add-fullname" class="text-input"></div>
-        <div class="field-group"><label>رقم الهاتف (اختياري)</label><input type="text" id="add-phone" class="text-input"></div>
+        <div class="field-group"><label>الاسم الكامل *</label><input type="text" id="add-fullname" class="text-input" required placeholder="الاسم الكامل"></div>
+        <div class="field-group"><label>رقم الهاتف *</label><input type="text" id="add-phone" class="text-input" required placeholder="01xxxxxxxxx"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="field-group"><label>المرتب الاساسي (ج.م)</label><input type="number" id="add-salary" class="text-input" value="0"></div>
             <div class="field-group"><label>التارجت الشهري (ج.م)</label><input type="number" id="add-target" class="text-input" value="0"></div>
@@ -310,6 +311,7 @@
         <div class="field-group"><label>الدور</label>
             <select id="edit-role" class="text-input">
                 <option value="employee">موظف كاشير</option>
+                <option value="manager">مدير فرع</option>
                 <option value="inventory_manager">مدير مخزن</option>
                 <option value="accounts_manager">مدير حسابات</option>
             </select>
@@ -444,16 +446,22 @@
         const r=document.getElementById("add-role").value;
         const fn=document.getElementById("add-fullname").value.trim();
         const ph=document.getElementById("add-phone").value.trim();
-        const sal=parseFloat(document.getElementById("add-salary").value)||0;
-        const tgt=parseFloat(document.getElementById("add-target").value)||0;
-        if(!u) return toast("اسم المستخدم مطلوب","error");
-        if(!/^[a-zA-Z0-9_؀-ۿ]+$/.test(u)) return toast("اسم المستخدم: حروف وأرقام فقط بدون مسافات","error");
-        if(!p||p.length<8) return toast("كلمة المرور أقل من 8 أحرف","error");
-        if(!r) return toast("الدور مطلوب","error");
-        if(sal<0) return toast("المرتب لا يمكن أن يكون سالباً","error");
-        if(tgt<0) return toast("التارجت لا يمكن أن يكون سالباً","error");
-        if(r==="manager") return toast("لا يمكن إضافة مدير فرع من هنا","error");
-        const{error}=await _sb.from("users").insert([{username:u,password:p,role:r,store_key:storeKey,full_name:fn||null,phone:ph||null,salary:sal,monthly_target:tgt}]);
+        const sal=parseFloat(document.getElementById("add-salary").value);
+        const tgt=parseFloat(document.getElementById("add-target").value);
+
+        // Validate all fields
+        if(!u)                        return toast("اسم المستخدم مطلوب","error");
+        if(!/^[a-zA-Z0-9_؀-ۿ]+$/.test(u)) return toast("اسم المستخدم: حروف وأرقام بدون مسافات","error");
+        if(!p||p.length<8)            return toast("كلمة المرور 8 أحرف على الأقل","error");
+        if(!r)                        return toast("الدور مطلوب","error");
+        if(r==="manager")             return toast("لا يمكن إضافة مدير فرع من هنا","error");
+        if(!fn)                       return toast("الاسم الكامل مطلوب","error");
+        if(!ph)                       return toast("رقم الهاتف مطلوب","error");
+        if(!/^01[0-9]{9}$/.test(ph)) return toast("رقم الهاتف غير صحيح (01xxxxxxxxx)","error");
+        if(isNaN(sal)||sal<0)         return toast("المرتب الأساسي مطلوب ويجب أن يكون صحيحاً","error");
+        if(isNaN(tgt)||tgt<0)         return toast("التارجت الشهري مطلوب ويجب أن يكون صحيحاً","error");
+
+        const{error}=await _sb.from("users").insert([{username:u,password:p,role:r,store_key:storeKey,full_name:fn,phone:ph,salary:sal,monthly_target:tgt}]);
         if(!error){toast("تم اضافة الموظف","success");closeModal("addEmpModal");loadAll();}
         else if(error.message.includes("duplicate"))toast("اسم المستخدم موجود بالفعل","error");
         else toast("خطا: "+error.message,"error");
