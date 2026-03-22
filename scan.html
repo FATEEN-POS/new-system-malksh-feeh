@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>كاشير موبايل — Fateen OS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
@@ -657,53 +657,78 @@
         @media print{@page{margin:0;size:${paperW} auto;}body{padding:8px;}}</style></head><body>
         ${allCopies}
         
-    <!-- NET STATUS + OFFLINE REDIRECT -->
+    <!-- FATEEN NET STATUS -->
     <script>
     (function(){
-        // 1. إلغاء الزوم
-        var vp = document.querySelector('meta[name=viewport]');
-        if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        // No-zoom
+        var vp=document.querySelector('meta[name="viewport"]');
+        if(vp) vp.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';
 
-        // 2. Status bar
-        var bar = document.createElement('div');
-        bar.id = '_net_bar';
-        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;height:28px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;transition:background .3s,color .3s;';
-        var dot = document.createElement('span');
-        dot.id = '_net_dot';
-        dot.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;';
-        var txt = document.createElement('span');
-        txt.id = '_net_txt';
-        bar.appendChild(dot);
-        bar.appendChild(txt);
-        document.body.appendChild(bar);
-
-        function setOnline(){
-            bar.style.background = 'rgba(0,230,118,0.15)';
-            bar.style.borderTop = '1px solid rgba(0,230,118,0.3)';
-            bar.style.color = '#00e676';
-            dot.style.background = '#00e676';
-            txt.innerText = 'الإنترنت متصل';
+        // Status bar
+        function mkBar(){
+            if(document.getElementById('_nb')) return;
+            var b=document.createElement('div');
+            b.id='_nb';
+            b.style.position='fixed';
+            b.style.bottom='0';
+            b.style.left='0';
+            b.style.right='0';
+            b.style.zIndex='99999';
+            b.style.height='24px';
+            b.style.display='flex';
+            b.style.alignItems='center';
+            b.style.justifyContent='center';
+            b.style.gap='7px';
+            b.style.fontFamily='Cairo,sans-serif';
+            b.style.fontSize='11px';
+            b.style.fontWeight='700';
+            b.style.transition='background 0.3s';
+            var d=document.createElement('span');
+            d.id='_nd';
+            d.style.width='7px';
+            d.style.height='7px';
+            d.style.borderRadius='50%';
+            d.style.display='inline-block';
+            var t=document.createElement('span');
+            t.id='_nt';
+            b.appendChild(d);
+            b.appendChild(t);
+            document.body.appendChild(b);
+            upd();
         }
-        function setOffline(){
-            bar.style.background = 'rgba(255,77,77,0.15)';
-            bar.style.borderTop = '1px solid rgba(255,77,77,0.3)';
-            bar.style.color = '#ff4d4d';
-            dot.style.background = '#ff4d4d';
-            txt.innerText = 'لا يوجد إنترنت';
+        function upd(){
+            var b=document.getElementById('_nb');
+            var d=document.getElementById('_nd');
+            var t=document.getElementById('_nt');
+            if(!b) return;
+            if(navigator.onLine){
+                b.style.background='rgba(0,230,118,0.1)';
+                b.style.borderTop='1px solid rgba(0,230,118,0.2)';
+                b.style.color='#00e676';
+                if(d) d.style.background='#00e676';
+                if(t) t.innerText='الإنترنت متصل';
+            } else {
+                b.style.background='rgba(255,77,77,0.1)';
+                b.style.borderTop='1px solid rgba(255,77,77,0.2)';
+                b.style.color='#ff4d4d';
+                if(d) d.style.background='#ff4d4d';
+                if(t) t.innerText='لا يوجد إنترنت';
+            }
         }
-
-        // 3. Redirect to no-internet
-        function goOffline(){
-            setOffline();
-            sessionStorage.setItem('_from_page', window.location.pathname.split('/').pop()||'index.html');
+        function goOff(){
+            upd();
+            sessionStorage.setItem('_fp', (window.location.pathname.split('/').pop()||'index.html'));
             setTimeout(function(){
-                if(!navigator.onLine) window.location.href = 'no-internet.html';
-            }, 2000);
+                if(!navigator.onLine) window.location.href='no-internet.html';
+            },2000);
         }
-
-        navigator.onLine ? setOnline() : setOffline();
-        window.addEventListener('online',  function(){ setOnline(); });
-        window.addEventListener('offline', function(){ goOffline(); });
+        if(document.readyState==='loading'){
+            document.addEventListener('DOMContentLoaded', mkBar);
+        } else {
+            mkBar();
+        }
+        window.addEventListener('online', upd);
+        window.addEventListener('offline', goOff);
     })();
     </script>
 </body></html>`;
