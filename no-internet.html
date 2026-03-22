@@ -400,7 +400,7 @@
             banner.style.display = 'block';
             // redirect
             setTimeout(()=>{
-                const target = sessionStorage.getItem('_from_page') || sessionStorage.getItem('no_internet_from') || 'index.html';
+                const target = sessionStorage.getItem('no_internet_from') || 'index.html';
                 location.href = target;
             }, 1500);
         } else {
@@ -468,7 +468,7 @@
     // Check on load
     if(navigator.onLine){
         // Already online - go back
-        location.href = sessionStorage.getItem('_from_page') || sessionStorage.getItem('no_internet_from') || 'index.html';
+        location.href = sessionStorage.getItem('no_internet_from') || 'index.html';
     } else {
         updateStatus(false);
         startAutoRetry();

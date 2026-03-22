@@ -14,7 +14,6 @@ const STATIC_ASSETS = [
   '/scan.html',
   '/about.html',
   '/guide.html',
-  '/no-internet.html',
   'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
@@ -68,9 +67,7 @@ self.addEventListener('fetch', event => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      }).catch(() =>
-        caches.match(event.request).then(cached => cached || caches.match('/no-internet.html'))
-      )
+      }).catch(() => caches.match(event.request))
     );
     return;
   }
