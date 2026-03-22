@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لا يوجد اتصال - Fateen OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080808;
+            --surface: #111111;
+            --surface2: #181818;
+            --accent: #00f2fe;
+            --accent-dim: rgba(0,242,254,0.1);
+            --border: #252525;
+            --text: #f0f0f0;
+            --text-muted: #777;
+            --red: #ff4d4d;
+            --red-dim: rgba(255,77,77,0.1);
+            --green: #00e676;
+            --green-dim: rgba(0,230,118,0.1);
+            --orange: #ffa040;
+            --shadow: 0 4px 24px rgba(0,0,0,0.5);
+            --radius: 14px;
+            --radius-sm: 9px;
+        }
+        [data-theme="light"] {
+            --bg: #f0ede5;
+            --surface: #ffffff;
+            --surface2: #f5f2eb;
+            --accent: #004643;
+            --accent-dim: rgba(0,70,67,0.08);
+            --border: #ddd8cf;
+            --text: #1a1a1a;
+            --text-muted: #888;
+            --red: #c0392b;
+            --red-dim: rgba(192,57,43,0.08);
+            --green: #00875a;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            transition: background .25s, color .25s;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* الخلفية المتحركة */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* الأيقونة المتحركة */
+        .icon-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid var(--red);
+            opacity: 0.3;
+            animation: ring-pulse 2s ease-in-out infinite;
+        }
+        .icon-ring:nth-child(2) { animation-delay: .4s; transform: scale(1.15); }
+        .icon-ring:nth-child(3) { animation-delay: .8s; transform: scale(1.3); }
+
+        @keyframes ring-pulse {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.05); }
+        }
+        .icon-ring:nth-child(2) { animation-delay: .4s; }
+        .icon-ring:nth-child(3) { animation-delay: .8s; }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--red-dim);
+            border: 2px solid var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            animation: shake 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes shake {
+            0%, 85%, 100% { transform: translateX(0) rotate(0deg); }
+            87% { transform: translateX(-4px) rotate(-3deg); }
+            89% { transform: translateX(4px) rotate(3deg); }
+            91% { transform: translateX(-3px) rotate(-2deg); }
+            93% { transform: translateX(3px) rotate(2deg); }
+            95% { transform: translateX(0) rotate(0deg); }
+        }
+
+        /* البطاقة الرئيسية */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            width: 100%;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--text);
+            margin: 0 0 8px;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0 0 20px;
+            line-height: 1.7;
+        }
+
+        /* Status indicator */
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--red-dim);
+            border: 1px solid var(--red);
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--red);
+            animation: blink 1.2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .status-text {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--red);
+        }
+
+        /* الزر */
+        .btn-retry {
+            width: 100%;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity .2s, transform .15s;
+        }
+        .btn-retry:hover { opacity: .85; transform: translateY(-1px); }
+        .btn-retry:active { transform: translateY(0); }
+        .btn-retry:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+        /* Tips */
+        .tips-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            width: 100%;
+        }
+
+        .tips-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tip-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .tip-item:last-child { border-bottom: none; }
+        .tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+        /* Counter */
+        .retry-counter {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Connected state */
+        .connected-banner {
+            display: none;
+            background: var(--green-dim);
+            border: 1px solid var(--green);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--green);
+            width: 100%;
+            animation: slideIn .3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Theme toggle */
+        .theme-btn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        /* Logo */
+        .logo {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--accent);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 20px 14px; }
+            .card { padding: 20px 16px; }
+            .card-title { font-size: 19px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+
+<div class="container">
+
+    <div class="logo">Fateen OS</div>
+
+    <!-- أيقونة متحركة -->
+    <div class="icon-wrap">
+        <div class="icon-ring"></div>
+        <div class="icon-ring"></div>
+        <div class="icon-ring"></div>
+        <div class="icon-circle" id="main-icon">📡</div>
+    </div>
+
+    <!-- بانر الاتصال -->
+    <div class="connected-banner" id="connected-banner">
+        ✅ تم استعادة الاتصال! جاري التحويل...
+    </div>
+
+    <!-- البطاقة الرئيسية -->
+    <div class="card">
+        <div class="card-title" id="main-title">لا يوجد اتصال بالإنترنت</div>
+        <div class="card-subtitle" id="main-subtitle">
+            النظام يحتاج اتصال بالإنترنت للعمل<br>تأكد من الواي فاي أو الداتا وحاول مرة أخرى
+        </div>
+
+        <div class="status-row">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-text" id="status-text">غير متصل</span>
+        </div>
+
+        <button class="btn-retry" id="retry-btn" onclick="retryConnection()">
+            <span id="retry-icon">🔄</span>
+            <span id="retry-text">إعادة المحاولة</span>
+        </button>
+
+        <div class="retry-counter" id="retry-counter" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- نصائح -->
+    <div class="tips-card">
+        <div class="tips-title">جرب الحلول دي</div>
+        <div class="tip-item"><span class="tip-icon">📶</span><span>تأكد إن الواي فاي شغال وإنت متصل بيه</span></div>
+        <div class="tip-item"><span class="tip-icon">📱</span><span>جرب تشغّل الداتا على التليفون</span></div>
+        <div class="tip-item"><span class="tip-icon">🔌</span><span>أعد تشغيل الراوتر لو الواي فاي مش شغال</span></div>
+        <div class="tip-item"><span class="tip-icon">✈️</span><span>تأكد إن وضع الطيران مش مفعّل</span></div>
+    </div>
+
+</div>
+
+<script>
+    // Theme
+    function toggleTheme(){
+        const h=document.documentElement;
+        const isLight=h.getAttribute('data-theme')==='light';
+        h.setAttribute('data-theme',isLight?'':'light');
+        localStorage.setItem('fateen_theme',isLight?'dark':'light');
+        document.getElementById('theme-btn').innerText=isLight?'🌙':'☀️';
+    }
+    (function(){
+        const s=localStorage.getItem('fateen_theme');
+        if(s==='light'){
+            document.documentElement.setAttribute('data-theme','light');
+            document.getElementById('theme-btn').innerText='☀️';
+        }
+    })();
+
+    // الصفحة اللي جاي منها
+    const prevPage = document.referrer || sessionStorage.getItem('last_page') || 'index.html';
+
+    // تحديث الـ status
+    function updateStatus(online){
+        const dot = document.getElementById('status-dot');
+        const txt = document.getElementById('status-text');
+        const icon = document.getElementById('main-icon');
+        const title = document.getElementById('main-title');
+        const subtitle = document.getElementById('main-subtitle');
+        const banner = document.getElementById('connected-banner');
+
+        if(online){
+            dot.style.background = 'var(--green)';
+            dot.style.animation = 'none';
+            txt.style.color = 'var(--green)';
+            txt.innerText = 'تم الاتصال ✅';
+            icon.innerText = '✅';
+            icon.style.background = 'var(--green-dim)';
+            icon.style.borderColor = 'var(--green)';
+            title.innerText = 'تم استعادة الاتصال!';
+            subtitle.innerText = 'هيتحولك للصفحة خلال ثانية...';
+            banner.style.display = 'block';
+            // redirect
+            setTimeout(()=>{
+                const target = sessionStorage.getItem('no_internet_from') || 'index.html';
+                location.href = target;
+            }, 1500);
+        } else {
+            dot.style.background = 'var(--red)';
+            dot.style.animation = '';
+            txt.style.color = 'var(--red)';
+            txt.innerText = 'غير متصل';
+        }
+    }
+
+    // إعادة المحاولة
+    let retryCount = 0;
+    let autoRetryTimer = null;
+    let countdown = 30;
+
+    function retryConnection(){
+        const btn = document.getElementById('retry-btn');
+        const icon = document.getElementById('retry-icon');
+        const text = document.getElementById('retry-text');
+
+        btn.disabled = true;
+        icon.style.animation = 'spin .6s linear infinite';
+        icon.style.display = 'inline-block';
+        text.innerText = 'جاري الفحص...';
+
+        // Add spin animation
+        const style = document.createElement('style');
+        style.innerHTML = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}';
+        document.head.appendChild(style);
+
+        setTimeout(()=>{
+            if(navigator.onLine){
+                updateStatus(true);
+            } else {
+                retryCount++;
+                btn.disabled = false;
+                icon.style.animation = '';
+                text.innerText = 'إعادة المحاولة';
+                document.getElementById('retry-counter').innerText =
+                    `محاولة ${retryCount} — سيتم الفحص تلقائياً بعد 30 ثانية`;
+                startAutoRetry();
+            }
+        }, 1000);
+    }
+
+    function startAutoRetry(){
+        clearInterval(autoRetryTimer);
+        countdown = 30;
+        autoRetryTimer = setInterval(()=>{
+            countdown--;
+            const el = document.getElementById('retry-counter');
+            if(countdown <= 0){
+                clearInterval(autoRetryTimer);
+                retryConnection();
+            } else {
+                if(el) el.innerText = `محاولة ${retryCount} — فحص تلقائي بعد ${countdown} ثانية`;
+            }
+        }, 1000);
+    }
+
+    // Listen for online/offline
+    window.addEventListener('online', () => updateStatus(true));
+    window.addEventListener('offline', () => updateStatus(false));
+
+    // Check on load
+    if(navigator.onLine){
+        // Already online - go back
+        location.href = sessionStorage.getItem('no_internet_from') || 'index.html';
+    } else {
+        updateStatus(false);
+        startAutoRetry();
+    }
+</script>
+</body>
+</html>
