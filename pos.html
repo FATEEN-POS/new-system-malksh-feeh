@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>كاشير - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -249,55 +249,12 @@
         .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
         .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
     </style>
-
-    <!-- FATEEN AUTH + OFFLINE -->
-    <script>
-    (function(){
-        const TIMEOUT_MS = 8*60*60*1000;
-        const PAGE = window.location.pathname.split('/').pop()||'index.html';
-        const PUBLIC = ['index.html','guide.html','about.html',''];
-        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
-        function getSession(){
-            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
-            if(!s)return null;
-            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
-            return s;}catch(e){return null;}
-        }
-        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
-        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
-        if(!PUBLIC.includes(PAGE)){
-            const s=getSession();
-            if(!s||!s.store_key){window.location.replace('index.html');return;}
-            sessionStorage.setItem('store_key',s.store_key);
-            sessionStorage.setItem('username',s.username);
-            sessionStorage.setItem('userRole',s.userRole);
-        }
-        window._fateenAuth={saveSession,getSession,clearSession};
-    })();
-    </script>
 </head>
 <body>
-<!-- STATUS BOX -->
-<div id="sys-status-box" style="position:fixed;bottom:12px;left:12px;z-index:8000;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow);">
-    <span id="sys-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span>
-    <span id="sys-status-text">النظام يعمل بشكل جيد</span>
+<div id="sys-status" style="position:fixed;bottom:12px;right:12px;z-index:8000;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow);">
+    <span id="sys-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0;"></span>
+    <span id="sys-txt">متصل</span>
 </div>
-<!-- OFFLINE BAR -->
-<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
-    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
-</div>
-<script>
-(function(){
-    function _updateNet(){
-        const b=document.getElementById('offline-bar');
-        if(b) b.style.display=navigator.onLine?'none':'block';
-    }
-    window.addEventListener('online',_updateNet);
-    window.addEventListener('offline',_updateNet);
-    document.addEventListener('DOMContentLoaded',_updateNet);
-    _updateNet();
-})();
-</script>
 
 <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
 <div class="sidebar" id="main-sidebar">
@@ -329,9 +286,10 @@
     <span class="version-chip" id="version-chip">V0.5</span>
 
     <!-- بحث موحد: باركود أو اسم -->
-    <div class="header-search">
+    <div class="header-search" style="display:flex;align-items:center;gap:6px;">
         <span style="color:var(--text-muted);">🔍</span>
-        <input type="text" id="p-search" placeholder="ابحث بالاسم أو الباركود..." oninput="handleSearchInput()" autocomplete="off">
+        <input type="text" id="p-search" placeholder="ابحث بالاسم أو الباركود..." oninput="handleSearchInput()" autocomplete="off" style="flex:1;">
+        <button onclick="location.href='scan.html'" title="مسح باركود بالكاميرا" style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:16px;flex-shrink:0;line-height:1;">📷</button>
     </div>
 
     <div class="target-box">
@@ -393,9 +351,16 @@
                 <input type="checkbox" id="print-check" checked onclick="event.stopPropagation()">
                 <label for="print-check">🖨️ طباعة الفاتورة</label>
             </div>
+            <!-- ملاحظة الفاتورة - لا تُحفظ في الداتابيز -->
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:var(--surface2);border-radius:var(--radius-sm);padding:7px 10px;border:1px solid var(--border);">
-                <span style="font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap;">📝</span>
-                <input type="text" id="sale-notes-input" placeholder="ملاحظة تظهر على الفاتورة..." style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
+                <span style="font-size:13px;white-space:nowrap;">📝</span>
+                <input type="text" id="receipt-note" placeholder="ملاحظة على الفاتورة..." maxlength="100"
+                    style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:var(--surface2);border-radius:var(--radius-sm);padding:7px 10px;border:1px solid var(--border);">
+                <span style="font-size:13px;white-space:nowrap;">📝</span>
+                <input type="text" id="sale-note" placeholder="ملاحظة للفاتورة..." maxlength="120"
+                    style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
             </div>
             <button class="btn-checkout" onclick="checkout()">✅ إتمام البيع (F2)</button>
         </div>
@@ -505,11 +470,7 @@
     // ===== INIT =====
     async function init(){
         if(!storeKey) return location.href='index.html';
-        // موبايل → scan.html
-        const isMobile=/Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            || (navigator.userAgent.includes('Mobile'))
-            || window.innerWidth<=768;
-        if(isMobile){ location.replace('scan.html'); return; }
+        // الكاشير يشتغل على كل الأجهزة
         loadTheme();
         try{
             const{data:store}=await _supabase.from('stores').select('*').eq('store_key',storeKey).single();
@@ -747,11 +708,10 @@
         const discount=getDiscount(subtotal);
         const total=subtotal-discount;
         try{
-            const _noteVal=document.getElementById('sale-notes-input')?.value?.trim()||'';
             const slimItems=cart.map(i=>({i:i.id,n:i.product_name,p:i.price,q:i.qty}));
             const{data:saleData,error}=await _supabase.from('sales').insert([{
                 store_key:storeKey,items:slimItems,total_amount:total,
-                payment_method:paymentMethod,seller_name:currentUser,type:'sale',notes:_noteVal
+                payment_method:paymentMethod,seller_name:currentUser,type:'sale'
             }]).select().single();
             if(error) throw error;
             // تحديث المخزون بـ Promise.all بدل sequential loop
@@ -761,10 +721,7 @@
                 await _supabase.from('products').update({stock:Math.max(0,currentStock-item.qty)}).eq('id',item.id);
             }));
             shiftSalesData.push({...saleData,type:'sale'});
-            const _sd=document.createElement('div');
-            _sd.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9998;background:rgba(0,0,0,0.6);';
-            _sd.innerHTML=`<div style="background:var(--surface);border:2px solid var(--green);border-radius:20px;padding:32px 40px;text-align:center;"><div style="font-size:48px;margin-bottom:8px;">✅</div><div style="font-size:18px;font-weight:900;color:var(--green);">تم البيع بنجاح</div><div style="font-size:14px;color:var(--text-muted);margin-top:6px;">${total.toLocaleString()} ج.م</div></div>`;
-            document.body.appendChild(_sd);setTimeout(()=>_sd.remove(),1800);
+            showToast('تم البيع بنجاح ✅','success');
             if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total,discount,subtotal);
             updateLocalStock(cart);
             cart=[];
@@ -789,6 +746,7 @@
         const showTax=s.invoice_show_tax!==false;
         const welcome=s.invoice_welcome||'';
         const footer=s.invoice_footer||'شكراً لزيارتكم 🌟';
+        const _saleNote=document.getElementById('sale-note')?.value?.trim()||'';
         const taxId=s.tax_id||'';
         const phone=s.phone||'';
         const address=s.address||'';
@@ -820,11 +778,12 @@
                     ${showUnitPrice?'<th style="padding:6px 4px;text-align:center;">سعر</th>':''}
                     <th style="padding:6px 4px;text-align:center;">إجمالي</th>
                 </tr></thead>
-                <tbody>${items.map(i=>`<tr>
+                <tbody>${_saleNote?`<div style=background:#f5f5f5;border-radius:4px;padding:6px 8px;margin-bottom:8px;font-size:11px;color:#555;border-right:3px solid #ccc><b>📝 ملاحظة:</b> ${_saleNote}</div>`:''}
+            ${items.map(i=>`<tr>
                     <td style="padding:6px 4px;font-weight:700;text-align:right;">${i.n||i.product_name}</td>
                     <td style="padding:6px 4px;text-align:center;">${i.q||i.qty}</td>
                     ${showUnitPrice?`<td style="padding:6px 4px;text-align:center;">${i.p||i.price}</td>`:''}
-                    <td style="padding:6px 4px;text-align:center;font-weight:800;">${((i.p||i.price)*(i.q||i.qty)).toFixed(0)}</td>
+                    <td style="padding:6px 4px;text-align:center;font-weight:800;">${(i.price*i.qty).toFixed(0)}</td>
                 </tr>`).join('')}</tbody>
             </table>
             <hr style="border:none;border-top:1px dashed #aaa;margin:6px 0;">
@@ -1058,7 +1017,8 @@
 
     function endShift(){
         if(confirm('هل أنت متأكد من إنهاء الوردية وتسجيل الخروج؟')){
-            if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); location.href='index.html';
+            sessionStorage.clear();
+            location.href='index.html';
         }
     }
 
@@ -1098,36 +1058,18 @@
     function closeModal(id){const el=document.getElementById(id);if(el) el.classList.remove('open');}
 
     init();
-
-    // ===== OFFLINE MODE =====
-    let _offlineQueue = JSON.parse(localStorage.getItem('fateen_offline_q')||'[]');
-
-    function _updateSysStatus(){
-        const on=navigator.onLine;
-        const dot=document.getElementById('sys-status-dot');
-        const txt=document.getElementById('sys-status-text');
-        if(dot) dot.style.background=on?'var(--green)':'var(--red)';
-        if(txt) txt.innerText=on?'النظام يعمل بشكل جيد':'لا يوجد إنترنت';
-        if(on && _offlineQueue.length>0) _syncOfflineQueue();
-    }
-
-    async function _syncOfflineQueue(){
-        if(!_offlineQueue.length) return;
-        showToast(`جاري رفع ${_offlineQueue.length} عملية محفوظة...`,'info');
-        const q=[..._offlineQueue]; _offlineQueue=[];
-        localStorage.removeItem('fateen_offline_q');
-        let ok=0;
-        for(const sale of q){
-            try{ await _supabase.from('sales').insert([sale]); ok++; }
-            catch(e){ _offlineQueue.push(sale); }
+    (function(){
+        function _ns(){
+            const on=navigator.onLine;
+            const d=document.getElementById('sys-dot');
+            const t=document.getElementById('sys-txt');
+            if(d)d.style.background=on?'var(--green)':'var(--red)';
+            if(t)t.innerText=on?'متصل':'لا يوجد نت';
         }
-        if(_offlineQueue.length) localStorage.setItem('fateen_offline_q',JSON.stringify(_offlineQueue));
-        if(ok>0){ showToast(`✅ تم رفع ${ok} عملية`,'success'); updateTargetDisplay(); }
-    }
-
-    window.addEventListener('online', _updateSysStatus);
-    window.addEventListener('offline', _updateSysStatus);
-    _updateSysStatus();
+        window.addEventListener('online',_ns);
+        window.addEventListener('offline',_ns);
+        _ns();
+    })();
 </script>
 </body>
 </html>

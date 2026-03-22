@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة المدير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -335,50 +335,8 @@
             .d-nav{grid-template-columns:repeat(4,1fr);}
         }
     </style>
-
-    <!-- FATEEN AUTH + OFFLINE -->
-    <script>
-    (function(){
-        const TIMEOUT_MS = 8*60*60*1000;
-        const PAGE = window.location.pathname.split('/').pop()||'index.html';
-        const PUBLIC = ['index.html','guide.html','about.html',''];
-        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
-        function getSession(){
-            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
-            if(!s)return null;
-            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
-            return s;}catch(e){return null;}
-        }
-        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
-        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
-        if(!PUBLIC.includes(PAGE)){
-            const s=getSession();
-            if(!s||!s.store_key){window.location.replace('index.html');return;}
-            sessionStorage.setItem('store_key',s.store_key);
-            sessionStorage.setItem('username',s.username);
-            sessionStorage.setItem('userRole',s.userRole);
-        }
-        window._fateenAuth={saveSession,getSession,clearSession};
-    })();
-    </script>
 </head>
 <body>
-<!-- OFFLINE BAR -->
-<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
-    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
-</div>
-<script>
-(function(){
-    function _updateNet(){
-        const b=document.getElementById('offline-bar');
-        if(b) b.style.display=navigator.onLine?'none':'block';
-    }
-    window.addEventListener('online',_updateNet);
-    window.addEventListener('offline',_updateNet);
-    document.addEventListener('DOMContentLoaded',_updateNet);
-    _updateNet();
-})();
-</script>
 
 <!-- ===== SIDEBAR OVERLAY ===== -->
 <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
@@ -394,7 +352,7 @@
         <a class="sb-item" onclick="location.href='pos.html'"><span class="sb-icon">🖥️</span>صفحة الكاشير</a>
         <a class="sb-item" onclick="location.href='reports.html'"><span class="sb-icon">📋</span>إدارة التقارير</a>
         <a class="sb-item" onclick="location.href='inventory.html'"><span class="sb-icon">🏪</span>إدارة المخزن</a>
-        <a class="sb-item" onclick="location.href='hr.html'"><span class="sb-icon">👥</span>إدارة الموظفين</a>
+        <a class="sb-item" onclick="openUserModal();closeSidebar()"><span class="sb-icon">👥</span>إدارة الموظفين</a>
         <a class="sb-item" onclick="location.href='accounting.html'"><span class="sb-icon">📒</span>المحاسبة</a>
         <a class="sb-item" onclick="location.href='guide.html'"><span class="sb-icon">📖</span>كيفية الاستخدام</a>
         <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
@@ -403,14 +361,8 @@
         <a class="sb-item" onclick="logout()" style="color:var(--red);border-color:transparent;"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
     </nav>
     <div class="sidebar-footer">
-        <span class="copy">جميع الحقوق محفوظة لفطين 2026</span>
+        <span class="copy">جميع الحقوق محفوظة لفطين 2026 | V <span id="sb-ver">1.0.0</span></span>
     </div>
-</div>
-
-<!-- STATUS BOX -->
-<div id="sys-status-box" style="position:fixed;bottom:12px;left:12px;z-index:8000;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:5px 10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow);">
-    <span id="sys-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span>
-    <span id="sys-status-text">النظام يعمل بشكل جيد</span>
 </div>
 
 <!-- ================================================
@@ -494,10 +446,22 @@
             </div>
         </div>
 
+        <!-- Chart -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">📊 آخر 7 أيام</h3>
+                <div style="display:flex; gap:6px;">
+                    <button id="m-chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:11px; padding:5px 12px;">💰 مبيعات</button>
+                    <button id="m-chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:11px; padding:5px 12px;">↩ مرتجع</button>
+                </div>
+            </div>
+            <canvas id="m-sales-chart" height="120"></canvas>
+        </div>
+
         <!-- النواقص -->
         <div class="section-card">
             <div class="section-header">
-                <h3 class="section-title" style="color:var(--red);">⚠️ منتجات تحتاج تعبئة</h3>
+                <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن</h3>
             </div>
             <div class="table-wrap">
                 <table class="data-table">
@@ -520,8 +484,7 @@
 
         <!-- Footer -->
         <div class="m-footer">
-            <span class="copy">جميع الحقوق محفوظة لفطين 2026 &nbsp;|&nbsp; V <span id="footer-ver">1.0.0</span></span>
-            <span class="ver" id="m-version-footer">V0.5</span>
+            <span class="copy">جميع الحقوق محفوظة لفطين 2026 | V <span id="m-version-footer">1.0.0</span></span>
         </div>
 
     </div>
@@ -602,33 +565,10 @@
         <!-- الموظفين + النواقص (جنب بجنب) -->
         <div class="d-two-col">
 
-            <!-- الموظفين -->
+<!-- النواقص -->
             <div class="section-card" style="margin-top:0;">
                 <div class="section-header">
-                    <h3 class="section-title">👥 إدارة الموظفين</h3>
-                    <div style="display:flex; gap:8px;">
-                        <select class="select-input" id="users-sort" onchange="sortUsers()">
-                            <option value="name-asc">أ-ي الاسم</option>
-                            <option value="sales-desc">⬇ أعلى مبيعات</option>
-                            <option value="sales-asc">⬆ أقل مبيعات</option>
-                            <option value="target-desc">⬇ أعلى تارجت</option>
-                            <option value="role">الوظيفة</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="openUserModal()">+ إضافة موظف</button>
-                    </div>
-                </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>الموظف</th><th>الوظيفة</th><th>مبيعات الشهر</th><th>التارجت</th><th>إجراءات</th></tr></thead>
-                        <tbody id="users-list"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- النواقص -->
-            <div class="section-card" style="margin-top:0;">
-                <div class="section-header">
-                    <h3 class="section-title" style="color:var(--red);">⚠️ منتجات تحتاج تعبئة (≤ 5)</h3>
+                    <h3 class="section-title" style="color:var(--red);">📦 نواقص بالمخزن (≤ 5)</h3>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table">
@@ -638,6 +578,18 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Chart -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">📊 مبيعات آخر 7 أيام</h3>
+                <div style="display:flex; gap:8px;">
+                    <button id="chart-btn-sales" class="btn btn-primary" onclick="switchChart('sales')" style="font-size:12px; padding:6px 16px;">💰 مبيعات</button>
+                    <button id="chart-btn-returns" class="btn btn-ghost" onclick="switchChart('returns')" style="font-size:12px; padding:6px 16px;">↩ مرتجع</button>
+                </div>
+            </div>
+            <canvas id="sales-chart" height="80"></canvas>
         </div>
 
         <!-- Feedback -->
@@ -705,14 +657,6 @@
         <input type="hidden" id="edit-un">
         <div class="field-group"><label>اسم المستخدم</label><input class="text-input" type="text" id="u-username" placeholder="اسم المستخدم"></div>
         <div class="field-group"><label>كلمة المرور</label><input class="text-input" type="password" id="u-pass" placeholder="كلمة المرور"></div>
-        <div class="field-group"><label>الدور</label>
-            <select class="text-input" id="u-role">
-                <option value="employee">موظف كاشير</option>
-                <option value="manager">مدير فرع</option>
-                <option value="inventory_manager">مدير مخزن</option>
-                <option value="accounts_manager">مدير حسابات</option>
-            </select>
-        </div>
         <div class="field-group"><label>رقم الهاتف</label><input class="text-input" type="text" id="u-phone" placeholder="رقم الهاتف"></div>
         <div class="field-group"><label>التارجت الشهري</label><input class="text-input" type="number" id="u-target" placeholder="0"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -1009,7 +953,7 @@
     let allUsers = [];
     async function loadUsers() {
         try {
-            const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).in('role', ['employee','manager','inventory_manager','accounts_manager']);
+            const { data: users, error } = await _supabase.from('users').select('*').eq('store_key', storeKey).in('role', ['employee','manager']);
             if(error) throw error;
             // حساب مبيعات الشهر الحالي من جدول sales لكل موظف
             const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
@@ -1079,7 +1023,7 @@
             const eid = document.getElementById('edit-un').value;
             const userData = eid
                 ? { username:uName, phone:uPhone, monthly_target:uTarget, store_key:storeKey }
-                : { username:uName, phone:uPhone, monthly_target:uTarget, role:document.getElementById('u-role')?.value||'employee', store_key:storeKey };
+                : { username:uName, phone:uPhone, monthly_target:uTarget, role:'employee', store_key:storeKey };
             if(uPass) userData.password = uPass;
             if(eid) {
                 const { error } = await _supabase.from('users').update(userData).eq('username',eid).eq('store_key',storeKey);
@@ -1221,7 +1165,11 @@
         const el = document.getElementById(id);
         if(el) { el.classList.remove('open'); el.style.display=''; }
     }
-    function logout() { sessionStorage.clear(); location.replace('index.html'); }
+    function logout(){
+            if(window._fateenAuth)window._fateenAuth.clearSession();
+            else sessionStorage.clear();
+            location.href='index.html';
+        }
 
     // ======= SIDEBAR =======
     function openSidebar(){
@@ -1361,10 +1309,6 @@
     }
 
     init();
-    (function(){
-        function _ns(){const on=navigator.onLine;const d=document.getElementById('sys-status-dot');const t=document.getElementById('sys-status-text');if(d)d.style.background=on?'var(--green)':'var(--red)';if(t)t.innerText=on?'النظام يعمل بشكل جيد':'لا يوجد إنترنت';}
-        window.addEventListener('online',_ns);window.addEventListener('offline',_ns);_ns();
-    })();
 </script>
 </body>
 </html>

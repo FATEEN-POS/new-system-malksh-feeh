@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المحاسبة — Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -167,50 +167,8 @@
         .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
         .sb-trigger:hover{border-color:var(--accent);}
     </style>
-
-    <!-- FATEEN AUTH + OFFLINE -->
-    <script>
-    (function(){
-        const TIMEOUT_MS = 8*60*60*1000;
-        const PAGE = window.location.pathname.split('/').pop()||'index.html';
-        const PUBLIC = ['index.html','guide.html','about.html',''];
-        function saveSession(d){localStorage.setItem('fateen_session',JSON.stringify({...d,ts:Date.now()}));}
-        function getSession(){
-            try{const s=JSON.parse(localStorage.getItem('fateen_session')||'null');
-            if(!s)return null;
-            if(Date.now()-s.ts>TIMEOUT_MS){localStorage.removeItem('fateen_session');return null;}
-            return s;}catch(e){return null;}
-        }
-        function clearSession(){localStorage.removeItem('fateen_session');sessionStorage.clear();}
-        ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{const s=getSession();if(s)saveSession(s);},{passive:true}));
-        if(!PUBLIC.includes(PAGE)){
-            const s=getSession();
-            if(!s||!s.store_key){window.location.replace('index.html');return;}
-            sessionStorage.setItem('store_key',s.store_key);
-            sessionStorage.setItem('username',s.username);
-            sessionStorage.setItem('userRole',s.userRole);
-        }
-        window._fateenAuth={saveSession,getSession,clearSession};
-    })();
-    </script>
 </head>
 <body>
-<!-- OFFLINE BAR -->
-<div id="offline-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d4d;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:800;font-family:'Cairo',sans-serif;">
-    ⚠️ لا يوجد اتصال بالإنترنت — سيتم المزامنة تلقائياً عند عودة الاتصال
-</div>
-<script>
-(function(){
-    function _updateNet(){
-        const b=document.getElementById('offline-bar');
-        if(b) b.style.display=navigator.onLine?'none':'block';
-    }
-    window.addEventListener('online',_updateNet);
-    window.addEventListener('offline',_updateNet);
-    document.addEventListener('DOMContentLoaded',_updateNet);
-    _updateNet();
-})();
-</script>
 
 <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
 <div class="sidebar" id="main-sidebar">
@@ -249,8 +207,7 @@
     </div>
 </div>
 
-    <div class="tab" onclick="switchTab('tax')">🧾 ضرائب</div>
-</div>
+<!-- TABS -->
 
 <!-- ══════════════════════════════════════
      1. نظرة عامة
