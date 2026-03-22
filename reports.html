@@ -799,7 +799,17 @@
         ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${st.tax_id}</div>`:''}
         <div class="footer">${footer}</div>
         <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
-        </body></html>`);
+        
+    <!-- OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        window.addEventListener('offline', function(){
+            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
+            window.location.href = 'no-internet.html';
+        });
+    })();
+    </script>
+</body></html>`);
         w.document.close();
     }
 

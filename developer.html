@@ -1206,5 +1206,15 @@
             <button class="btn-full btn-cancel-modal" onclick="document.getElementById('devPassModal').classList.remove('open')" style="margin-top:8px;">إلغاء</button>
         </div>
     </div>
+
+    <!-- OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        window.addEventListener('offline', function(){
+            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
+            window.location.href = 'no-internet.html';
+        });
+    })();
+    </script>
 </body>
 </html>

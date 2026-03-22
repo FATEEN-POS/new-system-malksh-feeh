@@ -1052,7 +1052,17 @@
             +'<h2>'+storeName+' — كشف الحساب</h2>'
             +'<p style="font-size:11px;color:#777;margin-bottom:14px;">'+new Date().toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+'</p>'
             +content
-            +'</body></html>';
+            +'
+    <!-- OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        window.addEventListener('offline', function(){
+            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
+            window.location.href = 'no-internet.html';
+        });
+    })();
+    </script>
+</body></html>';
         w.document.write(html);
         w.document.close();
         setTimeout(()=>w.print(),800);

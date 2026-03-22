@@ -656,7 +656,17 @@
         <style>*{box-sizing:border-box;margin:0;padding:0;}body{width:${paperW};margin:0 auto;padding:10px;color:#000;background:#fff;font-family:'Cairo',sans-serif;font-weight:700;}
         @media print{@page{margin:0;size:${paperW} auto;}body{padding:8px;}}</style></head><body>
         ${allCopies}
-        </body></html>`;
+        
+    <!-- OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        window.addEventListener('offline', function(){
+            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
+            window.location.href = 'no-internet.html';
+        });
+    })();
+    </script>
+</body></html>`;
 
         // موبايل — Blob URL يتجنب مشكلة popup blocker
         const blob=new Blob([html],{type:'text/html'});

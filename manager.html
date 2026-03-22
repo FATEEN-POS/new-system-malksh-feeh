@@ -890,7 +890,17 @@
         <div style="text-align:center;margin-top:10px;font-size:11px;color:#555;border-top:1px dashed #ccc;padding-top:6px;">${footer}</div>
         <div style="text-align:center;font-size:9px;color:#aaa;margin-top:3px;">Fateen OS</div>
         <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1400);}<\/script>
-        </body></html>`);
+        
+    <!-- OFFLINE REDIRECT -->
+    <script>
+    (function(){
+        window.addEventListener('offline', function(){
+            sessionStorage.setItem('no_internet_from', window.location.pathname.split('/').pop()||'index.html');
+            window.location.href = 'no-internet.html';
+        });
+    })();
+    </script>
+</body></html>`);
         w.document.close();
     }
 
