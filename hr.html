@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>إدارة الموظفين - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -187,6 +187,10 @@
         <a class="sb-item active"><span class="sb-icon">👥</span>الموظفين</a>
         <a class="sb-item" onclick="location.href='3dadat.html'"><span class="sb-icon">⚙️</span>الإعدادات</a>
         <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+        <a class="sb-item" id="sb-tab-employees" onclick="switchTab('employees',this);closeSidebar()" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">👥</span>الموظفين</a>
+        <a class="sb-item" id="sb-tab-performance" onclick="switchTab('performance',this);closeSidebar()"><span class="sb-icon">📈</span>الأداء</a>
+        <a class="sb-item" id="sb-tab-salaries" onclick="switchTab('salaries',this);closeSidebar()"><span class="sb-icon">💰</span>المرتبات</a>
+        <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
         <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
         <a class="sb-item" onclick="logout()" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
     </nav>
@@ -201,15 +205,9 @@
     </div>
     <div class="topbar-right">
         <button class="topbar-btn accent" onclick="openModal('addEmpModal')">➕ موظف جديد</button>
-        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
     </div>
 </div>
 
-<div class="tabs-bar">
-    <button class="tab-btn active" onclick="switchTab('employees',this)">👥 الموظفين</button>
-    <button class="tab-btn" onclick="switchTab('performance',this)">📈 الأداء</button>
-    <button class="tab-btn" onclick="switchTab('salaries',this)">💰 المرتبات</button>
-</div>
 
 <div class="tab-section active" id="tab-employees">
 <div class="page">
@@ -356,7 +354,22 @@
     function toggleTheme(){const h=document.documentElement;const l=h.getAttribute("data-theme")==="light";h.setAttribute("data-theme",l?"":"light");localStorage.setItem("fateen_theme",l?"dark":"light");document.getElementById("theme-icon").innerText=l?"moon":"sun";}
     (function(){const s=localStorage.getItem("fateen_theme");if(s==="light"){document.documentElement.setAttribute("data-theme","light");document.getElementById("theme-icon").innerText="sun";}})();
     function logout(){sessionStorage.clear();location.href="index.html";}
-    function switchTab(id,btn){document.querySelectorAll(".tab-section").forEach(t=>t.classList.remove("active"));document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));document.getElementById("tab-"+id).classList.add("active");if(btn)btn.classList.add("active");}
+    function switchTab(id,btn){
+        document.querySelectorAll(".tab-section").forEach(t=>t.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+        document.getElementById("tab-"+id).classList.add("active");
+        if(btn)btn.classList.add("active");
+        // sync sidebar items
+        ['employees','performance','salaries'].forEach(t=>{
+            const el=document.getElementById('sb-tab-'+t);
+            if(!el)return;
+            if(t===id){
+                el.style.borderColor='var(--accent)';el.style.background='var(--accent-dim)';el.style.color='var(--accent)';
+            } else {
+                el.style.borderColor='transparent';el.style.background='';el.style.color='';
+            }
+        });
+    }
     const rLabel=r=>({employee:"موظف كاشير",manager:"مدير فرع",inventory_manager:"مدير مخزن",accounts_manager:"مدير حسابات"}[r]||r);
     const rBadge=r=>({employee:"badge-accent",manager:"badge-orange",inventory_manager:"badge-purple",accounts_manager:"badge-green"}[r]||"badge-accent");
 
