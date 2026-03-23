@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>كاشير - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -229,10 +229,29 @@
 
         /* MOBILE */
         @media(max-width:768px){
-            .cart-sidebar{width:100%;position:fixed;bottom:0;left:0;right:0;height:55vh;border-right:none;border-top:1px solid var(--border);z-index:50;}
-            .products-area{padding-bottom:55vh;}
+            body{height:100dvh;}
+            header{height:52px;padding:0 10px;}
+            .hbtn{padding:6px 8px;font-size:11px;}
+            .store-name{font-size:13px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+            .cart-sidebar{width:100%;position:fixed;bottom:0;left:0;right:0;height:52vh;border-right:none;border-top:1px solid var(--border);z-index:50;}
+            .products-area{padding-bottom:52vh;}
             .target-box{display:none;}
             main{flex-direction:column;}
+            .product-card{padding:8px;}
+            .product-name{font-size:11px;}
+            .product-price{font-size:13px;}
+            .cart-row{font-size:12px;}
+            .cart-row-name{font-size:12px;}
+            .btn-checkout{padding:12px;font-size:14px;}
+            .checkout-area{padding:8px 10px;}
+            .total-row{margin-bottom:6px;}
+            #discount-row{margin-bottom:6px;padding:5px 8px;}
+            .modal-box{padding:16px;border-radius:14px;}
+        }
+        @media(max-width:400px){
+            .cart-sidebar{height:58vh;}
+            .products-area{padding-bottom:58vh;}
+            .hbtn span,.hbtn{font-size:10px;padding:5px 6px;}
         }
         .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;backdrop-filter:blur(3px);}
         .sidebar-overlay.open{display:block;}
@@ -266,6 +285,7 @@
         <a class="sb-item" onclick="location.href='pos.html'" style="border-color:var(--accent);background:var(--accent-dim);color:var(--accent);"><span class="sb-icon">🖥️</span>الكاشير</a>
         <a class="sb-item" onclick="location.href='employeesite.html'"><span class="sb-icon">👤</span>ملفي الشخصي</a>
         <a class="sb-item" onclick="openReturnModal();closeSidebar()"><span class="sb-icon">↩️</span>مرتجع</a>
+        <a class="sb-item" onclick="openPriceInquiry();closeSidebar()"><span class="sb-icon">🔍</span>استعلام عن سعر</a>
         <a class="sb-item" onclick="openShiftModal();closeSidebar()"><span class="sb-icon">⏹️</span>إنهاء الوردية</a>
         <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
         <a class="sb-item" onclick="location.href='about.html'"><span class="sb-icon">📞</span>تواصل معنا</a>
@@ -298,6 +318,7 @@
     </div>
 
     <div class="header-btns">
+        <button class="hbtn" onclick="openPriceInquiry()">🔍 سعر</button>
         <button class="hbtn" onclick="openReturnModal()">↩️ مرتجع</button>
         <button class="hbtn hbtn-red" onclick="openShiftModal()">⏹️ إنهاء الوردية</button>
         <button class="hbtn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
@@ -358,7 +379,7 @@
                 <input type="text" id="sale-note" placeholder="ملاحظة للفاتورة..." maxlength="120"
                     style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
             </div>
-            <button class="btn-checkout" onclick="checkout()">✅ إتمام البيع (F2)</button>
+            <button class="btn-checkout" id="checkout-btn" onclick="handleCheckoutClick()">✅ إتمام البيع (F2)</button>
         </div>
     </div>
 </main>
@@ -395,6 +416,43 @@
             <button class="btn btn-orange" style="flex:1;justify-content:center;" onclick="printShiftReport()">🖨️ طباعة التقرير</button>
             <button class="btn btn-red"    style="flex:1;justify-content:center;" onclick="endShift()">✅ إنهاء وتسجيل خروج</button>
         </div>
+    </div>
+</div>
+
+<!-- PRICE INQUIRY MODAL -->
+<div id="priceModal" class="modal">
+    <div class="modal-box" style="width:400px;">
+        <div class="modal-title">
+            <span>🔍 استعلام عن سعر</span>
+            <span class="modal-close" onclick="closeModal('priceModal')">✕</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <input type="text" id="price-inquiry-input" placeholder="اكتب اسم المنتج أو الباركود..."
+                style="flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;outline:none;"
+                oninput="searchPriceInquiry()" onkeydown="if(event.key==='Escape')closeModal('priceModal')">
+        </div>
+        <div id="price-inquiry-results" style="max-height:300px;overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- CASH CHANGE MODAL -->
+<div id="cashModal" class="modal">
+    <div class="modal-box" style="width:360px;text-align:center;">
+        <div class="modal-title">
+            <span>💵 حساب الباقي</span>
+            <span class="modal-close" onclick="closeModal('cashModal')">✕</span>
+        </div>
+        <div style="margin-bottom:12px;font-size:14px;color:var(--text-muted);">الإجمالي المطلوب</div>
+        <div id="cash-total-display" style="font-size:28px;font-weight:900;color:var(--accent);margin-bottom:18px;">0.00 ج.م</div>
+        <div style="margin-bottom:8px;font-size:13px;font-weight:700;">دفع العميل</div>
+        <input type="number" id="cash-paid-input" placeholder="0.00" min="0"
+            style="width:100%;background:var(--input-bg);border:2px solid var(--accent);color:var(--text);padding:12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:20px;font-weight:800;outline:none;text-align:center;margin-bottom:14px;"
+            oninput="calcChange()">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:18px;border:1px solid var(--border);">
+            <span style="font-size:14px;font-weight:700;">الباقي للعميل</span>
+            <span id="cash-change-display" style="font-size:22px;font-weight:900;color:var(--green);">0.00 ج.م</span>
+        </div>
+        <button class="btn-checkout" onclick="confirmCashAndCheckout()" style="width:100%;">✅ تأكيد وإتمام البيع</button>
     </div>
 </div>
 
@@ -503,7 +561,7 @@
         }
         updateTargetDisplay();
         document.getElementById('p-search').focus();
-        document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();checkout();}});
+        document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();handleCheckoutClick();}});
     }
 
     // ===== تطبيق الصلاحيات =====
@@ -721,6 +779,7 @@
             if(document.getElementById('print-check').checked) printReceipt(saleData,cart,total,discount,subtotal);
             updateLocalStock(cart);
             cart=[];
+            window._cashPaid=0;window._cashChange=0;
             const dv=document.getElementById('discount-val');
             if(dv) dv.value='';
             // الملاحظة تتمسح بعد طباعة الفاتورة بـ 3 ثوان
@@ -770,6 +829,7 @@
                 <span>الوقت: <b>${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</b></span>
                 ${showEmployee?`<span>البائع: <b>${employeeName}</b></span>`:''}
                 <span style="grid-column:1/-1;">الدفع: <b>${paymentMethod}</b></span>
+                ${(window._cashPaid&&paymentMethod==='كاش')?`<span>دفع: <b>${window._cashPaid.toFixed(2)} ج.م</b></span><span style="color:green;">الباقي: <b>${(window._cashChange||0).toFixed(2)} ج.م</b></span>`:''
             </div>
             <hr style="border:none;border-top:1px dashed #aaa;margin:6px 0;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -1056,7 +1116,75 @@
         }catch(e){}
     }
 
-    function closeModal(id){const el=document.getElementById(id);if(el) el.classList.remove('open');}
+    // ===== PRICE INQUIRY =====
+    function openPriceInquiry(){
+        document.getElementById('price-inquiry-input').value='';
+        document.getElementById('price-inquiry-results').innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">ابدأ الكتابة للبحث عن منتج...</div>';
+        document.getElementById('priceModal').classList.add('open');
+        setTimeout(()=>document.getElementById('price-inquiry-input').focus(),100);
+    }
+
+    function searchPriceInquiry(){
+        const q=document.getElementById('price-inquiry-input').value.trim().toLowerCase();
+        const res=document.getElementById('price-inquiry-results');
+        if(!q){res.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">ابدأ الكتابة للبحث عن منتج...</div>';return;}
+        const found=allProducts.filter(p=>
+            (p.product_name||'').toLowerCase().includes(q)||
+            (p.barcode||'').toLowerCase().includes(q)
+        ).slice(0,8);
+        if(!found.length){res.innerHTML='<div style="text-align:center;color:var(--red);padding:20px;font-size:13px;">لا يوجد منتج بهذا الاسم أو الباركود</div>';return;}
+        res.innerHTML=found.map(p=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px;background:var(--surface2);">
+                <div>
+                    <div style="font-size:13px;font-weight:800;">${p.product_name}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">مخزون: ${p.stock} | ${p.barcode?'#'+p.barcode:''}</div>
+                </div>
+                <div style="font-size:18px;font-weight:900;color:var(--accent);">${getEffectivePrice(p).toFixed(2)} ج.م</div>
+            </div>`).join('');
+    }
+
+    // ===== CASH CHANGE =====
+    let _pendingCheckout=false;
+
+    function handleCheckoutClick(){
+        if(!cart.length){showToast('السلة فارغة','error');return;}
+        if(paymentMethod==='فيزا'){checkout();return;}
+        // كاش — افتح popup الباقي
+        const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+        const discount=getDiscount(subtotal);
+        const total=subtotal-discount;
+        document.getElementById('cash-total-display').innerText=total.toFixed(2)+' ج.م';
+        document.getElementById('cash-paid-input').value='';
+        document.getElementById('cash-change-display').innerText='0.00 ج.م';
+        document.getElementById('cashModal').classList.add('open');
+        setTimeout(()=>document.getElementById('cash-paid-input').focus(),100);
+    }
+
+    function calcChange(){
+        const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+        const discount=getDiscount(subtotal);
+        const total=subtotal-discount;
+        const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
+        const change=paid-total;
+        const el=document.getElementById('cash-change-display');
+        el.innerText=(change>=0?change:0).toFixed(2)+' ج.م';
+        el.style.color=change>=0?'var(--green)':'var(--red)';
+    }
+
+    function confirmCashAndCheckout(){
+        const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+        const discount=getDiscount(subtotal);
+        const total=subtotal-discount;
+        const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
+        if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
+        // حفظ الباقي عشان يظهر في الريسيت
+        window._cashPaid=paid;
+        window._cashChange=(paid-total);
+        closeModal('cashModal');
+        checkout();
+    }
+
+        function closeModal(id){const el=document.getElementById(id);if(el) el.classList.remove('open');}
 
     init();
     (function(){

@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>مركز التقارير - Fateen OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -244,7 +244,7 @@
 <div class="topbar">
     <div class="topbar-left">
         <div class="sb-trigger" onclick="openSidebar()">☰</div>
-        <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
+        
         <div>
             <div class="store-name" id="store-name-display">Fateen OS</div>
         </div>
@@ -755,7 +755,9 @@
     }
 
     function printInvoice(s){
-        const items=typeof s.items==='string'?JSON.parse(s.items):(s.items||[]);
+        let items=[];
+        try{items=typeof s.items==='string'?JSON.parse(s.items||'[]'):(s.items||[]);}catch(e){items=[];}
+        if(!Array.isArray(items))items=[];
         const st=storeSettings;
         const paperW=st.invoice_size==='58mm'?'58mm':st.invoice_size==='A4'?'210mm':'80mm';
         const showEmp=st.invoice_show_employee!==false;
@@ -792,7 +794,7 @@
         ${showEmp?`<div class="info"><span>البائع: ${s.seller_name||'---'}</span><span>الدفع: ${s.payment_method||'كاش'}</span></div>`:`<div class="info"><span>الدفع: ${s.payment_method||'كاش'}</span></div>`}
         <hr>
         <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>`<tr><td class="name">${i.n||i.product_name||'—'}</td><td>${i.q||i.qty}</td>${showUnit?`<td>${i.p||i.price}</td>`:''}<td>${((i.q||i.qty)*(i.p||i.price)).toFixed(0)}</td></tr>`).join('')}</tbody></table>
+        <tbody>${items.map(i=>{const nm=i.n||i.name||i.product_name||'—';const q=parseFloat(i.q||i.qty||0);const p=parseFloat(i.p||i.price||0);return`<tr><td class="name">${nm}</td><td>${q}</td>${showUnit?`<td>${p}</td>`:''}<td>${(q*p).toFixed(0)}</td></tr>`;}).join('')||'<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد أصناف</td></tr>'}</tbody></table>
         <div class="total"><div class="total-lbl">الإجمالي</div><div class="total-val">${parseFloat(s.total_amount).toFixed(0)} ج.م</div></div>
         ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${st.tax_id}</div>`:''}
         <div class="footer">${footer}</div>

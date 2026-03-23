@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>لوحة المدير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -404,8 +404,11 @@
             </div>
         </div>
 
-        <!-- مبيعات اليوم -->
-        <div class="section-card" id="m-sales-section">
+        <!-- زرار عرض الفواتير -->
+        <button class="btn btn-outline" style="width:100%;justify-content:center;margin-bottom:12px;" onclick="toggleMobileSales()">🧾 عرض الفواتير</button>
+
+        <!-- مبيعات اليوم — مخفية بالأساس -->
+        <div class="section-card" id="m-sales-section" style="display:none;">
             <div class="section-header">
                 <h3 class="section-title">🕒 مبيعات اليوم</h3>
                 <select class="select-input" id="m-sales-sort" onchange="sortSales()">
@@ -420,27 +423,6 @@
                 <table class="data-table">
                     <thead><tr><th>رقم</th><th>التاريخ والوقت</th><th>المبلغ</th><th>الحالة</th></tr></thead>
                     <tbody id="m-sales-list"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- الموظفين -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3 class="section-title">👥 الموظفين</h3>
-                <div style="display:flex; gap:8px;">
-                    <select class="select-input" id="m-users-sort" onchange="sortUsers()">
-                        <option value="name-asc">أ-ي</option>
-                        <option value="sales-desc">⬇ مبيعات</option>
-                        <option value="role">الوظيفة</option>
-                    </select>
-                    <button class="btn btn-primary" style="font-size:12px; padding:6px 12px;" onclick="openUserModal()">+ موظف</button>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead><tr><th>الموظف</th><th>الوظيفة</th><th>مبيعات</th><th>إجراءات</th></tr></thead>
-                    <tbody id="m-users-list"></tbody>
                 </table>
             </div>
         </div>
@@ -696,6 +678,13 @@
     }
 
     // ======= DAILY REPORT MODAL =======
+    function toggleMobileSales(){
+        const sec=document.getElementById('m-sales-section');
+        if(!sec)return;
+        const visible=sec.style.display!=='none';
+        sec.style.display=visible?'none':'block';
+    }
+
     function openDailyReportModal() {
         const dateEl = document.getElementById('report-date');
         if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
@@ -816,7 +805,8 @@
     }
 
     async function printManagerReceipt(sale) {
-        const rawItems = typeof sale.items==='string' ? JSON.parse(sale.items) : (sale.items||[]);
+        let rawItems=[];try{rawItems=typeof sale.items==='string'?JSON.parse(sale.items||'[]'):(sale.items||[]);}catch(e){rawItems=[];}
+        if(!Array.isArray(rawItems))rawItems=[];
         // دعم الـ keys القديمة والجديدة
         const items = rawItems.map(i=>({
             product_name: i.n||i.product_name||'—',
