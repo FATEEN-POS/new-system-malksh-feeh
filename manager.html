@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
     <title>لوحة المدير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -880,11 +880,18 @@
     // ======= RECEIPT =======
     function showReceipt(sale) {
         try {
-            const items = typeof sale.items==='string' ? JSON.parse(sale.items) : sale.items;
+            let items=[];
+            try{items=typeof sale.items==='string'?JSON.parse(sale.items||'[]'):(sale.items||[]);}catch(e){items=[];}
+            if(!Array.isArray(items))items=[];
             const codeEl = document.getElementById('receipt-code');
             if(codeEl) codeEl.innerText = '#'+sale.id.toString().slice(-6);
-            let html = `<p style="margin:0 0 12px;"><b>البائع:</b> ${sale.seller_name}</p><div class="table-wrap"><table class="data-table"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
-            items.forEach(it => { html += `<tr><td>${it.product_name}</td><td>${it.qty}</td><td>${it.price} ج.م</td></tr>`; });
+            let html = `<p style="margin:0 0 12px;"><b>البائع:</b> ${sale.seller_name||'---'}</p><div class="table-wrap"><table class="data-table"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th></tr></thead><tbody>`;
+            items.forEach(it => {
+                const nm=it.n||it.name||it.product_name||'—';
+                const qty=parseFloat(it.q||it.qty||0);
+                const pr=parseFloat(it.p||it.price||0);
+                html += `<tr><td>${nm}</td><td>${qty}</td><td>${pr} ج.م</td></tr>`;
+            });
             html += `</tbody></table></div><div style="margin-top:14px; padding:12px 16px; background:var(--accent-dim); border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-size:13px;">الإجمالي</span><span style="font-size:18px; font-weight:800; color:var(--accent);">${sale.total_amount} ج.م</span></div>`;
             if(sale.type==='sale') {
                 html += `<button class="btn btn-danger" style="width:100%; margin-top:14px; justify-content:center;" onclick="processReturn('${sale.id}')">↩ إرجاع الفاتورة كاملة</button>`;
@@ -1175,7 +1182,7 @@
             const prodMap = {};
             sales.forEach(s => {
                 const items = typeof s.items==='string'?JSON.parse(s.items||'[]'):(s.items||[]);
-                items.forEach(i => { prodMap[i.product_name]=(prodMap[i.product_name]||0)+(i.qty||1); });
+                items.forEach(i => { const nm=i.n||i.name||i.product_name||'—'; prodMap[nm]=(prodMap[nm]||0)+(parseFloat(i.q||i.qty)||1); });
             });
             const topProd = Object.entries(prodMap).sort((a,b)=>b[1]-a[1])[0];
             // أكثر ساعة
