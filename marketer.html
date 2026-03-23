@@ -199,8 +199,8 @@
                         <th>كود المتجر</th>
                         <th>الاشتراك</th>
                         <th>انتهاء</th>
-                        <th>العمولة</th>
                         <th>الحالة</th>
+                        <th>إجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="stores-table"></tbody>
@@ -267,6 +267,39 @@
     </div>
 </div>
 
+<!-- Modal تفاصيل المتجر -->
+<div id="storeDetailModal" class="modal">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span id="detail-store-name">تفاصيل المتجر</span>
+            <span class="modal-close" onclick="closeModal('storeDetailModal')">✕</span>
+        </div>
+        <div id="detail-store-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px;line-height:1.8;"></div>
+
+        <!-- تعديل الاشتراك -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+            <div style="font-size:13px;font-weight:800;color:var(--accent);margin-bottom:10px;">🔄 تعديل الاشتراك</div>
+            <select class="text-input" id="detail-plan" onchange="updateDetailPrice()" style="margin-bottom:8px;">
+                <option value="trial">تجريبي (مجاني)</option>
+                <option value="year">سنة كاملة — 7,000 ج.م</option>
+                <option value="two_years">سنتان — 10,000 ج.م</option>
+            </select>
+            <div id="detail-trial-wrap" class="field-group" style="display:none;">
+                <label>عدد أيام التجربة</label>
+                <input class="text-input" type="number" id="detail-trial-days" value="30" min="1">
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="updateSubscription()">✅ تحديث الاشتراك</button>
+        </div>
+
+        <!-- ملاحظات -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+            <div style="font-size:13px;font-weight:800;color:var(--accent);margin-bottom:10px;">📝 ملاحظاتي على المتجر</div>
+            <textarea class="text-input" id="detail-notes" rows="3" placeholder="اكتب ملاحظاتك هنا..." style="resize:vertical;"></textarea>
+            <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveStoreNotes()">💾 حفظ الملاحظات</button>
+        </div>
+    </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -324,30 +357,42 @@
 
     async function loadStores() {
         try {
-            // جلب المتاجر المرتبطة بهذا الماركتر
             const { data: stores, error } = await _supabase.from('stores').select('*').eq('marketer_id', currentUser);
             if(error) throw error;
 
             const storesList = stores || [];
             document.getElementById('stat-stores').innerText = storesList.length;
 
-            // جلب إجمالي المبيعات لكل متجر
             let totalSales = 0;
             let totalCommission = 0;
             const commissionRows = [];
+            const renewalAlerts = [];
 
             for(let st of storesList) {
                 const { data: sales } = await _supabase.from('sales').select('total_amount').eq('store_key', st.store_key).eq('type','sale');
                 const storeSales = sales?.reduce((s,r) => s + (parseFloat(r.total_amount)||0), 0) || 0;
-                const commissionRate = st.commission_rate || 0;
-                const commissionAmt = (storeSales * commissionRate) / 100;
+                // عمولة ثابتة: 500 لسنة، 1000 لسنتين
+                const commAmt = st.subscription_price >= 10000 ? 1000 : st.subscription_price > 0 ? 500 : 0;
                 totalSales += storeSales;
-                totalCommission += commissionAmt;
-                commissionRows.push({ name: st.store_name, sales: storeSales, rate: commissionRate, amount: commissionAmt });
+                totalCommission += commAmt;
+                commissionRows.push({ name: st.store_name, sales: storeSales, rate: st.subscription_price>=10000?'سنتان':'سنة', amount: commAmt });
+
+                // تنبيه اليوم 27 (باقي 3 أيام أو أقل على الانتهاء)
+                const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000*60*60*24));
+                if(diffDays <= 3 && diffDays > 0) {
+                    renewalAlerts.push({name: st.store_name, days: diffDays, key: st.store_key});
+                }
             }
 
             document.getElementById('stat-sales').innerText = totalSales.toLocaleString() + ' ج.م';
             document.getElementById('stat-commission').innerText = totalCommission.toLocaleString() + ' ج.م';
+
+            // تنبيهات التجديد
+            if(renewalAlerts.length) {
+                renewalAlerts.forEach(al => {
+                    showToast(`⚠️ متجر "${al.name}" ينتهي خلال ${al.days} يوم — تواصل مع العميل!`, 'error');
+                });
+            }
 
             // جدول المتاجر
             const storesTable = document.getElementById('stores-table');
@@ -355,13 +400,17 @@
                 const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000*60*60*24));
                 const daysColor = diffDays > 5 ? 'badge-green' : 'badge-orange';
                 const daysText = diffDays > 0 ? `${diffDays} يوم` : 'منتهي';
+                const alertIcon = diffDays <= 3 && diffDays > 0 ? '⚠️ ' : '';
+                const safeData = JSON.stringify(st).replace(/'/g,"\\'");
                 return `<tr>
-                    <td style="font-weight:700;">${st.store_name}</td>
+                    <td style="font-weight:700;">${alertIcon}${st.store_name}</td>
                     <td><span class="badge badge-accent">${st.store_key}</span></td>
                     <td style="color:var(--green); font-weight:700;">${st.subscription_price || 0} ج.م</td>
                     <td><span class="badge ${daysColor}">${daysText}</span></td>
-                    <td style="color:var(--orange);">${st.commission_rate || 0}%</td>
                     <td><span class="badge ${st.is_active ? 'badge-green' : 'badge-orange'}">${st.is_active ? 'نشط' : 'موقوف'}</span></td>
+                    <td>
+                        <button onclick='openStoreDetail(${safeData})' style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:700;font-family:'Cairo',sans-serif;">تفاصيل</button>
+                    </td>
                 </tr>`;
             }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">لا يوجد متاجر مسجلة بعد</td></tr>';
 
@@ -371,11 +420,67 @@
                 <tr>
                     <td style="font-weight:700;">${r.name}</td>
                     <td style="color:var(--accent);">${r.sales.toLocaleString()} ج.م</td>
-                    <td><span class="badge badge-orange">${r.rate}%</span></td>
+                    <td><span class="badge badge-orange">${r.rate}</span></td>
                     <td style="color:var(--green); font-weight:800;">${r.amount.toLocaleString()} ج.م</td>
                 </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</td></tr>';
 
         } catch(e) { showToast('خطأ في تحميل البيانات: ' + e.message, 'error'); }
+    }
+
+    let activeDetailStore = null;
+
+    function openStoreDetail(st) {
+        activeDetailStore = st;
+        document.getElementById('detail-store-name').innerText = st.store_name;
+        const diffDays = Math.ceil((new Date(st.expiry_date) - new Date()) / (1000*60*60*24));
+        document.getElementById('detail-store-info').innerHTML = `
+            <div>📋 الكود: <b>${st.store_key}</b></div>
+            <div>📞 الهاتف: <b>${st.phone || '---'}</b></div>
+            <div>💰 الاشتراك: <b style="color:var(--green);">${st.subscription_price || 0} ج.م</b></div>
+            <div>📅 الانتهاء: <b style="color:${diffDays<=3?'var(--red)':'var(--text)'};">${st.expiry_date} (فاضل ${diffDays} يوم)</b></div>
+            <div>✅ الحالة: <b>${st.is_active ? 'نشط' : 'موقوف'}</b></div>`;
+        document.getElementById('detail-notes').value = st.marketer_notes || '';
+        document.getElementById('storeDetailModal').classList.add('open');
+    }
+
+    function updateDetailPrice() {
+        const plan = document.getElementById('detail-plan').value;
+        const tw = document.getElementById('detail-trial-wrap');
+        if(tw) tw.style.display = plan==='trial' ? 'block' : 'none';
+    }
+
+    async function updateSubscription() {
+        if(!activeDetailStore) return;
+        const plan = document.getElementById('detail-plan').value;
+        const prices = {trial:0, year:7000, two_years:10000};
+        const newPrice = prices[plan];
+        const expiry = new Date();
+        if(plan==='trial'){const d=parseInt(document.getElementById('detail-trial-days').value)||30;expiry.setDate(expiry.getDate()+d);}
+        else if(plan==='year') expiry.setFullYear(expiry.getFullYear()+1);
+        else expiry.setFullYear(expiry.getFullYear()+2);
+
+        const {error} = await _supabase.from('stores').update({
+            subscription_price: newPrice,
+            expiry_date: expiry.toISOString().split('T')[0],
+            is_active: true
+        }).eq('store_key', activeDetailStore.store_key);
+
+        if(!error) {
+            if(newPrice>0){
+                try{const{data:rd}=await _supabase.from('system_settings').select('value').eq('key','total_revenue').single();const c=parseFloat(rd?.value||0);await _supabase.from('system_settings').update({value:String(c+newPrice)}).eq('key','total_revenue');}catch(e){}
+            }
+            showToast(`تم تحديث اشتراك ${activeDetailStore.store_name}`,'success');
+            closeModal('storeDetailModal');
+            loadStores();
+        } else showToast('خطأ: '+error.message,'error');
+    }
+
+    async function saveStoreNotes() {
+        if(!activeDetailStore) return;
+        const notes = document.getElementById('detail-notes').value;
+        const {error} = await _supabase.from('stores').update({marketer_notes: notes}).eq('store_key', activeDetailStore.store_key);
+        if(!error) showToast('تم حفظ الملاحظات ✅','success');
+        else showToast('خطأ: '+error.message,'error');
     }
 
     function updatePlanPrice() {

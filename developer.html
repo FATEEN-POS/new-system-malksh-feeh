@@ -341,7 +341,7 @@
         <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px;margin-top:15px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <span style="font-weight:800;font-size:14px;color:var(--accent);">🗄️ حالة الداتابيز</span>
-                <button onclick="loadDbStats()" style="background:var(--accent);color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;font-family:'Cairo',sans-serif;">🔄</button>
+                <button onclick="loadDbStats(true)" style="background:var(--accent);color:#000;border:none;padding:5px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;font-family:'Cairo',sans-serif;">🔄</button>
             </div>
             <div style="margin-bottom:10px;">
                 <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
@@ -476,7 +476,7 @@
         <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:18px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0; color:var(--accent); font-size:16px;">🗄️ حالة قاعدة البيانات</h3>
-                <button onclick="loadDbStats()" style="background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">🔄 تحديث</button>
+                <button onclick="loadDbStats(true)" style="background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">🔄 تحديث</button>
             </div>
 
             <!-- شريط الحجم -->
@@ -671,27 +671,32 @@
                 ['m-v-input','d-v-input'].forEach(id => { const el=document.getElementById(id); if(el && !el.value) el.value=vData.value; });
             }
 
-            // جلب المتاجر باستثناء حسابات المطور والماركتر
-            const { data: allUsers } = await _supabase.from('users').select('store_key,role');
-            const excludeKeys = (allUsers||[]).filter(u=>u.role==='developer'||u.role==='marketer').map(u=>u.store_key).filter(Boolean);
-            let storesQuery = _supabase.from('stores').select('*');
-            const { data: stores } = await storesQuery;
-            const filteredStores = (stores||[]).filter(st => !excludeKeys.includes(st.store_key) || st.store_key === 'DEVELOPER');
+            const { data: stores } = await _supabase.from('stores').select('*');
             const { data: users } = await _supabase.from('users').select('*');
-            allStores = filteredStores || [];
 
+            // إخفاء متجر DEVELOPER وأي store_key مرتبط بماركتر أو مطور
+            const excludeKeys = ['DEVELOPER'];
+            const devMarketerKeys = (users||[])
+                .filter(u=>u.role==='developer'||u.role==='marketer')
+                .map(u=>u.store_key).filter(Boolean);
+            excludeKeys.push(...devMarketerKeys);
+
+            // allStores = المتاجر الحقيقية فقط
+            allStores = (stores||[]).filter(st => !excludeKeys.includes(st.store_key));
+
+            // الإحصائيات بناءً على المتاجر الحقيقية فقط
             let totalRev = 0;
-            stores?.forEach(st => totalRev += Number(st.subscription_price || 0));
-            const empsCount = users?.filter(u=>u.role==='employee').length || 0;
-            const mgrsCount = users?.filter(u=>u.role==='manager').length || 0;
+            allStores.forEach(st => totalRev += Number(st.subscription_price || 0));
+            const empsCount = (users||[]).filter(u=>u.role==='employee').length;
+            const mgrsCount = (users||[]).filter(u=>u.role==='manager').length;
 
             setStats('revenue', totalRev.toLocaleString() + ' ج.م', totalRev.toLocaleString());
-            setStats('stores', stores?.length || 0);
+            setStats('stores', allStores.length);
             setStats('emps', empsCount);
             setStats('mgrs', mgrsCount);
 
             renderStores(allStores);
-            // إيرادات مؤكدة من الماركترز
+
             try {
                 const {data:revData} = await _supabase.from('system_settings').select('value').eq('key','total_revenue').single();
                 const rev = parseFloat(revData?.value||0);
@@ -957,22 +962,20 @@
                 for(let m of mList) {
                     const { data: mStores } = await _supabase.from('stores').select('*').eq('marketer_id', m.username);
                     const storesList = mStores || [];
-                    let totalSales = 0;
-                    for(let st of storesList) {
-                        const { data: sales } = await _supabase.from('sales').select('total_amount').eq('store_key', st.store_key).eq('type','sale');
-                        totalSales += sales?.reduce((s,r) => s+(parseFloat(r.total_amount)||0), 0) || 0;
-                    }
-                    const commRate = m.commission_rate || 0;
-                    const commAmt = (totalSales * commRate) / 100;
+                    // حساب العمولة: 500 لكل سنة، 1000 لكل سنتين
+                    let totalComm = 0;
+                    storesList.forEach(st => {
+                        if(st.subscription_price >= 10000) totalComm += 1000;
+                        else if(st.subscription_price > 0) totalComm += 500;
+                    });
                     rows += `<tr>
                         <td style="font-weight:700;">${m.username}</td>
                         <td style="color:var(--accent);">${storesList.length}</td>
-                        <td style="color:var(--green); font-weight:700;">${totalSales.toLocaleString()} ج.م</td>
-                        <td><span style="background:var(--orange-dim); color:var(--orange); padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700;">${commRate}%</span></td>
-                        <td style="color:var(--green); font-weight:800;">${commAmt.toLocaleString()} ج.م</td>
+                        <td style="color:var(--green); font-weight:700;">${storesList.length} متجر</td>
+                        <td><span style="background:var(--orange-dim); color:var(--orange); padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700;">500/1000 ج.م</span></td>
+                        <td style="color:var(--green); font-weight:800;">${totalComm.toLocaleString()} ج.م</td>
                         <td>
-                            <button onclick="editMarketerCommission('${m.username}', ${commRate})" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700;">تعديل العمولة</button>
-                            <button onclick="changeMarketerPassword('${m.username}')" style="background:var(--card2); color:var(--text); border:1px solid var(--border); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700; margin-right:4px;">🔑 باسورد</button>
+                            <button onclick="changeMarketerPassword('${m.username}')" style="background:var(--card2); color:var(--text); border:1px solid var(--border); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700;">🔑 باسورد</button>
                             <button onclick="deleteMarketer('${m.username}')" style="background:var(--red-dim); color:var(--red); border:1px solid var(--red); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:700; margin-right:4px;">حذف</button>
                         </td>
                     </tr>`;
@@ -1053,90 +1056,101 @@
         }
 
         // ======= DATABASE STATS =======
-        async function loadDbStats() {
+        async function loadDbStats(showNotif) {
             try {
-                const { data, error } = await _supabase.rpc('get_db_size');
-                if(error || !data) {
-                    // fallback: count manually
-                    const [s, sa, p, pu] = await Promise.all([
-                        _supabase.from('sales').select('id', {count:'exact', head:true}),
-                        _supabase.from('sales_archive').select('id', {count:'exact', head:true}),
-                        _supabase.from('products').select('id', {count:'exact', head:true}),
-                        _supabase.from('purchases').select('id', {count:'exact', head:true}),
-                    ]);
-                    document.getElementById('db-sales-count').innerText = (s.count||0).toLocaleString();
-                    document.getElementById('db-archive-count').innerText = (sa.count||0).toLocaleString();
-                    document.getElementById('db-products-count').innerText = (p.count||0).toLocaleString();
-                    document.getElementById('db-purchases-count').innerText = (pu.count||0).toLocaleString();
-                    document.getElementById('db-invoices-count').innerText = ((s.count||0)+(sa.count||0)).toLocaleString();
-                    document.getElementById('db-size-text').innerText = 'لا يمكن حساب الحجم تلقائياً';
-                    const mst=document.getElementById('m-db-size-text');if(mst)mst.innerText='غير متاح';
-                    const mds=document.getElementById('m-db-sales');if(mds)mds.innerText=(s.count||0).toLocaleString();
-                    const mdi=document.getElementById('m-db-invoices');if(mdi)mdi.innerText=((s.count||0)+(sa.count||0)).toLocaleString();
-                    const mdp=document.getElementById('m-db-products');if(mdp)mdp.innerText=(p.count||0).toLocaleString();
-                    const mda=document.getElementById('m-db-archive');if(mda)mda.innerText=(sa.count||0).toLocaleString();
-                    return;
+                // جلب العدد دايماً من count مباشرة
+                const [s, sa, p, pu] = await Promise.all([
+                    _supabase.from('sales').select('id', {count:'exact', head:true}),
+                    _supabase.from('sales_archive').select('id', {count:'exact', head:true}),
+                    _supabase.from('products').select('id', {count:'exact', head:true}),
+                    _supabase.from('purchases').select('id', {count:'exact', head:true}),
+                ]);
+
+                const salesCount    = s.count || 0;
+                const archiveCount  = sa.count || 0;
+                const productsCount = p.count || 0;
+                const invoicesTotal = salesCount + archiveCount;
+
+                // تحديث desktop
+                const _set = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+                _set('db-sales-count',    salesCount.toLocaleString());
+                _set('db-archive-count',  archiveCount.toLocaleString());
+                _set('db-products-count', productsCount.toLocaleString());
+                _set('db-purchases-count',(pu.count||0).toLocaleString());
+                if(document.getElementById('db-invoices-count'))
+                    _set('db-invoices-count', invoicesTotal.toLocaleString());
+
+                // تحديث موبايل
+                _set('m-db-sales',    salesCount.toLocaleString());
+                _set('m-db-invoices', invoicesTotal.toLocaleString());
+                _set('m-db-products', productsCount.toLocaleString());
+                _set('m-db-archive',  archiveCount.toLocaleString());
+
+                // حجم الداتابيز
+                try {
+                    const { data: dbSize } = await _supabase.rpc('get_db_size');
+                    if(dbSize) {
+                        const sizeMB = parseFloat(dbSize.total_size_mb) || 0;
+                        const maxMB = 500;
+                        const pct = Math.min((sizeMB/maxMB)*100, 100);
+                        const barColor = pct>80?'var(--red)':pct>50?'var(--orange)':'var(--green)';
+                        ['db-size-bar','m-db-size-bar'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.width=pct+'%';el.style.background=barColor;}});
+                        const remaining = (maxMB-sizeMB).toFixed(1);
+                        const sizeText = `${sizeMB} MB / 500 MB (فاضل ${remaining} MB)`;
+                        _set('db-size-text', sizeText);
+                        _set('m-db-size-text', sizeText);
+                    } else {
+                        _set('db-size-text', 'غير متاح');
+                        _set('m-db-size-text', 'غير متاح');
+                    }
+                } catch(e) {
+                    _set('db-size-text', 'غير متاح');
+                    _set('m-db-size-text', 'غير متاح');
                 }
 
-                const sizeMB = parseFloat(data.total_size_mb) || 0;
-                const maxMB = 500;
-                const pct = Math.min((sizeMB / maxMB) * 100, 100);
-                const barColor = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--orange)' : 'var(--green)';
-
-                document.getElementById('db-size-bar').style.width = pct + '%';
-                document.getElementById('db-size-bar').style.background = barColor;
-                const msb=document.getElementById('m-db-size-bar');if(msb){msb.style.width=pct+'%';msb.style.background=barColor;}
-                document.getElementById('db-size-text').innerHTML =
-                    `<span style="color:${barColor}; font-weight:900;">${sizeMB} MB</span>
-                     <span style="color:var(--text-muted); font-size:11px;"> / 500 MB
-                     (${(maxMB - sizeMB).toFixed(1)} MB متبقي)</span>`;
-
-                document.getElementById('db-sales-count').innerText = (data.sales_rows||0).toLocaleString();
-                document.getElementById('db-archive-count').innerText = (data.sales_archive_rows||0).toLocaleString();
-                document.getElementById('db-products-count').innerText = (data.products_rows||0).toLocaleString();
-                document.getElementById('db-purchases-count').innerText = (data.purchases_rows||0).toLocaleString();
-                // موبايل sync
-                const _mds=document.getElementById('m-db-sales');if(_mds)_mds.innerText=(data.sales_rows||0).toLocaleString();
-                const _mdi=document.getElementById('m-db-invoices');if(_mdi)_mdi.innerText=((data.sales_rows||0)+(data.sales_archive_rows||0)).toLocaleString();
-                const _mdp=document.getElementById('m-db-products');if(_mdp)_mdp.innerText=(data.products_rows||0).toLocaleString();
-                const _mda=document.getElementById('m-db-archive');if(_mda)_mda.innerText=(data.sales_archive_rows||0).toLocaleString();
-                const _mst=document.getElementById('m-db-size-text');if(_mst)_mst.innerText=(data.total_size_mb||0)+' MB / 500 MB';
-
-                // حساب فاضل على الأرشفة (آخر أرشفة)
+                // حساب فاضل على الأرشفة
                 const { data: lastSale } = await _supabase
-                    .from('sales')
-                    .select('created_at')
-                    .order('created_at', {ascending: true})
-                    .limit(1)
-                    .single();
+                    .from('sales').select('created_at')
+                    .order('created_at', {ascending:true}).limit(1).single();
 
                 if(lastSale) {
                     const oldest = new Date(lastSale.created_at);
                     const archiveDate = new Date(oldest);
-                    archiveDate.setDate(archiveDate.getDate() + 90);
+                    archiveDate.setDate(archiveDate.getDate() + 80);
                     const daysLeft = Math.ceil((archiveDate - new Date()) / 86400000);
-                    const daysEl = document.getElementById('db-days-to-archive');
                     if(daysLeft <= 0) {
-                        daysEl.innerText = 'الآن!';
-                        daysEl.style.color = 'var(--red)';
-                        const _mdd=document.getElementById('m-db-days');if(_mdd){_mdd.innerText='جاهزة للأرشفة!';_mdd.style.color='var(--red)';}
-                        document.getElementById('db-archive-status').innerText =
-                            '⚠️ يوجد سجلات جاهزة للأرشفة';
+                        _set('db-days-to-archive', 'الآن!');
+                        _set('m-db-days', 'جاهزة للأرشفة!');
+                        const dEl=document.getElementById('db-days-to-archive'); if(dEl) dEl.style.color='var(--red)';
+                        _set('db-archive-status', '⚠️ يوجد سجلات جاهزة للأرشفة');
                     } else {
-                        daysEl.innerText = daysLeft + ' يوم';
-                        daysEl.style.color = daysLeft < 15 ? 'var(--orange)' : 'var(--green)';
-                        const _mdd2=document.getElementById('m-db-days');if(_mdd2)_mdd2.innerText='فاضل '+daysLeft+' يوم';
-                        document.getElementById('db-archive-status').innerText =
-                            `تنقل السجلات الأقدم من 90 يوم — أقدم سجل: ${oldest.toLocaleDateString('ar-EG')}`;
+                        _set('db-days-to-archive', daysLeft+' يوم');
+                        _set('m-db-days', 'فاضل '+daysLeft+' يوم');
+                        const dEl=document.getElementById('db-days-to-archive'); if(dEl) dEl.style.color=daysLeft<15?'var(--orange)':'var(--green)';
+                        _set('db-archive-status', `تنقل الفواتير الأقدم من 80 يوم — أقدم سجل: ${oldest.toLocaleDateString('ar-EG')}`);
                     }
                 } else {
-                    document.getElementById('db-days-to-archive').innerText = 'لا يوجد';
+                    _set('db-days-to-archive', 'لا يوجد');
+                    _set('m-db-days', 'لا يوجد');
                 }
 
+                if(showNotif) showDevToast('✅ تم تحديث بيانات الداتابيز', 'success');
+
             } catch(e) {
-                document.getElementById('db-size-text').innerText = 'خطأ في التحميل';
+                const _set=(id,v)=>{const el=document.getElementById(id);if(el)el.innerText=v;};
+                _set('db-size-text','خطأ في التحميل');
+                _set('m-db-size-text','خطأ');
                 console.error(e);
             }
+        }
+
+        function showDevToast(msg, type='info') {
+            const colors={success:'#00e676',error:'#ff4d4d',info:'#00f2fe'};
+            const t=document.createElement('div');
+            t.style.cssText=`position:fixed;bottom:20px;left:20px;z-index:9999;background:var(--card);border:1px solid ${colors[type]};color:${colors[type]};padding:10px 18px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeIn 0.3s ease;`;
+            t.innerText=msg;
+            document.body.appendChild(t);
+            setTimeout(()=>t.remove(),3000);
         }
 
         async function runArchive() {
@@ -1150,18 +1164,15 @@
                 if(error) throw error;
                 const r = data;
                 resultEl.style.display = 'block';
-                resultEl.innerHTML = `✅ تمت الأرشفة بنجاح — مبيعات: ${r.sales_archived||0} | مشتريات: ${r.purchases_archived||0} | مصروفات: ${r.expenses_archived||0}`;
+                resultEl.innerHTML = `✅ تمت الأرشفة — فواتير: ${r.sales_archived||0} | مشتريات: ${r.purchases_archived||0} | مصروفات: ${r.expenses_archived||0}`;
                 // إعادة العد من 80 يوم
-                const _dEl=document.getElementById('db-days-to-archive');
-                if(_dEl){_dEl.innerText='80 يوم';_dEl.style.color='var(--green)';}
-                const _mEl=document.getElementById('m-db-days');
-                if(_mEl)_mEl.innerText='فاضل 80 يوم';
-                // إعادة العد من 80 يوم من الآن
-                const daysEl = document.getElementById('db-days-to-archive');
-                if(daysEl) { daysEl.innerText = '80 يوم'; daysEl.style.color = 'var(--green)'; }
-                const statusEl = document.getElementById('db-archive-status');
-                if(statusEl) statusEl.innerText = 'تم الأرشفة — العد بدأ من الآن';
-                await loadDbStats();
+                const _set=(id,v)=>{const el=document.getElementById(id);if(el)el.innerText=v;};
+                _set('db-days-to-archive','80 يوم');
+                _set('m-db-days','فاضل 80 يوم');
+                _set('db-archive-status','تم الأرشفة — العد بدأ من الآن (80 يوم)');
+                const dEl=document.getElementById('db-days-to-archive');if(dEl)dEl.style.color='var(--green)';
+                showDevToast('✅ تمت الأرشفة بنجاح','success');
+                await loadDbStats(false);
             } catch(e) {
                 resultEl.style.display = 'block';
                 resultEl.style.color = 'var(--red)';
@@ -1191,8 +1202,8 @@
         loadData();
         loadChartData();
         loadMarketers();
-        setTimeout(loadDbStats, 500);
-        setInterval(()=>{if(!document.hidden)loadDbStats();}, 5*60*1000);
+        setTimeout(()=>loadDbStats(false), 500);
+        setInterval(()=>{if(!document.hidden)loadDbStats(false);}, 5*60*1000);
         setInterval(() => { if(!document.hidden) loadData(); }, 60000);
         setInterval(() => { if(!document.hidden) loadMarketers(); }, 60000);
     </script>
