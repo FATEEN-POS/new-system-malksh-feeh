@@ -183,7 +183,7 @@
         <a class="sb-item" id="sb-tab-performance" onclick="switchTab('performance',this);closeSidebar()"><span class="sb-icon">📈</span>الأداء</a>
         <a class="sb-item" id="sb-tab-salaries" onclick="switchTab('salaries',this);closeSidebar()"><span class="sb-icon">💰</span>المرتبات</a>
         <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
-        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
+        <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon" id="theme-icon">🌙</span>تغيير الثيم</a>
         <a class="sb-item" onclick="logout()" style="color:var(--red);"><span class="sb-icon">🚪</span>تسجيل الخروج</a>
     </nav>
     <div class="sidebar-footer"><span class="copy">Fateen OS 2026</span></div>
@@ -343,8 +343,8 @@
     document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));});
     function openSidebar(){document.getElementById("main-sidebar").classList.add("open");document.getElementById("sb-overlay").classList.add("open");}
     function closeSidebar(){document.getElementById("main-sidebar").classList.remove("open");document.getElementById("sb-overlay").classList.remove("open");}
-    function toggleTheme(){const h=document.documentElement;const l=h.getAttribute("data-theme")==="light";h.setAttribute("data-theme",l?"":"light");localStorage.setItem("fateen_theme",l?"dark":"light");document.getElementById("theme-icon").innerText=l?"moon":"sun";}
-    (function(){const s=localStorage.getItem("fateen_theme");if(s==="light"){document.documentElement.setAttribute("data-theme","light");document.getElementById("theme-icon").innerText="sun";}})();
+    function toggleTheme(){const h=document.documentElement;const l=h.getAttribute("data-theme")==="light";h.setAttribute("data-theme",l?"":"light");localStorage.setItem("fateen_theme",l?"dark":"light");const ti=document.getElementById("theme-icon");if(ti)ti.innerText=l?"🌙":"☀️";}
+    (function(){const s=localStorage.getItem("fateen_theme");if(s==="light"){document.documentElement.setAttribute("data-theme","light");const ti=document.getElementById("theme-icon");if(ti)ti.innerText="☀️";}})();
     function logout(){sessionStorage.clear();location.href="index.html";}
     function switchTab(id,btn){
         document.querySelectorAll(".tab-section").forEach(t=>t.classList.remove("active"));
