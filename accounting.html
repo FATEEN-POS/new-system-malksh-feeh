@@ -167,6 +167,18 @@
         .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
         .sb-trigger:hover{border-color:var(--accent);}
     </style>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 
@@ -188,7 +200,7 @@
         <a class="sb-item" onclick="switchTab('tax');closeSidebar()"><span class="sb-icon">🧾</span>ضرائب</a>
         <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
         <a class="sb-item" onclick="toggleTheme();closeSidebar()"><span class="sb-icon">🌙</span>تغيير الثيم</a>
-        <a class="sb-item" onclick="location.href='manager.html'" style="color:var(--red);"><span class="sb-icon">⬅️</span>رجوع للمدير</a>
+        
     </nav>
     <div class="sidebar-footer"><span class="copy">Fateen OS © 2026</span></div>
 </div>
@@ -197,302 +209,13 @@
 <div class="topbar">
     <div class="topbar-left">
         <div class="sb-trigger" onclick="openSidebar()">☰</div>
-        <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
+        
         <img src="لوجو_فطين_ابيض.png" id="topbar-logo" style="height:30px;object-fit:contain;" onerror="this.style.display='none'">
         <div class="store-title" id="store-name-display">المحاسبة</div>
         <span class="version-chip" id="version-chip">V0.5</span>
     </div>
     <div class="topbar-right">
-        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
-    </div>
-</div>
-
-<!-- TABS -->
-
-<!-- ══════════════════════════════════════
-     1. نظرة عامة
-══════════════════════════════════════ -->
-<div class="page active" id="page-overview">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat green"><h4>💰 إجمالي المبيعات</h4><p id="ov-sales">0 ج.م</p></div>
-        <div class="stat red"><h4>↩️ مرتجع مبيعات</h4><p id="ov-sales-ret">0 ج.م</p></div>
-        <div class="stat orange"><h4>🛒 إجمالي المشتريات</h4><p id="ov-purchases">0 ج.م</p></div>
-        <div class="stat red"><h4>🔄 مرتجع مشتريات</h4><p id="ov-pur-ret">0 ج.م</p></div>
-        <div class="stat purple"><h4>💸 المصروفات</h4><p id="ov-expenses">0 ج.م</p></div>
-        <div class="stat accent"><h4>📈 صافي الربح</h4><p id="ov-profit">0 ج.م</p></div>
-    </div>
-    <div class="profit-row">
-        <div class="profit-item"><div class="lbl">مبيعات صافية</div><div class="val" id="ov-net-sales" style="color:var(--green);">0 ج.م</div></div>
-        <div class="profit-item"><div class="lbl">تكلفة مشتريات</div><div class="val" id="ov-cost" style="color:var(--red);">0 ج.م</div></div>
-        <div class="profit-item"><div class="lbl">المصروفات</div><div class="val" id="ov-exp-bar" style="color:var(--purple);">0 ج.م</div></div>
-        <div class="profit-item"><div class="lbl">هامش الربح</div><div class="val" id="ov-margin" style="color:var(--accent);">0%</div></div>
-        <div class="profit-item"><div class="lbl">عدد الفواتير</div><div class="val" id="ov-invoices" style="color:var(--orange);">0</div></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">📅 فلترة بالتاريخ</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="ov-from">
-                <input type="date" class="filter-input" id="ov-to">
-                <button class="btn btn-primary" onclick="loadOverview()">تطبيق</button>
-                <button class="btn btn-ghost" onclick="resetOv()">إعادة تعيين</button>
-            </div>
-        </div>
-    </div>
-    <div class="section">
-        <div class="section-header"><h3 class="section-title">🕒 آخر العمليات</h3></div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th>البائع/المورد</th></tr></thead>
-                <tbody id="ov-recent"></tbody>
-            </table>
-        </div>
-    </div>
-    <div class="section">
-        <div class="section-header"><h3 class="section-title">📊 مبيعات آخر 7 أيام</h3></div>
-        <div class="chart-wrap"><canvas id="ov-chart"></canvas></div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     2. مبيعات
-══════════════════════════════════════ -->
-<div class="page" id="page-sales">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat green"><h4>💰 إجمالي المبيعات</h4><p id="s-total">0 ج.م</p></div>
-        <div class="stat accent"><h4>🧾 عدد الفواتير</h4><p id="s-count">0</p></div>
-        <div class="stat orange"><h4>📊 متوسط الفاتورة</h4><p id="s-avg">0 ج.م</p></div>
-        <div class="stat green"><h4>💵 كاش</h4><p id="s-cash">0 ج.م</p></div>
-        <div class="stat purple"><h4>💳 فيزا</h4><p id="s-visa">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">💰 فواتير المبيعات</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="s-from">
-                <input type="date" class="filter-input" id="s-to">
-                <input type="text" class="filter-input" placeholder="🔍 بحث..." id="s-search" oninput="filterSales()" style="min-width:140px;">
-                <button class="btn btn-primary" onclick="loadSales()">تطبيق</button>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>رقم</th><th>التاريخ</th><th>البائع</th><th>الدفع</th><th>المبلغ</th></tr></thead>
-                <tbody id="s-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     3. مرتجع مبيعات
-══════════════════════════════════════ -->
-<div class="page" id="page-sales-returns">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat red"><h4>↩️ إجمالي المرتجع</h4><p id="sr-total">0 ج.م</p></div>
-        <div class="stat accent"><h4>🧾 عدد المرتجعات</h4><p id="sr-count">0</p></div>
-        <div class="stat orange"><h4>📊 متوسط المرتجع</h4><p id="sr-avg">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">↩️ فواتير مرتجع المبيعات</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="sr-from">
-                <input type="date" class="filter-input" id="sr-to">
-                <button class="btn btn-primary" onclick="loadSalesReturns()">تطبيق</button>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>رقم</th><th>التاريخ</th><th>البائع</th><th>المبلغ</th></tr></thead>
-                <tbody id="sr-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     4. مشتريات
-══════════════════════════════════════ -->
-<div class="page" id="page-purchases">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat red"><h4>🛒 إجمالي المشتريات</h4><p id="p-total">0 ج.م</p></div>
-        <div class="stat accent"><h4>🧾 عدد الفواتير</h4><p id="p-count">0</p></div>
-        <div class="stat orange"><h4>📊 متوسط الفاتورة</h4><p id="p-avg">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">🛒 فواتير المشتريات</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="p-from">
-                <input type="date" class="filter-input" id="p-to">
-                <input type="text" class="filter-input" placeholder="🔍 بحث..." id="p-search" oninput="filterPurchases()" style="min-width:140px;">
-                <button class="btn btn-primary" onclick="loadPurchases()">تطبيق</button>
-                <button class="btn btn-green" onclick="openPurchaseModal()">+ فاتورة شراء</button>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>رقم</th><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>الأصناف</th><th>إجراءات</th></tr></thead>
-                <tbody id="p-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     5. مرتجع مشتريات
-══════════════════════════════════════ -->
-<div class="page" id="page-pur-returns">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat green"><h4>🔄 إجمالي المرتجع</h4><p id="pr-total">0 ج.م</p></div>
-        <div class="stat accent"><h4>🧾 عدد المرتجعات</h4><p id="pr-count">0</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">🔄 مرتجع المشتريات</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="pr-from">
-                <input type="date" class="filter-input" id="pr-to">
-                <button class="btn btn-primary" onclick="loadPurReturns()">تطبيق</button>
-                <button class="btn btn-green" onclick="openPurReturnModal()">+ تسجيل مرتجع</button>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>رقم</th><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>السبب</th></tr></thead>
-                <tbody id="pr-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     6. مصروفات
-══════════════════════════════════════ -->
-<div class="page" id="page-expenses">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat purple"><h4>💸 إجمالي المصروفات</h4><p id="ex-total">0 ج.م</p></div>
-        <div class="stat red"><h4>🏠 إيجار</h4><p id="ex-rent">0 ج.م</p></div>
-        <div class="stat orange"><h4>👥 رواتب</h4><p id="ex-salaries">0 ج.م</p></div>
-        <div class="stat accent"><h4>⚡ كهرباء/مياه</h4><p id="ex-utilities">0 ج.م</p></div>
-        <div class="stat green"><h4>📦 أخرى</h4><p id="ex-other">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">💸 سجل المصروفات</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="ex-from">
-                <input type="date" class="filter-input" id="ex-to">
-                <button class="btn btn-primary" onclick="loadExpenses()">تطبيق</button>
-                <button class="btn btn-purple" onclick="openExpenseModal()">+ مصروف جديد</button>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>النوع</th><th>الوصف</th><th>التاريخ</th><th>المبلغ</th><th>حذف</th></tr></thead>
-                <tbody id="ex-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     7. أرباح وخسائر
-══════════════════════════════════════ -->
-<div class="page" id="page-profit">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat green"><h4>💰 إيرادات المبيعات</h4><p id="prf-revenue">0 ج.م</p></div>
-        <div class="stat red"><h4>↩️ مرتجع مبيعات</h4><p id="prf-sales-ret">0 ج.م</p></div>
-        <div class="stat red"><h4>🛒 تكلفة مشتريات</h4><p id="prf-cost">0 ج.م</p></div>
-        <div class="stat green"><h4>🔄 مرتجع مشتريات</h4><p id="prf-pur-ret">0 ج.م</p></div>
-        <div class="stat purple"><h4>💸 المصروفات</h4><p id="prf-expenses">0 ج.م</p></div>
-        <div class="stat accent"><h4>📊 صافي الربح</h4><p id="prf-net">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">📅 فلترة</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="prf-from">
-                <input type="date" class="filter-input" id="prf-to">
-                <button class="btn btn-primary" onclick="loadProfit()">تطبيق</button>
-            </div>
-        </div>
-        <div id="profit-breakdown"></div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     8. كشف حساب
-══════════════════════════════════════ -->
-<div class="page" id="page-statement">
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">📋 كشف حساب</h3>
-            <div class="filters">
-                <select class="filter-input" id="stmt-period" onchange="loadStatement()">
-                    <option value="today">اليوم</option>
-                    <option value="week">آخر 7 أيام</option>
-                    <option value="month" selected>هذا الشهر</option>
-                    <option value="custom">مخصص</option>
-                </select>
-                <input type="date" class="filter-input" id="stmt-from" style="display:none;">
-                <input type="date" class="filter-input" id="stmt-to" style="display:none;">
-                <button class="btn btn-primary" onclick="loadStatement()">تحديث</button>
-                <button class="btn btn-ghost" onclick="printStatement()">🖨️ طباعة</button>
-            </div>
-        </div>
-        <div id="stmt-content">
-            <div style="text-align:center;color:var(--text-muted);padding:30px;">جاري التحميل...</div>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     9. ضرائب
-══════════════════════════════════════ -->
-<div class="page" id="page-tax">
-    <div class="stats" style="margin-top:18px;">
-        <div class="stat green"><h4>💰 إجمالي المبيعات الخاضعة</h4><p id="tax-sales">0 ج.م</p></div>
-        <div class="stat orange"><h4>🧾 ضريبة القيمة المضافة 14%</h4><p id="tax-vat">0 ج.م</p></div>
-        <div class="stat accent"><h4>📊 الوعاء الضريبي</h4><p id="tax-base">0 ج.م</p></div>
-    </div>
-    <div class="section">
-        <div class="section-header">
-            <h3 class="section-title">🧾 حساب الضرائب</h3>
-            <div class="filters">
-                <input type="date" class="filter-input" id="tax-from">
-                <input type="date" class="filter-input" id="tax-to">
-                <input type="number" class="filter-input" id="tax-rate" value="14" min="0" max="100" style="width:80px;" placeholder="% ضريبة">
-                <button class="btn btn-primary" onclick="loadTax()">احسب</button>
-            </div>
-        </div>
-        <div id="tax-breakdown" style="margin-top:10px;"></div>
-    </div>
-    <div class="section">
-        <div class="section-header"><h3 class="section-title">📅 ضرائب شهرية</h3></div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>الشهر</th><th>إجمالي المبيعات</th><th>الضريبة المستحقة</th></tr></thead>
-                <tbody id="tax-monthly-list"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ══════ MODALS ══════ -->
-
-<!-- Purchase Modal -->
-<div id="purchaseModal" class="modal">
-    <div class="modal-box">
-        <div class="modal-title"><span>🛒 فاتورة شراء جديدة</span><span class="modal-close" onclick="closeModal('purchaseModal')">✕</span></div>
-        <div class="field-group"><label>المورد</label><input class="text-input" type="text" id="pur-supplier" placeholder="اسم المورد"></div>
-        <div class="field-group"><label>التاريخ</label><input class="text-input" type="date" id="pur-date"></div>
-        <div class="field-group"><label>رقم مرجعي (اختياري)</label><input class="text-input" type="text" id="pur-ref" placeholder="رقم الفاتورة"></div>
-        <div class="field-group">
-            <label>الأصناف</label>
-            <div id="pur-items-list"></div>
-            <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:6px;" onclick="addPurchaseItem()">+ صنف</button>
+        
         </div>
         <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-top:12px;display:flex;justify-content:space-between;">
             <span style="font-size:12px;color:var(--text-muted);">الإجمالي:</span>

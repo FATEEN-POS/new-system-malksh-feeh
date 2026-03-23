@@ -249,6 +249,18 @@
         .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
         .sidebar-footer .copy{font-size:11px;color:var(--text-muted);text-align:center;display:block;}
     </style>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 <div id="sys-status" style="position:fixed;bottom:12px;right:12px;z-index:8000;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow);">
@@ -358,7 +370,7 @@
                 <input type="text" id="sale-note" placeholder="ملاحظة للفاتورة..." maxlength="120"
                     style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;outline:none;">
             </div>
-            <button class="btn-checkout" onclick="checkout()">✅ إتمام البيع (F2)</button>
+            <button class="btn-checkout" onclick="openPaymentModal()">✅ إتمام البيع (F2)</button>
         </div>
     </div>
 </main>
@@ -1018,8 +1030,7 @@
 
     function endShift(){
         if(confirm('هل أنت متأكد من إنهاء الوردية وتسجيل الخروج؟')){
-            sessionStorage.clear();
-            location.href='index.html';
+            sessionStorage.clear(); ['ft_store_key','ft_username','ft_userRole'].forEach(function(k){localStorage.removeItem(k);}); location.href='index.html';
         }
     }
 
@@ -1074,5 +1085,126 @@
 </script>
 
 <div id="_sb" style="position:fixed;bottom:10px;right:12px;z-index:9999;background:var(--surface,#111);border:1px solid var(--border,#252525);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;font-family:Cairo,sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><span id="_sd" style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00e676;"></span><span id="_st">&#x645;&#x62a;&#x635;&#x644;</span></div><script>(function(){function _u(){var d=document.getElementById("_sd"),t=document.getElementById("_st");if(!d||!t)return;if(navigator.onLine){d.style.background="#00e676";t.innerText="متصل";}else{d.style.background="#ff4d4d";t.innerText="لا يوجد نت";}}function _go(){sessionStorage.setItem("_fp",(window.location.pathname.split("/").pop()||"index.html"));setTimeout(function(){if(!navigator.onLine)window.location.href="no-internet.html";},1500);}window.addEventListener("online",_u);window.addEventListener("offline",function(){_u();_go();});if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_u);}else{_u();}})();</script>
+
+<!-- PAYMENT MODAL -->
+<div id="paymentModal" class="modal">
+    <div class="modal-box" style="max-width:380px;">
+        <div class="modal-title">💵 تفاصيل الدفع <span class="modal-close" onclick="closeModal('paymentModal')">✕</span></div>
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">الإجمالي المطلوب</div>
+            <div id="pay-total-display" style="font-size:32px;font-weight:900;color:var(--accent);">0 ج.م</div>
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">المبلغ المدفوع</label>
+            <input type="number" id="pay-amount" class="text-input" placeholder="أدخل المبلغ المدفوع" oninput="calcChange()" style="font-size:18px;font-weight:800;text-align:center;" min="0">
+        </div>
+        <div id="change-display" style="display:none;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px;text-align:center;margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--text-muted);">الباقي للعميل</div>
+            <div id="change-amount" style="font-size:28px;font-weight:900;color:var(--green);">0 ج.م</div>
+        </div>
+        <div id="short-display" style="display:none;background:var(--red-dim);border:1px solid var(--red);border-radius:var(--radius-sm);padding:12px;text-align:center;margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--text-muted);">ناقص</div>
+            <div id="short-amount" style="font-size:28px;font-weight:900;color:var(--red);">0 ج.م</div>
+        </div>
+        <button class="btn-checkout" id="confirm-pay-btn" onclick="confirmPayment()" style="margin-top:0;" disabled>✅ تأكيد البيع</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;" onclick="closeModal('paymentModal')">إلغاء</button>
+    </div>
+</div>
+
+<!-- PRICE INQUIRY MODAL -->
+<div id="priceModal" class="modal">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-title">💲 استعلام السعر <span class="modal-close" onclick="closeModal('priceModal')">✕</span></div>
+        <div class="field-group" style="margin-bottom:10px;">
+            <input type="text" id="price-search" class="text-input" placeholder="ابحث بالاسم أو الباركود..." oninput="searchPrice()" style="font-size:14px;">
+        </div>
+        <div id="price-results" style="max-height:350px;overflow-y:auto;"></div>
+    </div>
+</div>
+
+<script>
+// ===== PAYMENT MODAL =====
+let _payTotal = 0;
+function openPaymentModal(){
+    if(cart.length===0) return showToast('السلة فارغة','error');
+    const disc=parseFloat(document.getElementById('discount-val')?.value)||0;
+    const dtype=document.getElementById('discount-type')?.value||'amount';
+    const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
+    _payTotal = dtype==='percent' ? subtotal*(1-disc/100) : Math.max(0,subtotal-disc);
+    document.getElementById('pay-total-display').innerText=_payTotal.toLocaleString()+' ج.م';
+    document.getElementById('pay-amount').value='';
+    document.getElementById('change-display').style.display='none';
+    document.getElementById('short-display').style.display='none';
+    document.getElementById('confirm-pay-btn').disabled=true;
+    document.getElementById('paymentModal').classList.add('open');
+    setTimeout(()=>document.getElementById('pay-amount').focus(),200);
+}
+
+function calcChange(){
+    const paid=parseFloat(document.getElementById('pay-amount').value)||0;
+    const change=paid-_payTotal;
+    const btn=document.getElementById('confirm-pay-btn');
+    if(paid<=0){
+        document.getElementById('change-display').style.display='none';
+        document.getElementById('short-display').style.display='none';
+        btn.disabled=true;
+        return;
+    }
+    if(change>=0){
+        document.getElementById('change-display').style.display='block';
+        document.getElementById('short-display').style.display='none';
+        document.getElementById('change-amount').innerText=change.toLocaleString()+' ج.م';
+        btn.disabled=false;
+    } else {
+        document.getElementById('change-display').style.display='none';
+        document.getElementById('short-display').style.display='block';
+        document.getElementById('short-amount').innerText=Math.abs(change).toLocaleString()+' ج.م';
+        btn.disabled=true;
+    }
+}
+
+function confirmPayment(){
+    const paid=parseFloat(document.getElementById('pay-amount').value)||0;
+    const change=paid-_payTotal;
+    // store paid/change for receipt
+    window._lastPaid=paid;
+    window._lastChange=change;
+    closeModal('paymentModal');
+    checkout();
+}
+
+document.addEventListener('keydown',function(e){
+    if(e.key==='F2'){e.preventDefault();openPaymentModal();}
+});
+
+// ===== PRICE INQUIRY =====
+function openPriceInquiry(){
+    document.getElementById('price-search').value='';
+    document.getElementById('price-results').innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;">ابحث عن منتج</div>';
+    document.getElementById('priceModal').classList.add('open');
+    setTimeout(()=>document.getElementById('price-search').focus(),200);
+}
+
+function searchPrice(){
+    const q=document.getElementById('price-search').value.trim().toLowerCase();
+    const res=document.getElementById('price-results');
+    if(!q){res.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;">ابحث عن منتج</div>';return;}
+    const found=(allProducts||[]).filter(p=>p.product_name.toLowerCase().includes(q)||(p.barcode&&p.barcode.includes(q)));
+    if(!found.length){res.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد نتائج</div>';return;}
+    res.innerHTML=found.map(p=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border);">
+            <div>
+                <div style="font-weight:800;font-size:14px;">${p.product_name}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${p.category||''} ${p.barcode?'| '+p.barcode:''}</div>
+                <div style="font-size:11px;color:${p.stock<=0?'var(--red)':'var(--green)'};">مخزون: ${p.stock} ${p.unit||'قطعة'}</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:22px;font-weight:900;color:var(--accent);">${p.price}</div>
+                <div style="font-size:11px;color:var(--text-muted);">ج.م</div>
+            </div>
+        </div>`).join('');
+}
+</script>
+
 </body>
 </html>

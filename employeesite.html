@@ -309,6 +309,18 @@
         window._fateenAuth={saveSession,getSession,clearSession};
     })();
     </script>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 <!-- OFFLINE BAR -->
@@ -348,7 +360,7 @@
 <div class="topbar">
     <div class="topbar-left">
         <div class="sb-trigger" onclick="openSidebar()">☰</div>
-        <a class="back-btn" onclick="history.back()">⬅️ رجوع</a>
+        
         <div class="emp-badge">
             <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
             <div>

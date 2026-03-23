@@ -153,6 +153,18 @@
         window._fateenAuth={saveSession,getSession,clearSession};
     })();
     </script>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 <!-- OFFLINE BAR -->

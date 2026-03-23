@@ -196,6 +196,18 @@
         window._fateenAuth={saveSession,getSession,clearSession};
     })();
     </script>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 <!-- OFFLINE BAR -->
@@ -244,7 +256,7 @@
 <div class="topbar">
     <div class="topbar-left">
         <div class="sb-trigger" onclick="openSidebar()">☰</div>
-        <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
+        
         <div>
             <div class="store-name" id="store-name-display">Fateen OS</div>
         </div>
@@ -792,7 +804,7 @@
         ${showEmp?`<div class="info"><span>البائع: ${s.seller_name||'---'}</span><span>الدفع: ${s.payment_method||'كاش'}</span></div>`:`<div class="info"><span>الدفع: ${s.payment_method||'كاش'}</span></div>`}
         <hr>
         <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>`<tr><td class="name">${i.n||i.product_name||'—'}</td><td>${i.q||i.qty}</td>${showUnit?`<td>${i.p||i.price}</td>`:''}<td>${((i.q||i.qty)*(i.p||i.price)).toFixed(0)}</td></tr>`).join('')}</tbody></table>
+        <tbody>${items.map(i=>`<tr><td class="name">${i.n||i.n||.product_name||'—'||'—'}</td><td>${i.q||i.qty}</td>${showUnit?`<td>${i.p||i.price}</td>`:''}<td>${((i.q||i.qty)*(i.p||i.price)).toFixed(0)}</td></tr>`).join('')}</tbody></table>
         <div class="total"><div class="total-lbl">الإجمالي</div><div class="total-val">${parseFloat(s.total_amount).toFixed(0)} ج.م</div></div>
         ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${st.tax_id}</div>`:''}
         <div class="footer">${footer}</div>
@@ -842,14 +854,14 @@
             // low stock table
             document.getElementById('inv-low-tbody').innerHTML=[...low,...out].map(p=>{
                 const badge=p.stock===0?'badge-red':'badge-orange';
-                return`<tr><td style="font-weight:700;">${p.product_name}</td><td>${p.category||'---'}</td><td><span class="badge ${badge}">${p.stock}</span></td><td><span class="badge ${badge}">${p.stock===0?'نفد':'منخفض'}</span></td></tr>`;
+                return`<tr><td style="font-weight:700;">${p.n||.product_name||'—'}</td><td>${p.category||'---'}</td><td><span class="badge ${badge}">${p.stock}</span></td><td><span class="badge ${badge}">${p.stock===0?'نفد':'منخفض'}</span></td></tr>`;
             }).join('')||emptyRow(4);
             // expiry table
             document.getElementById('inv-expiry-tbody').innerHTML=expiring.map(p=>{
                 const diff=Math.ceil((new Date(p.expiry_date)-new Date())/(1000*60*60*24));
                 const badge=diff<=0?'badge-red':diff<=7?'badge-orange':'badge-accent';
                 const label=diff<=0?'منتهي':diff<=7?`باقي ${diff} يوم`:`باقي ${diff} يوم`;
-                return`<tr><td style="font-weight:700;">${p.product_name}</td><td>${p.category||'---'}</td><td>${p.stock}</td><td style="font-size:11px;">${p.expiry_date}</td><td><span class="badge ${badge}">${label}</span></td></tr>`;
+                return`<tr><td style="font-weight:700;">${p.n||.product_name||'—'}</td><td>${p.category||'---'}</td><td>${p.stock}</td><td style="font-size:11px;">${p.expiry_date}</td><td><span class="badge ${badge}">${label}</span></td></tr>`;
             }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--green);padding:16px;">✅ لا توجد منتجات منتهية أو قاربت الصلاحية</td></tr>';
         }catch(e){showToast('خطأ في تحميل المخزن','error');}
     }
@@ -867,7 +879,7 @@
             ]);
             const statsMap={};
             (sales||[]).forEach(s=>(s.items||[]).forEach(i=>{
-                if(!statsMap[i.id]) statsMap[i.id]={name:i.n||i.product_name||'—',qty:0,revenue:0};
+                if(!statsMap[i.id]) statsMap[i.id]={name:i.n||i.n||.product_name||'—'||'—',qty:0,revenue:0};
                 statsMap[i.id].qty+=i.qty;
                 statsMap[i.id].revenue+=(i.q||i.qty)*(i.p||i.price);
             }));
@@ -906,7 +918,7 @@
             setText('w-count',wasted.length);
             document.getElementById('w-tbody').innerHTML=wasted.sort((a,b)=>(b.wasted_qty||0)-(a.wasted_qty||0)).map(p=>`
                 <tr>
-                    <td style="font-weight:700;">${p.product_name}</td>
+                    <td style="font-weight:700;">${p.n||.product_name||'—'}</td>
                     <td>${p.category||'---'}</td>
                     <td style="color:var(--red);font-weight:800;">${p.wasted_qty}</td>
                     <td>${money(p.cost_price||0)}</td>
@@ -1020,10 +1032,10 @@
             setText('def-total-qty',totalQty);
             setText('def-total-val',money(totalVal));
             setText('def-count',defList.length);
-            currentSectionData=defList.map(p=>({'المنتج':p.product_name,'القسم':p.category||'---','كمية العجز':p.deficit_qty,'سعر الشراء':p.cost_price||0,'قيمة العجز':(p.deficit_qty||0)*(p.cost_price||0)}));
+            currentSectionData=defList.map(p=>({'المنتج':p.n||.product_name||'—','القسم':p.category||'---','كمية العجز':p.deficit_qty,'سعر الشراء':p.cost_price||0,'قيمة العجز':(p.deficit_qty||0)*(p.cost_price||0)}));
             document.getElementById('def-tbody').innerHTML=defList.length?defList.sort((a,b)=>(b.deficit_qty||0)-(a.deficit_qty||0)).map(p=>`
                 <tr>
-                    <td style="font-weight:700;">${p.product_name}</td>
+                    <td style="font-weight:700;">${p.n||.product_name||'—'}</td>
                     <td>${p.category||'---'}</td>
                     <td style="color:var(--red);font-weight:800;">${p.deficit_qty}</td>
                     <td>${money(p.cost_price||0)}</td>

@@ -272,6 +272,18 @@
         window._fateenAuth={saveSession,getSession,clearSession};
     })();
     </script>
+<script>
+// AUTH BRIDGE - sync localStorage to sessionStorage
+(function(){
+    var keys=['store_key','username','userRole'];
+    keys.forEach(function(k){
+        if(!sessionStorage.getItem(k)){
+            var v=localStorage.getItem('ft_'+k);
+            if(v) sessionStorage.setItem(k,v);
+        }
+    });
+})();
+</script>
 </head>
 <body>
 <!-- OFFLINE BAR -->
@@ -850,7 +862,7 @@
 
         function openModal(id) { document.getElementById(id).style.display='flex'; }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
-        function logout() { if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); location.href='index.html'; }
+        function logout() { if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); ['ft_store_key','ft_username','ft_userRole'].forEach(function(k){localStorage.removeItem(k);}); location.href='index.html'; }
 
         // ======= CHART =======
         let chartD = null, chartM = null;
