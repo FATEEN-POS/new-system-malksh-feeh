@@ -335,18 +335,6 @@
             .d-nav{grid-template-columns:repeat(4,1fr);}
         }
     </style>
-<script>
-// AUTH BRIDGE - sync localStorage to sessionStorage
-(function(){
-    var keys=['store_key','username','userRole'];
-    keys.forEach(function(k){
-        if(!sessionStorage.getItem(k)){
-            var v=localStorage.getItem('ft_'+k);
-            if(v) sessionStorage.setItem(k,v);
-        }
-    });
-})();
-</script>
 </head>
 <body>
 
@@ -414,26 +402,19 @@
                 <p class="lbl" style="color:var(--accent);">📅 التقرير اليومي</p>
                 <p class="val" style="color:var(--accent);font-size:12px;">اضغط للعرض</p>
             </div>
-            <div class="m-stat" style="cursor:pointer;border-color:var(--green);background:var(--green-dim);grid-column:span 2;" onclick="document.getElementById('m-sales-section').style.display='block';document.getElementById('m-sales-section').scrollIntoView({behavior:'smooth'});">
-                <p class="lbl" style="color:var(--green);">🧾 عرض فواتير اليوم</p>
-                <p class="val" style="color:var(--green);font-size:12px;">اضغط لعرض التفاصيل</p>
-            </div>
         </div>
 
-        <!-- مبيعات اليوم - مخفية افتراضياً -->
-        <div class="section-card" id="m-sales-section" style="display:none;">
+        <!-- مبيعات اليوم -->
+        <div class="section-card" id="m-sales-section">
             <div class="section-header">
                 <h3 class="section-title">🕒 مبيعات اليوم</h3>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    <select class="select-input" id="m-sales-sort" onchange="sortSales()">
-                        <option value="time-desc">⬇ الأحدث</option>
-                        <option value="time-asc">⬆ الأقدم</option>
-                        <option value="amount-desc">💰 أعلى مبلغ</option>
-                        <option value="type-sale">✅ بيع فقط</option>
-                        <option value="type-return">↩ مرتجع فقط</option>
-                    </select>
-                    <button onclick="document.getElementById('m-sales-section').style.display='none'" style="background:var(--red-dim);border:1px solid var(--red);color:var(--red);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;">✕</button>
-                </div>
+                <select class="select-input" id="m-sales-sort" onchange="sortSales()">
+                    <option value="time-desc">⬇ الأحدث</option>
+                    <option value="time-asc">⬆ الأقدم</option>
+                    <option value="amount-desc">💰 أعلى مبلغ</option>
+                    <option value="type-sale">✅ بيع فقط</option>
+                    <option value="type-return">↩ مرتجع فقط</option>
+                </select>
             </div>
             <div class="table-wrap">
                 <table class="data-table">
@@ -443,7 +424,26 @@
             </div>
         </div>
 
-
+        <!-- الموظفين -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">👥 الموظفين</h3>
+                <div style="display:flex; gap:8px;">
+                    <select class="select-input" id="m-users-sort" onchange="sortUsers()">
+                        <option value="name-asc">أ-ي</option>
+                        <option value="sales-desc">⬇ مبيعات</option>
+                        <option value="role">الوظيفة</option>
+                    </select>
+                    <button class="btn btn-primary" style="font-size:12px; padding:6px 12px;" onclick="openUserModal()">+ موظف</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>الموظف</th><th>الوظيفة</th><th>مبيعات</th><th>إجراءات</th></tr></thead>
+                    <tbody id="m-users-list"></tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- النواقص -->
         <div class="section-card">
@@ -1143,7 +1143,8 @@
     }
     function logout(){
             if(window._fateenAuth)window._fateenAuth.clearSession();
-            else sessionStorage.clear(); ['ft_store_key','ft_username','ft_userRole'].forEach(function(k){localStorage.removeItem(k);}); location.href='index.html';
+            else sessionStorage.clear();
+            location.href='index.html';
         }
 
     // ======= SIDEBAR =======

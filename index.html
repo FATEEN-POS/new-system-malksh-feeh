@@ -477,10 +477,6 @@
             sessionStorage.setItem('username', user.username);
             sessionStorage.setItem('userRole', user.role);
             sessionStorage.setItem('store_key', currentStore.store_key);
-            // حفظ في localStorage عشان يفضل حتى لو التاب اتقفل
-            localStorage.setItem('ft_store_key', currentStore.store_key);
-            localStorage.setItem('ft_username', user.username);
-            localStorage.setItem('ft_userRole', user.role);
 
             const _roleMap = {
                 'developer':         'developer.html',

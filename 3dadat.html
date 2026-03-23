@@ -165,18 +165,6 @@
         window._fateenAuth={saveSession,getSession,clearSession};
     })();
     </script>
-<script>
-// AUTH BRIDGE - sync localStorage to sessionStorage
-(function(){
-    var keys=['store_key','username','userRole'];
-    keys.forEach(function(k){
-        if(!sessionStorage.getItem(k)){
-            var v=localStorage.getItem('ft_'+k);
-            if(v) sessionStorage.setItem(k,v);
-        }
-    });
-})();
-</script>
 </head>
 <body>
 <!-- OFFLINE BAR -->
@@ -199,7 +187,7 @@
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
-        
+        <a class="topbar-btn" href="manager.html">⬅️ رجوع</a>
         <div>
             <div class="store-title" id="store-name-display">Fateen OS</div>
             <div class="store-sub">لوحة الإعدادات</div>
@@ -207,7 +195,21 @@
         <span class="version-chip" id="version-chip">V0.5</span>
     </div>
     <div class="topbar-right">
-        
+        <button class="topbar-btn" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+    </div>
+</div>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-label">القائمة</div>
+        <button class="nav-btn active" onclick="showSection('identity',this)"><span class="nav-icon">🆔</span> هوية المتجر</button>
+        <button class="nav-btn" onclick="showSection('security',this)"><span class="nav-icon">🔐</span> الأمان والنسخ</button>
+        <button class="nav-btn" onclick="showSection('permissions',this)"><span class="nav-icon">👥</span> الصلاحيات</button>
+        <button class="nav-btn" onclick="showSection('invoice',this)"><span class="nav-icon">🧾</span> إعدادات الفاتورة</button>
+        <div class="sidebar-spacer"></div>
+        <button class="nav-btn nav-btn-red" onclick="location.href='manager.html'"><span class="nav-icon">⬅️</span> خروج للإدارة</button>
     </div>
 
     <!-- MAIN -->
@@ -820,7 +822,7 @@
                 if(!confirm('تغيير كود المحل سيخرجك من النظام. هل أنت متأكد؟')) return;
                 await _supabase.from('stores').update({store_key:newKey}).eq('store_key',storeKey);
                 await _supabase.from('users').update({store_key:newKey}).eq('store_key',storeKey);
-                if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); ['ft_store_key','ft_username','ft_userRole'].forEach(function(k){localStorage.removeItem(k);}); location.href='index.html';
+                if(window._fateenAuth)window._fateenAuth.clearSession();else sessionStorage.clear(); location.href='index.html';
                 return;
             }
             showToast('تم تحديث بيانات الأمان بنجاح','success');

@@ -152,18 +152,6 @@
         .sb-trigger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;}
         .sb-trigger:hover{border-color:var(--accent);}
     </style>
-<script>
-// AUTH BRIDGE - sync localStorage to sessionStorage
-(function(){
-    var keys=['store_key','username','userRole'];
-    keys.forEach(function(k){
-        if(!sessionStorage.getItem(k)){
-            var v=localStorage.getItem('ft_'+k);
-            if(v) sessionStorage.setItem(k,v);
-        }
-    });
-})();
-</script>
 </head>
 <body>
 
@@ -194,7 +182,7 @@
 <div class="topbar">
     <div class="topbar-left">
         <div class="sb-trigger" onclick="openSidebar()">☰</div>
-        
+        <a href="manager.html" class="topbar-btn" style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:700;">⬅️ رجوع</a>
         <div class="store-info">
             <h2 id="store-name-display">Fateen OS</h2>
             <div class="sub">إدارة المخزون والتوريدات</div>

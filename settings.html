@@ -26,23 +26,11 @@
         .back-btn { background: none; border: 1px solid var(--gray); color: #888; padding: 8px 20px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 14px; }
         .back-btn:hover { border-color: #fff; color: #fff; }
     </style>
-<script>
-// AUTH BRIDGE - sync localStorage to sessionStorage
-(function(){
-    var keys=['store_key','username','userRole'];
-    keys.forEach(function(k){
-        if(!sessionStorage.getItem(k)){
-            var v=localStorage.getItem('ft_'+k);
-            if(v) sessionStorage.setItem(k,v);
-        }
-    });
-})();
-</script>
 </head>
 <body>
 
     <div class="header-settings">
-        
+        <button class="back-btn" onclick="location.href='manager.html'">← عودة للوحة المدير</button>
         <span id="sys-v" class="version-badge">V ...</span>
     </div>
 
