@@ -31,7 +31,8 @@
             --btn-color:#f0ede5; --input-bg:#f5f2eb;
             --shadow:0 4px 24px rgba(0,0,0,0.08);
         }
-        *,*::before,*::after{box-sizing:border-box;font-family:'Cairo',sans-serif;transition:background 0.25s,color 0.25s,border-color 0.25s;}
+        *,*::before,*::after{box-sizing:border-box;font-family:'Cairo',sans-serif;transition:background 0.25s,color 0.25s,border-color 0.25s;user-select:none;-webkit-user-select:none;}
+        .product-card h4{user-select:text;-webkit-user-select:text;}
         body{margin:0;padding:0;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 
         /* ===== HEADER ===== */
@@ -462,22 +463,45 @@
 
 <!-- CASH CHANGE MODAL -->
 <div id="cashModal" class="modal">
-    <div class="modal-box" style="width:360px;text-align:center;">
+    <div class="modal-box" style="width:380px;text-align:center;">
         <div class="modal-title">
             <span>💵 حساب الباقي</span>
             <span class="modal-close" onclick="closeModal('cashModal')">✕</span>
         </div>
         <div style="margin-bottom:12px;font-size:14px;color:var(--text-muted);">الإجمالي المطلوب</div>
-        <div id="cash-total-display" style="font-size:28px;font-weight:900;color:var(--accent);margin-bottom:18px;">0.00 ج.م</div>
+        <div id="cash-total-display" style="font-size:28px;font-weight:900;color:var(--accent);margin-bottom:14px;">0.00 ج.م</div>
+
+        <!-- طريقة الدفع -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <div id="cm-cash" onclick="setCashModalPayment('كاش')"
+                style="flex:1;padding:10px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;background:var(--accent-dim);color:var(--accent);">
+                💵 كاش
+            </div>
+            <div id="cm-visa" onclick="setCashModalPayment('فيزا')"
+                style="flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;color:var(--text-muted);background:var(--surface2);">
+                💳 فيزا
+            </div>
+        </div>
+
         <div style="margin-bottom:8px;font-size:13px;font-weight:700;">دفع العميل</div>
         <input type="number" id="cash-paid-input" placeholder="0.00" min="0"
-            style="width:100%;background:var(--input-bg);border:2px solid var(--accent);color:var(--text);padding:12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:20px;font-weight:800;outline:none;text-align:center;margin-bottom:14px;"
+            style="width:100%;background:var(--input-bg);border:2px solid var(--accent);color:var(--text);padding:12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:20px;font-weight:800;outline:none;text-align:center;margin-bottom:14px;user-select:text;-webkit-user-select:text;"
             oninput="calcChange()">
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:18px;border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:14px;border:1px solid var(--border);">
             <span style="font-size:14px;font-weight:700;">الباقي للعميل</span>
             <span id="cash-change-display" style="font-size:22px;font-weight:900;color:var(--green);">0.00 ج.م</span>
         </div>
-        <button class="btn-checkout" onclick="confirmCashAndCheckout()" style="width:100%;">✅ تأكيد وإتمام البيع</button>
+
+        <!-- أزرار الطباعة والتأكيد -->
+        <div style="display:flex;gap:8px;">
+            <div id="cm-print-row" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;flex:1;justify-content:center;"
+                onclick="document.getElementById('cm-print-check').click()">
+                <input type="checkbox" id="cm-print-check" checked onclick="event.stopPropagation()"
+                    style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
+                <span style="font-size:12px;font-weight:700;">🖨️ طباعة</span>
+            </div>
+            <button class="btn-checkout" onclick="confirmCashAndCheckout()" style="flex:2;">✅ تأكيد البيع</button>
+        </div>
     </div>
 </div>
 
@@ -1171,18 +1195,46 @@
     // ===== CASH CHANGE =====
     let _pendingCheckout=false;
 
+    function setCashModalPayment(method){
+        paymentMethod=method;
+        const cashBtn=document.getElementById('cm-cash');
+        const visaBtn=document.getElementById('cm-visa');
+        const inputEl=document.getElementById('cash-paid-input');
+        const changeRow=inputEl.parentElement.previousElementSibling.nextElementSibling;
+        if(method==='كاش'){
+            cashBtn.style.cssText='flex:1;padding:10px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;background:var(--accent-dim);color:var(--accent);';
+            visaBtn.style.cssText='flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;color:var(--text-muted);background:var(--surface2);';
+            inputEl.style.display='';
+            document.getElementById('cash-paid-input').previousElementSibling && (document.getElementById('cash-paid-input').previousElementSibling.style.display='');
+        } else {
+            visaBtn.style.cssText='flex:1;padding:10px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;background:var(--accent-dim);color:var(--accent);';
+            cashBtn.style.cssText='flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;color:var(--text-muted);background:var(--surface2);';
+        }
+        // sync main payment buttons
+        const map={'كاش':'m-cash','فيزا':'m-visa'};
+        Object.values(map).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
+        const active=document.getElementById(map[method]);
+        if(active)active.classList.add('active');
+    }
+
     function handleCheckoutClick(){
         if(!cart.length){showToast('السلة فارغة','error');return;}
-        if(paymentMethod==='فيزا'){checkout();return;}
-        // كاش — افتح popup الباقي
         const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
         const discount=getDiscount(subtotal);
         const total=subtotal-discount;
         document.getElementById('cash-total-display').innerText=total.toFixed(2)+' ج.م';
         document.getElementById('cash-paid-input').value='';
         document.getElementById('cash-change-display').innerText='0.00 ج.م';
+        // sync payment method display in modal
+        setCashModalPayment(paymentMethod);
+        // sync print checkbox with main checkbox
+        const mainPrint=document.getElementById('print-check');
+        const modalPrint=document.getElementById('cm-print-check');
+        if(mainPrint&&modalPrint) modalPrint.checked=mainPrint.checked;
         document.getElementById('cashModal').classList.add('open');
-        setTimeout(()=>document.getElementById('cash-paid-input').focus(),100);
+        setTimeout(()=>{
+            if(paymentMethod==='كاش') document.getElementById('cash-paid-input').focus();
+        },100);
     }
 
     function calcChange(){
@@ -1200,11 +1252,19 @@
         const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
         const discount=getDiscount(subtotal);
         const total=subtotal-discount;
-        const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
-        if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
-        // حفظ الباقي عشان يظهر في الريسيت
-        window._cashPaid=paid;
-        window._cashChange=(paid-total);
+        // sync print preference from modal checkbox to main checkbox
+        const mainPrint=document.getElementById('print-check');
+        const modalPrint=document.getElementById('cm-print-check');
+        if(mainPrint&&modalPrint) mainPrint.checked=modalPrint.checked;
+        if(paymentMethod==='كاش'){
+            const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
+            if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
+            window._cashPaid=paid;
+            window._cashChange=(paid-total);
+        } else {
+            window._cashPaid=0;
+            window._cashChange=0;
+        }
         closeModal('cashModal');
         checkout();
     }
