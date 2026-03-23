@@ -854,7 +854,7 @@
                 <span>الوقت: <b>${now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</b></span>
                 ${showEmployee?`<span>البائع: <b>${employeeName}</b></span>`:''}
                 <span style="grid-column:1/-1;">الدفع: <b>${paymentMethod}</b></span>
-                ${(window._cashPaid&&paymentMethod==='كاش')?`<span>دفع: <b>${window._cashPaid.toFixed(2)} ج.م</b></span><span style="color:green;">الباقي: <b>${(window._cashChange||0).toFixed(2)} ج.م</b></span>`:''
+                ${(window._cashPaid&&paymentMethod==='كاش')?`<span>دفع: <b>${window._cashPaid.toFixed(2)} ج.م</b></span><span style="color:green;">الباقي: <b>${(window._cashChange||0).toFixed(2)} ج.م</b></span>`:''}
             </div>
             <hr style="border:none;border-top:1px dashed #aaa;margin:6px 0;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;">
