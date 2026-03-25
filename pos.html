@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
-    <title>كاشير - Fateen OS</title>
+    <title>كاشير </title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -1200,17 +1200,15 @@
         const cashBtn=document.getElementById('cm-cash');
         const visaBtn=document.getElementById('cm-visa');
         const inputEl=document.getElementById('cash-paid-input');
-        const changeRow=inputEl.parentElement.previousElementSibling.nextElementSibling;
+        if(!cashBtn||!visaBtn||!inputEl) return;
         if(method==='كاش'){
             cashBtn.style.cssText='flex:1;padding:10px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;background:var(--accent-dim);color:var(--accent);';
             visaBtn.style.cssText='flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;color:var(--text-muted);background:var(--surface2);';
             inputEl.style.display='';
-            document.getElementById('cash-paid-input').previousElementSibling && (document.getElementById('cash-paid-input').previousElementSibling.style.display='');
         } else {
             visaBtn.style.cssText='flex:1;padding:10px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;background:var(--accent-dim);color:var(--accent);';
             cashBtn.style.cssText='flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:800;color:var(--text-muted);background:var(--surface2);';
         }
-        // sync main payment buttons
         const map={'كاش':'m-cash','فيزا':'m-visa'};
         Object.values(map).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
         const active=document.getElementById(map[method]);
@@ -1258,9 +1256,9 @@
         if(mainPrint&&modalPrint) mainPrint.checked=modalPrint.checked;
         if(paymentMethod==='كاش'){
             const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
-            if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
+            if(paid>0 && paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
             window._cashPaid=paid;
-            window._cashChange=(paid-total);
+            window._cashChange=Math.max(0,paid-total);
         } else {
             window._cashPaid=0;
             window._cashChange=0;
