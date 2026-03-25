@@ -1197,18 +1197,25 @@
         }
 
         async function changeDevPass(){
+            const op=document.getElementById('dev-old-pass').value;
             const np=document.getElementById('dev-new-pass').value;
             const cp=document.getElementById('dev-confirm-pass').value;
-            if(!np||np.length<8){alert('الباسورد أقل من 8 أحرف');return;}
-            if(np!==cp){alert('الباسوردين مش متطابقين');return;}
+            if(!op){showDevToast('أدخل الباسورد الحالي','error');return;}
+            if(!np||np.length<8){showDevToast('الباسورد الجديد أقل من 8 أحرف','error');return;}
+            if(np!==cp){showDevToast('الباسوردين مش متطابقين','error');return;}
             const devUser=sessionStorage.getItem('username');
+            // تحقق من الباسورد الحالي
+            const{data:u}=await _supabase.from('users').select('password').eq('username',devUser).eq('role','developer').single();
+            if(!u||u.password!==op){showDevToast('❌ الباسورد الحالي غلط','error');return;}
             const{error}=await _supabase.from('users').update({password:np}).eq('username',devUser).eq('role','developer');
             if(!error){
-                alert('✅ تم تغيير الباسورد');
-                if(window._fateenAuth)window._fateenAuth.clearSession();
-                else sessionStorage.clear();
-                location.href='index.html';
-            }else alert('خطأ: '+error.message);
+                showDevToast('✅ تم تغيير الباسورد','success');
+                setTimeout(()=>{
+                    if(window._fateenAuth)window._fateenAuth.clearSession();
+                    else sessionStorage.clear();
+                    location.href='index.html';
+                },1500);
+            }else showDevToast('خطأ: '+error.message,'error');
         }
 
         loadTheme();
@@ -1219,15 +1226,30 @@
         setInterval(()=>{if(!document.hidden)loadDbStats(false);}, 5*60*1000);
         setInterval(() => { if(!document.hidden) loadData(); }, 60000);
         setInterval(() => { if(!document.hidden) loadMarketers(); }, 60000);
+
+        // ======= حذف items بعد 14 يوم تلقائي =======
+        async function clearOldItems(){
+            try{
+                const cutoff=new Date();
+                cutoff.setDate(cutoff.getDate()-14);
+                const{error,count}=await _supabase.from('sales')
+                    .update({items:null})
+                    .lt('created_at',cutoff.toISOString())
+                    .not('items','is',null);
+                if(!error) console.log('تم مسح items القديمة');
+            }catch(e){console.error('clearOldItems:',e);}
+        }
+        setTimeout(clearOldItems, 3000);
     </script>
     <!-- MODAL: تغيير باسورد المطور -->
     <div id="devPassModal" class="modal">
         <div class="modal-box">
             <h3 style="margin:0 0 16px;color:var(--accent);font-size:15px;font-weight:800;">🔑 تغيير باسورد المطور</h3>
-            <input type="password" id="dev-new-pass" placeholder="الباسورد الجديد (8 أحرف)" style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;margin-bottom:10px;outline:none;">
-            <input type="password" id="dev-confirm-pass" placeholder="تأكيد الباسورد" style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;margin-bottom:14px;outline:none;">
-            <button class="btn-full btn-save" onclick="changeDevPass()">✅ تغيير</button>
-            <button class="btn-full btn-cancel-modal" onclick="document.getElementById('devPassModal').classList.remove('open')" style="margin-top:8px;">إلغاء</button>
+            <input type="password" id="dev-old-pass" placeholder="الباسورد الحالي" style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;margin-bottom:10px;outline:none;">
+            <input type="password" id="dev-new-pass" placeholder="الباسورد الجديد (8 أحرف على الأقل)" style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;margin-bottom:10px;outline:none;">
+            <input type="password" id="dev-confirm-pass" placeholder="تأكيد الباسورد الجديد" style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;margin-bottom:14px;outline:none;">
+            <button class="btn-full btn-save" onclick="changeDevPass()">✅ تغيير الباسورد</button>
+            <button class="btn-full btn-cancel-modal" onclick="document.getElementById('devPassModal').classList.remove('open');document.getElementById('dev-old-pass').value='';document.getElementById('dev-new-pass').value='';document.getElementById('dev-confirm-pass').value='';" style="margin-top:8px;">إلغاء</button>
         </div>
     </div>
 

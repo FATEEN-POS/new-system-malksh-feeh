@@ -756,8 +756,11 @@
 
     function printInvoice(s){
         let items=[];
-        try{items=typeof s.items==='string'?JSON.parse(s.items||'[]'):(s.items||[]);}catch(e){items=[];}
-        if(!Array.isArray(items))items=[];
+        const itemsNull = !s.items;
+        if(!itemsNull){
+            try{items=typeof s.items==='string'?JSON.parse(s.items||'[]'):(s.items||[]);}catch(e){items=[];}
+            if(!Array.isArray(items))items=[];
+        }
         const st=storeSettings;
         const paperW=st.invoice_size==='58mm'?'58mm':st.invoice_size==='A4'?'210mm':'80mm';
         const showEmp=st.invoice_show_employee!==false;
@@ -793,8 +796,11 @@
         <div class="info"><span>رقم: #${String(s.id).slice(-6)}</span><span>${fmt(s.created_at)}</span></div>
         ${showEmp?`<div class="info"><span>البائع: ${s.seller_name||'---'}</span><span>الدفع: ${s.payment_method||'كاش'}</span></div>`:`<div class="info"><span>الدفع: ${s.payment_method||'كاش'}</span></div>`}
         <hr>
-        <table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
-        <tbody>${items.map(i=>{const nm=i.n||i.name||i.product_name||'—';const q=parseFloat(i.q||i.qty||0);const p=parseFloat(i.p||i.price||0);return`<tr><td class="name">${nm}</td><td>${q}</td>${showUnit?`<td>${p}</td>`:''}<td>${(q*p).toFixed(0)}</td></tr>`;}).join('')||'<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد أصناف</td></tr>'}</tbody></table>
+        ${itemsNull
+            ? `<div style="text-align:center;padding:14px;color:#999;font-size:12px;border:1px dashed #ccc;border-radius:6px;margin:8px 0;">🗂️ تفاصيل الأصناف غير متاحة<br><span style="font-size:10px;">(تم حذف التفاصيل بعد 14 يوم)</span></div>`
+            : `<table><thead><tr><th>الصنف</th><th>ك</th>${showUnit?'<th>سعر</th>':''}<th>إجمالي</th></tr></thead>
+        <tbody>${items.map(i=>{const nm=i.n||i.name||i.product_name||'—';const q=parseFloat(i.q||i.qty||0);const p=parseFloat(i.p||i.price||0);return`<tr><td class="name">${nm}</td><td>${q}</td>${showUnit?`<td>${p}</td>`:''}<td>${(q*p).toFixed(0)}</td></tr>`;}).join('')||'<tr><td colspan="4" style="text-align:center;color:#999;">لا توجد أصناف</td></tr>'}</tbody></table>`
+        }
         <div class="total"><div class="total-lbl">الإجمالي</div><div class="total-val">${parseFloat(s.total_amount).toFixed(0)} ج.م</div></div>
         ${showTax?`<div style="font-size:10px;color:#777;text-align:center;margin-top:5px;">الرقم الضريبي: ${st.tax_id}</div>`:''}
         <div class="footer">${footer}</div>
@@ -868,11 +874,14 @@
                 _supabase.from('products').select('*').eq('store_key',storeKey)
             ]);
             const statsMap={};
-            (sales||[]).forEach(s=>(s.items||[]).forEach(i=>{
-                if(!statsMap[i.id]) statsMap[i.id]={name:i.n||i.product_name||'—',qty:0,revenue:0};
-                statsMap[i.id].qty+=i.qty;
-                statsMap[i.id].revenue+=(i.q||i.qty)*(i.p||i.price);
-            }));
+            (sales||[]).forEach(s=>{
+                if(!s.items) return; // تفاصيل محذوفة بعد 14 يوم
+                (s.items||[]).forEach(i=>{
+                    if(!statsMap[i.id]) statsMap[i.id]={name:i.n||i.product_name||'—',qty:0,revenue:0};
+                    statsMap[i.id].qty+=i.qty;
+                    statsMap[i.id].revenue+=(i.q||i.qty)*(i.p||i.price);
+                });
+            });
             const sorted=Object.entries(statsMap).sort((a,b)=>b[1].qty-a[1].qty);
             // chart top 10
             const top10=sorted.slice(0,10);
