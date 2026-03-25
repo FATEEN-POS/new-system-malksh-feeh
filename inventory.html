@@ -607,6 +607,18 @@
 </div>
 <div id="toast-container"></div>
 
+<!-- زر إضافة صنف عائم -->
+<button onclick="openAddModal()" style="
+    position:fixed;bottom:24px;left:24px;
+    width:56px;height:56px;border-radius:50%;
+    background:var(--accent);color:#000;
+    border:none;font-size:28px;font-weight:900;
+    cursor:pointer;z-index:500;
+    box-shadow:0 4px 20px rgba(0,242,254,0.4);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform 0.2s,box-shadow 0.2s;
+" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+
 <script>
     // ===== SECURITY CHECK =====
     (function securityCheck(){
