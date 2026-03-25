@@ -811,7 +811,7 @@
         const discount=getDiscount(subtotal);
         const total=subtotal-discount;
         try{
-            const slimItems=cart.map(i=>({i:i.id,n:i.product_name,p:i.price,q:i.qty}));
+            const slimItems=cart.map(i=>({id:i.id,product_name:i.product_name,price:i.price,qty:i.qty}));
             const{data:saleData,error}=await _supabase.from('sales').insert([{
                 store_key:storeKey,items:slimItems,total_amount:total,
                 payment_method:paymentMethod,seller_name:currentUser,type:'sale'
