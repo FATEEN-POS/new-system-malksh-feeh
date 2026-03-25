@@ -358,7 +358,6 @@
 
             const storesList = stores || [];
             document.getElementById('stat-stores').innerText = storesList.length;
-
             let totalSales = 0;
             let totalCommission = 0;
             const commissionRows = [];
@@ -380,7 +379,8 @@
                 }
             }
 
-            document.getElementById('stat-sales').innerText = totalSales.toLocaleString() + ' ج.م';
+            const salesEl=document.getElementById('stat-sales');
+            if(salesEl) salesEl.innerText = totalSales.toLocaleString() + ' ج.م';
             document.getElementById('stat-commission').innerText = totalCommission.toLocaleString() + ' ج.م';
 
             // تنبيهات التجديد
