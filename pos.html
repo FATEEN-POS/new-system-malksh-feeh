@@ -811,7 +811,7 @@
         const discount=getDiscount(subtotal);
         const total=subtotal-discount;
         try{
-            const slimItems=cart.map(i=>({id:i.id,product_name:i.product_name,price:i.price,qty:i.qty}));
+            const slimItems=cart.map(i=>({i:i.id,n:i.product_name,p:i.price,q:i.qty}));
             const{data:saleData,error}=await _supabase.from('sales').insert([{
                 store_key:storeKey,items:slimItems,total_amount:total,
                 payment_method:paymentMethod,seller_name:currentUser,type:'sale'
@@ -1258,11 +1258,11 @@
         if(mainPrint&&modalPrint) mainPrint.checked=modalPrint.checked;
         if(paymentMethod==='كاش'){
             const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
-            if(paid>0 && paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
-            window._cashPaid=paid||total;
-            window._cashChange=Math.max(0,(paid||total)-total);
+            if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
+            window._cashPaid=paid;
+            window._cashChange=(paid-total);
         } else {
-            window._cashPaid=total;
+            window._cashPaid=0;
             window._cashChange=0;
         }
         closeModal('cashModal');
