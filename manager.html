@@ -751,8 +751,8 @@
             allSales = sales || [];
             let total = 0, ret = 0;
             allSales.forEach(s => { const amt = parseFloat(s.total_amount)||0; if(s.type==='sale') total+=amt; else ret+=amt; });
-            ['m-total-sales','d-total-sales'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = total.toLocaleString()+' ج.م'; });
-            ['m-returns','d-returns'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = ret.toLocaleString()+' ج.م'; });
+            ['m-total-sales','d-total-sales'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = total.toLocaleString('en-US')+' ج.م'; });
+            ['m-returns','d-returns'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = ret.toLocaleString('en-US')+' ج.م'; });
             ['m-bill-count','d-bill-count'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = allSales.filter(s=>s.type==='sale').length; });
             renderSales(allSales);
         } catch(e) { showToast('خطأ في تحميل المبيعات: ' + e.message, 'error'); }
@@ -910,9 +910,11 @@
             if(e1) throw e1;
             const items = typeof sale.items==='string' ? JSON.parse(sale.items) : sale.items;
             for(let item of items) {
-                const { data: p, error: e2 } = await _supabase.from('products').select('stock').eq('id', item.id).single();
-                if(e2) throw e2;
-                await _supabase.from('products').update({ stock: p.stock+item.qty }).eq('id', item.id);
+                const itemId = item.id || item.i;
+                const itemQty = item.qty || item.q || 1;
+                if(!itemId) continue;
+                const { data: p } = await _supabase.from('products').select('stock').eq('id', itemId).single();
+                if(p) await _supabase.from('products').update({ stock: p.stock + itemQty }).eq('id', itemId);
             }
             const { error: e3 } = await _supabase.from('sales').update({ type: 'return' }).eq('id', saleId);
             if(e3) throw e3;
@@ -951,7 +953,7 @@
                 <tr>
                     <td><span style="font-size:18px;">👤</span> ${u.username}</td>
                     <td>${roleLabel(u.role)}</td>
-                    <td style="color:var(--green); font-weight:700;">${(u.monthly_sales||0).toLocaleString()} ج.م</td>
+                    <td style="color:var(--green); font-weight:700;">${(u.monthly_sales||0).toLocaleString('en-US')} ج.م</td>
                     <td style="color:var(--text-muted);">${u.monthly_target||0}</td>
                     <td>
                         <button class="btn btn-primary" style="padding:4px 8px; font-size:12px;" onclick="editUser('${u.username}')">⚙️</button>
@@ -965,7 +967,7 @@
                 <tr>
                     <td style="font-size:12px;"><span style="font-size:18px;">👤</span> ${u.username}</td>
                     <td>${roleLabel(u.role)}</td>
-                    <td style="color:var(--green); font-weight:700; font-size:12px;">${(u.monthly_sales||0).toLocaleString()} ج.م</td>
+                    <td style="color:var(--green); font-weight:700; font-size:12px;">${(u.monthly_sales||0).toLocaleString('en-US')} ج.م</td>
                     <td>
                         <button class="btn btn-primary" style="padding:3px 7px; font-size:11px;" onclick="editUser('${u.username}')">⚙️</button>
                         <button class="btn btn-danger" style="padding:3px 7px; font-size:11px;" onclick="deleteUser('${u.username}')">🗑️</button>
@@ -1195,10 +1197,10 @@
             const diffPct = ystTotal>0 ? ((diff/ystTotal)*100).toFixed(1) : null;
             const cmpClass = diff>0?'up':diff<0?'down':'same';
             const cmpText = diff===0 ? (currentLang==='ar'?'= نفس الأمس':'= Same as yesterday') :
-                diff>0 ? `▲ ${Math.abs(diff).toLocaleString()} ${currentLang==='ar'?'عن الأمس':'vs yesterday'}${diffPct?` (${diffPct}%)`:''}`
-                       : `▼ ${Math.abs(diff).toLocaleString()} ${currentLang==='ar'?'عن الأمس':'vs yesterday'}${diffPct?` (${diffPct}%)` :''}`;
+                diff>0 ? `▲ ${Math.abs(diff).toLocaleString('en-US')} ${currentLang==='ar'?'عن الأمس':'vs yesterday'}${diffPct?` (${diffPct}%)`:''}`
+                       : `▼ ${Math.abs(diff).toLocaleString('en-US')} ${currentLang==='ar'?'عن الأمس':'vs yesterday'}${diffPct?` (${diffPct}%)` :''}`;
             drData = { date, totalSales, totalReturns, net, cash, visa, topProd, peakHour, invoices:sales.length, cmpText };
-            const money = n => Number(n).toLocaleString() + (currentLang==='ar'?' ج.م':' EGP');
+            const money = n => Number(n).toLocaleString('en-US') + (currentLang==='ar'?' ج.م':' EGP');
             // desktop
             const setT = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
             setT('dr-sales', money(totalSales));
@@ -1225,7 +1227,7 @@
     async function printDailyReport() {
         if(!drData) return showToast('حمّل التقرير أولاً','info');
         const d = drData;
-        const money = n => Number(n).toLocaleString() + ' ج.م';
+        const money = n => Number(n).toLocaleString('en-US') + ' ج.م';
         // جلب إعدادات المتجر
         let s = {};
         try {

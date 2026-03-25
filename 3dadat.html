@@ -1067,7 +1067,7 @@
             const{error}=await _supabase.from('stores').update({
                 perm_returns:document.getElementById('perm-returns').checked,
                 perm_discounts:document.getElementById('perm-discounts').checked,
-                perm_show_prices:document.getElementById('perm-show-prices').checked,
+                perm_show_prices:false,
                 perm_show_stats:document.getElementById('perm-show-stats').checked
             }).eq('store_key',storeKey);
             if(error) throw error;

@@ -1258,9 +1258,9 @@
         if(mainPrint&&modalPrint) mainPrint.checked=modalPrint.checked;
         if(paymentMethod==='كاش'){
             const paid=parseFloat(document.getElementById('cash-paid-input').value)||0;
-            if(paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
+            if(paid>0 && paid<total){showToast('المبلغ المدفوع أقل من الإجمالي','error');return;}
             window._cashPaid=paid;
-            window._cashChange=(paid-total);
+            window._cashChange=Math.max(0,paid-total);
         } else {
             window._cashPaid=0;
             window._cashChange=0;

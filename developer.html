@@ -307,7 +307,10 @@
                     <span id="m-theme-icon">🌙</span>
                     <span id="m-theme-label">فاتح</span>
                 </button>
-                <button class="btn btn-red" onclick="logout()">خروج</button>
+                <div style="display:flex;gap:6px;">
+                    <button class="theme-toggle-btn" onclick="document.getElementById('devPassModal').classList.add('open')" style="padding:6px 10px;">⚙️</button>
+                    <button class="btn btn-red" onclick="logout()">خروج</button>
+                </div>
             </div>
         </div>
 
@@ -362,13 +365,10 @@
                     <div style="font-size:16px;font-weight:800;color:var(--orange);" id="m-db-invoices">—</div>
                 </div>
                 <div style="background:var(--card2);border-radius:8px;padding:8px;text-align:center;">
-                    <div style="font-size:10px;color:var(--text-muted);">المنتجات</div>
-                    <div style="font-size:16px;font-weight:800;color:var(--green);" id="m-db-products">—</div>
-                </div>
-                <div style="background:var(--card2);border-radius:8px;padding:8px;text-align:center;">
                     <div style="font-size:10px;color:var(--text-muted);">مؤرشفة</div>
                     <div style="font-size:16px;font-weight:800;color:var(--text-muted);" id="m-db-archive">—</div>
                 </div>
+                <div style="display:none;" id="m-db-products">—</div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card2);border-radius:8px;padding:10px;">
                 <div>
@@ -407,6 +407,7 @@
             </div>
             <div class="header-controls">
                 <button class="btn btn-orange" onclick="exportToExcel()">📊 Excel</button>
+                <button class="theme-toggle-btn" onclick="document.getElementById('devPassModal').classList.add('open')" style="padding:7px 12px;">⚙️ باسورد</button>
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
                     <span id="d-theme-icon">🌙</span>
                     <span id="d-theme-label">ثيم فاتح</span>
@@ -495,7 +496,7 @@
             </div>
 
             <!-- إحصائيات الجداول -->
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px;" id="db-stats-grid">
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;" id="db-stats-grid">
                 <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المبيعات النشطة</div>
                     <div style="font-size:20px; font-weight:800; color:var(--accent);" id="db-sales-count">—</div>
@@ -505,17 +506,11 @@
                     <div style="font-size:20px; font-weight:800; color:var(--orange);" id="db-archive-count">—</div>
                 </div>
                 <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
-                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المنتجات</div>
-                    <div style="font-size:20px; font-weight:800; color:var(--green);" id="db-products-count">—</div>
-                </div>
-                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
-                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">المشتريات</div>
-                    <div style="font-size:20px; font-weight:800; color:var(--text);" id="db-purchases-count">—</div>
-                </div>
-                <div style="background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">إجمالي الفواتير</div>
                     <div style="font-size:20px; font-weight:800; color:var(--accent);" id="db-invoices-count">—</div>
                 </div>
+                <div style="display:none;" id="db-products-count">—</div>
+                <div style="display:none;" id="db-purchases-count">—</div>
             </div>
 
             <!-- الأرشفة -->
@@ -1160,12 +1155,30 @@
             btn.innerText = '⏳ جاري الأرشفة...';
             resultEl.style.display = 'none';
             try {
-                const { data, error } = await _supabase.rpc('run_full_archive');
-                if(error) throw error;
-                const r = data;
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 80);
+                const cutoffStr = cutoff.toISOString();
+
+                // جلب المبيعات القديمة
+                const { data: oldSales, error: e1 } = await _supabase
+                    .from('sales').select('*')
+                    .lt('created_at', cutoffStr);
+                if(e1) throw e1;
+
+                let salesArchived = 0;
+                if(oldSales && oldSales.length > 0) {
+                    // نسخ للأرشيف
+                    const { error: e2 } = await _supabase.from('sales_archive').insert(oldSales);
+                    if(e2) throw e2;
+                    // حذف من الأصل
+                    const ids = oldSales.map(s => s.id);
+                    await _supabase.from('sales').delete().in('id', ids);
+                    salesArchived = oldSales.length;
+                }
+
                 resultEl.style.display = 'block';
-                resultEl.innerHTML = `✅ تمت الأرشفة — فواتير: ${r.sales_archived||0} | مشتريات: ${r.purchases_archived||0} | مصروفات: ${r.expenses_archived||0}`;
-                // إعادة العد من 80 يوم
+                resultEl.style.color = 'var(--green)';
+                resultEl.innerHTML = `✅ تمت الأرشفة — فواتير مؤرشفة: ${salesArchived}`;
                 const _set=(id,v)=>{const el=document.getElementById(id);if(el)el.innerText=v;};
                 _set('db-days-to-archive','80 يوم');
                 _set('m-db-days','فاضل 80 يوم');

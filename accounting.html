@@ -590,7 +590,7 @@
     }
     function setText(id,val){const el=document.getElementById(id);if(el)el.innerText=val;}
     function closeModal(id){document.getElementById(id).classList.remove('open');}
-    const money=n=>Number(n||0).toLocaleString()+' ج.م';
+    const money=n=>Number(n||0).toLocaleString('en-US')+' ج.م';
     const fmt=dt=>new Date(dt).toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit',year:'numeric'});
     function today(){return new Date().toISOString().split('T')[0];}
     function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];}
@@ -783,16 +783,29 @@
         setText('p-total',money(total));
         setText('p-count',data.length.toString());
         setText('p-avg',money(data.length?total/data.length:0));
-        document.getElementById('p-list').innerHTML=data.length?data.map(p=>'<tr><td><span class="badge badge-orange">#'+String(p.id).slice(-6)+'</span></td><td style="font-size:11px;color:var(--text-muted);">'+fmt(p.date)+'</td><td style="font-weight:700;">'+(p.supplier||'غير محدد')+'</td><td style="font-weight:800;color:var(--orange);">'+money(p.total_amount)+'</td><td style="color:var(--text-muted);">'+(p.items_count||0)+' صنف</td><td><button onclick="showPurDetail('+JSON.stringify(p).replace(/"/g,"'")+' )" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:700;">تفاصيل</button> <button onclick="deletePurchase('+p.id+')" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:700;">حذف</button></td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</td></tr>';
+        // store purchases data for detail modal
+        window._purchasesMap = {};
+        data.forEach(p => { window._purchasesMap[p.id] = p; });
+        document.getElementById('p-list').innerHTML=data.length?data.map(p=>'<tr><td><span class="badge badge-orange">#'+String(p.id).slice(-6)+'</span></td><td style="font-size:11px;color:var(--text-muted);">'+fmt(p.date)+'</td><td style="font-weight:700;">'+(p.supplier||'غير محدد')+'</td><td style="font-weight:800;color:var(--orange);">'+money(p.total_amount)+'</td><td style="color:var(--text-muted);">'+(p.items_count||0)+' صنف</td><td style="display:flex;gap:4px;"><button onclick="showPurDetail(\''+p.id+'\')" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:700;">تفاصيل</button> <button onclick="openReturnFromPurchase(\''+p.id+'\',\''+(p.supplier||'غير محدد')+'\')" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:700;">↩️ إرجاع</button></td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد بيانات</td></tr>';
     }
     function filterPurchases(){
         const q=(document.getElementById('p-search')?.value||'').toLowerCase();
         renderPurchases(allPurchasesData.filter(p=>(p.supplier||'').toLowerCase().includes(q)||String(p.id).slice(-6).includes(q)));
     }
-    function showPurDetail(p){
+    function showPurDetail(id){
+        const p = window._purchasesMap && window._purchasesMap[id];
+        if(!p) return showToast('لم يتم العثور على الفاتورة','error');
         const items=typeof p.items==='string'?JSON.parse(p.items):(p.items||[]);
         document.getElementById('pur-detail-content').innerHTML='<p style="margin:0 0 6px;"><b>المورد:</b> '+(p.supplier||'---')+'</p><p style="margin:0 0 6px;"><b>التاريخ:</b> '+fmt(p.date)+'</p>'+(p.ref_number?'<p style="margin:0 0 6px;"><b>المرجع:</b> '+p.ref_number+'</p>':'')+'<div class="table-wrap" style="margin-top:10px;"><table class="data-table"><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+items.map(i=>'<tr><td>'+i.name+'</td><td>'+i.qty+'</td><td>'+money(i.price)+'</td><td>'+money(i.qty*i.price)+'</td></tr>').join('')+'</tbody></table></div><div style="margin-top:12px;padding:10px 14px;background:var(--accent-dim);border-radius:var(--radius-sm);display:flex;justify-content:space-between;"><span>الإجمالي</span><span style="font-weight:800;color:var(--accent);">'+money(p.total_amount)+'</span></div>';
         document.getElementById('purchaseDetailModal').classList.add('open');
+    }
+    function openReturnFromPurchase(id, supplier){
+        document.getElementById('pret-supplier').value = supplier || '';
+        document.getElementById('pret-date').value = new Date().toISOString().split('T')[0];
+        const p = window._purchasesMap && window._purchasesMap[id];
+        if(p) document.getElementById('pret-amount').value = p.total_amount || '';
+        document.getElementById('pret-reason').value = '';
+        document.getElementById('purReturnModal').classList.add('open');
     }
     async function deletePurchase(id){
         if(!confirm('حذف الفاتورة؟')) return;
