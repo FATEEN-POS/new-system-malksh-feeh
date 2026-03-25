@@ -162,8 +162,8 @@
         <span class="sidebar-close" onclick="closeSidebar()">✕</span>
     </div>
     <nav class="sidebar-nav">
-        <a class="sb-item" onclick="openModal('productModal');resetProductForm();closeSidebar()"><span class="sb-icon">✨</span>صنف جديد</a>
-        <a class="sb-item" onclick="openModal('orderModal');closeSidebar()"><span class="sb-icon">📦</span>توريد فاتورة</a>
+        <a class="sb-item" onclick="openAddModal();closeSidebar()"><span class="sb-icon">✨</span>صنف جديد</a>
+        <a class="sb-item" onclick="openOrderModal();closeSidebar()"><span class="sb-icon">📦</span>توريد فاتورة</a>
         <a class="sb-item" onclick="showSection('sec-inventory');closeSidebar()"><span class="sb-icon">📊</span>جرد مفصل</a>
         <a class="sb-item" onclick="exportBackup();closeSidebar()"><span class="sb-icon">💾</span>Back-Up</a>
         <a class="sb-item" onclick="showSection('sec-favorites');closeSidebar()"><span class="sb-icon">⭐️</span>المفضلة</a>
@@ -721,8 +721,9 @@
     }
 
     function buildProductCategorySelect(){
-        const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
         const sel=document.getElementById('p-category-select');
+        if(!sel) return;
+        const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
         const cur=sel.value;
         sel.innerHTML='<option value="">-- بدون قسم --</option>';
         cats.forEach(c=>{sel.innerHTML+=`<option value="${c}"${cur===c?' selected':''}>${c}</option>`;});
