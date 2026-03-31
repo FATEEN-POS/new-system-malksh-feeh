@@ -6,6 +6,8 @@
     <title>تسجيل الدخول</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="src/js/db.js"></script>
+    <script src="src/js/auth.js"></script>
     <style>
         /* ======= THEMES ======= */
         :root {
@@ -379,6 +381,10 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Expose globals for FateenAuth module
+        window.SUPABASE_URL      = SUPABASE_URL;
+        window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
         let currentStore = null;
 
         // ======= THEME =======
@@ -477,13 +483,14 @@
             sessionStorage.setItem('username', user.username);
             sessionStorage.setItem('userRole', user.role);
             sessionStorage.setItem('store_key', currentStore.store_key);
-            // حفظ في localStorage عشان الصفحات التانية تعرف تقراه
-            localStorage.setItem('fateen_session', JSON.stringify({
+            // Cache session locally for offline continuity
+            await FateenAuth.saveSession({
                 store_key: currentStore.store_key,
-                username: user.username,
-                userRole: user.role,
-                ts: Date.now()
-            }));
+                username:  user.username,
+                userRole:  user.role,
+            });
+            // Cache store info for offline use
+            await FateenAuth.cacheStoreInfo(currentStore);
 
             const _roleMap = {
                 'developer':         'developer.html',
@@ -506,8 +513,23 @@
 
         // ======= INIT =======
         loadTheme();
-        loadSplash();
-        setTimeout(hideSplash, 2200);
+
+        // Initialise IndexedDB and check if first-run setup is needed
+        async function initApp() {
+            await FateenDB.openDB();
+            const identity = await FateenDB.getMeta('store_identity');
+            if (!identity || !identity.store_key) {
+                // First run — redirect to setup
+                // Only redirect if not already on setup.html
+                if (!location.pathname.includes('setup.html')) {
+                    location.href = 'setup.html';
+                    return;
+                }
+            }
+            loadSplash();
+            setTimeout(hideSplash, 2200);
+        }
+        initApp();
 
         // ===== PWA Service Worker =====
         if('serviceWorker' in navigator){

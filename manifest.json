@@ -1,8 +1,9 @@
 {
-  "name": "Fateen OS",
+  "name": "Fateen POS",
   "short_name": "فطين",
   "description": "نظام إدارة المبيعات والمخازن الذكي",
-  "start_url": "/index.html",
+  "start_url": "index.html",
+  "scope": ".",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#080808",
@@ -27,13 +28,13 @@
     {
       "name": "الكاشير",
       "short_name": "كاشير",
-      "url": "/pos.html",
+      "url": "pos.html",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "لوحة المدير",
       "short_name": "مدير",
-      "url": "/manager.html",
+      "url": "manager.html",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ],

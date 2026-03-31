@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+  <title>إعداد فطين POS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+  <script src="src/js/db.js"></script>
+  <style>
+    :root {
+      --bg: #050505;
+      --card: #111111;
+      --card2: #1a1a1a;
+      --accent: #00f2fe;
+      --border: #2a2a2a;
+      --text: #ffffff;
+      --text-muted: #666;
+      --input-bg: #000000;
+      --btn-color: #000;
+    }
+    [data-theme="light"] {
+      --bg: #f0ede5;
+      --card: #ffffff;
+      --card2: #e8e4db;
+      --accent: #004643;
+      --border: #c8c4bb;
+      --text: #1a1a1a;
+      --text-muted: #888;
+      --input-bg: #e8e4db;
+      --btn-color: #f0ede5;
+    }
+    * { font-family: 'Cairo', sans-serif; box-sizing: border-box; margin: 0; padding: 0; transition: background .3s, color .3s, border-color .3s; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .setup-wrapper {
+      width: 100%;
+      max-width: 460px;
+      animation: fadeUp .5s ease;
+    }
+    @keyframes fadeUp { from { opacity:0;transform:translateY(20px); } to { opacity:1;transform:translateY(0); } }
+    .brand {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .brand-logo {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: var(--accent);
+    }
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+    .field {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+    input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: var(--btn-color);
+      font-family: 'Cairo', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .error-msg {
+      display: none;
+      background: rgba(255,77,77,.1);
+      border: 1px solid #ff4d4d;
+      color: #ff4d4d;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .success-msg {
+      display: none;
+      background: rgba(0,230,118,.1);
+      border: 1px solid #00e676;
+      color: #00e676;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .step-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--btn-color);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle:hover { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌙</span>
+    <span id="theme-label">ثيم فاتح</span>
+  </button>
+
+  <div class="setup-wrapper">
+    <div class="brand">
+      <div class="brand-logo">FATEEN POS</div>
+      <div class="brand-sub">الإعداد الأول — First-time Setup</div>
+    </div>
+
+    <div class="card">
+      <div class="step-badge">إعداد أولي</div>
+      <div class="card-title">مرحباً بك في فطين POS 👋</div>
+      <div class="card-desc">
+        يبدو أنك تشغّل التطبيق لأول مرة. أدخل بيانات متجرك وحساب المدير للبدء.
+        لن تحتاج لإعادة هذه الخطوة مرةً أخرى.
+      </div>
+
+      <div id="errMsg" class="error-msg"></div>
+      <div id="successMsg" class="success-msg">✅ تم الإعداد بنجاح! جاري التوجيه لتسجيل الدخول...</div>
+
+      <div class="field">
+        <label for="storeName">اسم المتجر</label>
+        <input type="text" id="storeName" placeholder="مثال: متجر فطين الرئيسي" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="storeKey">كود المتجر (يُستخدم للدخول)</label>
+        <input type="text" id="storeKey" placeholder="مثال: FATEEN001" autocomplete="off" style="text-transform:uppercase;">
+      </div>
+
+      <div class="field">
+        <label for="adminName">اسم المدير الكامل</label>
+        <input type="text" id="adminName" placeholder="مثال: أحمد محمد" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="adminUser">اسم المستخدم للمدير</label>
+        <input type="text" id="adminUser" placeholder="مثال: admin" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="adminPass">كلمة المرور</label>
+        <input type="password" id="adminPass" placeholder="8 أحرف على الأقل">
+      </div>
+
+      <div class="field">
+        <label for="adminPassConfirm">تأكيد كلمة المرور</label>
+        <input type="password" id="adminPassConfirm" placeholder="أعد إدخال كلمة المرور">
+      </div>
+
+      <button class="btn-primary" id="setupBtn" onclick="runSetup()">بدء الإعداد وحفظ البيانات</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Theme ──────────────────────────────────────────────────────────────
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isLight = html.getAttribute('data-theme') === 'light';
+      html.setAttribute('data-theme', isLight ? '' : 'light');
+      localStorage.setItem('fateen_theme', isLight ? 'dark' : 'light');
+      updateThemeBtn(!isLight);
+    }
+    function updateThemeBtn(isLight) {
+      document.getElementById('theme-icon').innerText  = isLight ? '☀️' : '🌙';
+      document.getElementById('theme-label').innerText = isLight ? 'ثيم داكن' : 'ثيم فاتح';
+    }
+    (function loadTheme() {
+      const saved = localStorage.getItem('fateen_theme');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        updateThemeBtn(true);
+      }
+    })();
+
+    // ── Password hashing via Web Crypto API ────────────────────────────────
+    async function hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ── Redirect if already set up ─────────────────────────────────────────
+    async function checkAlreadySetup() {
+      await FateenDB.openDB();
+      const meta = await FateenDB.getMeta('store_identity');
+      if (meta && meta.store_key) {
+        location.href = 'index.html';
+      }
+    }
+    checkAlreadySetup();
+
+    // ── Setup ──────────────────────────────────────────────────────────────
+    async function runSetup() {
+      const errEl  = document.getElementById('errMsg');
+      const sucEl  = document.getElementById('successMsg');
+      const btn    = document.getElementById('setupBtn');
+      errEl.style.display = 'none';
+      sucEl.style.display = 'none';
+
+      const storeName       = document.getElementById('storeName').value.trim();
+      const storeKey        = document.getElementById('storeKey').value.trim().toUpperCase();
+      const adminName       = document.getElementById('adminName').value.trim();
+      const adminUser       = document.getElementById('adminUser').value.trim();
+      const adminPass       = document.getElementById('adminPass').value;
+      const adminPassConfirm= document.getElementById('adminPassConfirm').value;
+
+      // Validation
+      if (!storeName || !storeKey || !adminName || !adminUser || !adminPass) {
+        errEl.innerText = 'يرجى ملء جميع الحقول.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (adminPass.length < 8) {
+        errEl.innerText = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (adminPass !== adminPassConfirm) {
+        errEl.innerText = 'كلمتا المرور غير متطابقتين.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'جاري الحفظ...';
+
+      try {
+        await FateenDB.openDB();
+
+        // Store identity
+        await FateenDB.setMeta('store_identity', {
+          store_name: storeName,
+          store_key:  storeKey,
+          setup_date: new Date().toISOString(),
+        });
+
+        // Local admin user (role: manager)
+        // Password is hashed with SHA-256 (Web Crypto API) before storage.
+        const hashedPassword = await hashPassword(adminPass);
+        await FateenDB.setMeta('local_admin', {
+          username:   adminUser,
+          full_name:  adminName,
+          role:       'manager',
+          password:   hashedPassword, // SHA-256 hash of the local-only credential
+          store_key:  storeKey,
+          created_at: new Date().toISOString(),
+        });
+
+        // App settings defaults
+        await FateenDB.setMeta('app_settings', {
+          licence_grace_days: 30,
+          currency:           'EGP',
+          vat_rate:           14,
+          setup_complete:     true,
+        });
+
+        sucEl.style.display = 'block';
+        btn.innerText = 'تم ✓';
+
+        setTimeout(() => { location.href = 'index.html'; }, 1800);
+      } catch (err) {
+        errEl.innerText = 'حدث خطأ أثناء الحفظ: ' + err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = 'بدء الإعداد وحفظ البيانات';
+      }
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') runSetup();
+    });
+  </script>
+</body>
+</html>
