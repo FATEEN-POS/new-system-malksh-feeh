@@ -43,8 +43,8 @@ jobs:
         run: |
           mkdir -p android-twa
           cd android-twa
-          bubblewrap init \
-            --manifest "${{ env.TWA_ORIGIN }}/manifest.json" \
+yes | bubblewrap init \
+--manifest "${{ env.TWA_ORIGIN }}/manifest.json" \
             --directory . \
             --skipPwaValidation
         env:
