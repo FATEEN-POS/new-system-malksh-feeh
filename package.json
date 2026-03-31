@@ -1,0 +1,12 @@
+{
+  "name": "fateen-pos",
+  "version": "1.0.0",
+  "description": "Fateen POS - Offline-first point of sale system",
+  "scripts": {
+    "build:android": "bubblewrap build",
+    "build:win": "npx tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.6.0"
+  }
+}

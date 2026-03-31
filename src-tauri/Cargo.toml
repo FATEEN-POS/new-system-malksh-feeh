@@ -1,0 +1,23 @@
+[package]
+name = "fateen-pos"
+version = "1.0.0"
+description = "Fateen POS - Offline-first point of sale system"
+authors = ["Fateen POS Team"]
+license = "MIT"
+repository = "https://github.com/FATEEN-POS/test-pos"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "1", features = [] }
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]

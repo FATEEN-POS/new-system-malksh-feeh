@@ -1,0 +1,145 @@
+name: Build Fateen POS Artifacts (Android & Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Windows build – Tauri v1  (produces .exe / MSI installer)
+  # ──────────────────────────────────────────────────────────────
+  build_windows:
+    name: Build Windows (Tauri)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry & build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build Windows app (Tauri)
+        id: build_win
+        run: npm run build:win
+        continue-on-error: true
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fateen-pos-windows
+          # captures raw .exe, NSIS/WiX installers, and .msi bundles
+          path: |
+            src-tauri/target/release/*.exe
+            src-tauri/target/release/bundle/**/*.exe
+            src-tauri/target/release/bundle/**/*.msi
+          if-no-files-found: warn
+
+  # ──────────────────────────────────────────────────────────────
+  # Android build – Bubblewrap/TWA  (produces signed/debug .apk)
+  # ──────────────────────────────────────────────────────────────
+  build_android:
+    name: Build Android (Bubblewrap/TWA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install Android build tools (minimal)
+        run: |
+          sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "platform-tools"
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Install Bubblewrap CLI globally
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize Android TWA project (non-interactive)
+        # Passes empty answers to any remaining interactive prompts via printf
+        # so the step never hangs. Bubblewrap reads twa-manifest.json from CWD.
+        run: |
+          if [ ! -d "app" ]; then
+            printf '\n\n\n\n\n' | bubblewrap init \
+              --manifest https://pos.fateen1.me/manifest.json \
+              --skip-pwa-validation || true
+          else
+            echo "Android project already exists – skipping init"
+          fi
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Generate debug keystore (if no release keystore supplied)
+        # A debug keystore lets bubblewrap sign without external secrets.
+        # To use a release key, add KEYSTORE_BASE64, KEY_ALIAS, KEY_PASSWORD,
+        # and STORE_PASSWORD as GitHub Actions secrets and decode them here.
+        run: |
+          if [ ! -f android.keystore ]; then
+            keytool -genkey -v \
+              -keystore android.keystore \
+              -alias fateen-pos \
+              -keyalg RSA -keysize 2048 -validity 365 \
+              -dname "CN=Fateen POS Debug, OU=Debug, O=Debug, L=Debug, S=Debug, C=US" \
+              -storepass android \
+              -keypass android
+          fi
+
+      - name: Build Android APK (Bubblewrap)
+        id: build_apk
+        run: npm run build:android
+        continue-on-error: true
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fateen-pos-android
+          path: '**/app/build/outputs/apk/release/*.apk'
+          if-no-files-found: warn
