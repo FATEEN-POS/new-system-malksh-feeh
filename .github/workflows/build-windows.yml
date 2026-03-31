@@ -35,18 +35,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Windows installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fateen-pos-windows-installer
-          path: dist-desktop/*.exe
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload Windows portable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fateen-pos-windows-portable
-          path: dist-desktop/*portable*.exe
-          retention-days: 30
-          if-no-files-found: warn
+   - name: Upload Windows installer
+  uses: actions/upload-artifact@v4
+  with:
+    name: fateen-pos-windows-installer
+    path: |
+      dist/**/*.exe
+      dist/**/*.msi
+      dist/**/*.zip
+    retention-days: 30
+    if-no-files-found: error
+    
+     - name: Upload Windows portable artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: fateen-pos-windows-portable
+    path: |
+      dist/**/*.exe
+      dist/**/*.msi
+      dist/**/*.zip
+    retention-days: 30
+    if-no-files-found: error
