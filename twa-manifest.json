@@ -1,46 +1,28 @@
 {
-  "packageId": "com.fateenpos.app",
-  "host": "fateen-pos.github.io",
+  "packageId": "com.fateen.pos",
+  "host": "pos.fateen1.me",
   "name": "Fateen POS",
-  "launcherName": "فطين",
+  "launcherName": "Fateen POS",
   "display": "standalone",
-  "themeColor": "#00f2fe",
-  "backgroundColor": "#080808",
-  "startUrl": "/test-pos/index.html",
-  "iconUrl": "https://fateen-pos.github.io/test-pos/icons/icon-512.png",
-  "maskableIconUrl": "https://fateen-pos.github.io/test-pos/icons/icon-512.png",
-  "appVersion": "1",
-  "appVersionName": "1.0.0",
-  "shortcuts": [
-    {
-      "name": "الكاشير",
-      "short_name": "كاشير",
-      "url": "/test-pos/pos.html",
-      "icons": [{ "src": "https://fateen-pos.github.io/test-pos/icons/icon-192.png", "sizes": "192x192" }]
-    }
-  ],
+  "themeColor": "#0f172a",
+  "navigationColor": "#0f172a",
+  "navigationColorDark": "#0f172a",
+  "navigationDividerColor": "#0f172a",
+  "backgroundColor": "#0f172a",
   "enableNotifications": false,
-  "features": {
-    "locationDelegation": { "enabled": false },
-    "playBilling": { "enabled": false }
+  "startUrl": "/",
+  "iconUrl": "https://pos.fateen1.me/icons/icon-512x512.png",
+  "maskableIconUrl": "https://pos.fateen1.me/icons/icon-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signing": {
+    "app": "android.keystore",
+    "keystore": "android.keystore",
+    "alias": "androiddebugkey",
+    "fullBackupContent": "true"
   },
-  "alphaDependencies": {
-    "enabled": false
-  },
-  "enableSiteSettingsShortcut": true,
-  "isChromeOSOnly": false,
-  "isMetaQuest": false,
-  "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://fateen-pos.github.io/test-pos/manifest.json",
-  "fallbackType": "customtabs",
-  "orientation": "default",
-  "fingerprints": [],
-  "serviceAccountJsonFile": "./service-account.json",
-  "signingKey": {
-    "path": "./android.keystore",
-    "alias": "fateen-pos"
-  },
-  "_note_signing": "Set signingKeyPassphrase and storeKeyPassphrase via environment variables or a local override file (not committed). See MIGRATION_OFFLINE.md.",
-  "signingKeyPassphrase": "",
-  "storeKeyPassphrase": ""
+  "orientation": "portrait",
+  "serviceWorker": {
+    "src": "sw.js",
+    "useCache": true
+  }
 }

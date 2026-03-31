@@ -1,23 +1,18 @@
 [package]
 name = "fateen-pos"
 version = "1.0.0"
-description = "Fateen POS — Offline-first Arabic Point of Sale"
+description = "Fateen POS - Offline-first point of sale system"
 authors = ["Fateen POS Team"]
+license = "MIT"
+repository = "https://github.com/FATEEN-POS/test-pos"
 edition = "2021"
 
-[lib]
-name = "fateen_pos_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
-
-[[bin]]
-name = "fateen-pos"
-path = "src/main.rs"
-
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
-tauri-plugin-shell = "2"
-serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "1", features = [] }
+
+[features]
