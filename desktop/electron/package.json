@@ -43,18 +43,17 @@ jobs:
         run: |
           mkdir -p android-twa
           cd android-twa
-          bubblewrap init \
+          yes | bubblewrap init \
             --manifest "${{ env.TWA_ORIGIN }}/manifest.json" \
             --directory . \
             --skipPwaValidation
         env:
-          # Bubblewrap may prompt interactively; provide defaults via env
           BUBBLEWRAP_SKIP_PROMPTS: "true"
 
       - name: Build debug APK
         run: |
           cd android-twa
-          bubblewrap build --skipPwaValidation
+          yes | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_SKIP_PROMPTS: "true"
 
