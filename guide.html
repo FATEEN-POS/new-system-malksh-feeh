@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>دليل فطين</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/db.js"></script>
     <style>
         :root{--bg:#080808;--surface:#111;--surface2:#181818;--accent:#00f2fe;--accent-dim:rgba(0,242,254,0.08);--border:#252525;--text:#f0f0f0;--text-muted:#777;--green:#00e676;--green-dim:rgba(0,230,118,0.1);--orange:#ffa040;--purple:#a78bfa;--red:#ff4d4d;--btn-color:#000;--shadow:0 4px 24px rgba(0,0,0,0.5);--radius:14px;--radius-sm:9px;}
         [data-theme="light"]{--bg:#f0ede5;--surface:#fff;--surface2:#f5f2eb;--accent:#004643;--accent-dim:rgba(0,70,67,0.07);--border:#ddd8cf;--text:#1a1a1a;--text-muted:#777;--green:#00875a;--green-dim:rgba(0,135,90,0.08);--orange:#d35400;--purple:#7c3aed;--red:#c0392b;--btn-color:#f0ede5;--shadow:0 4px 24px rgba(0,0,0,0.08);}
@@ -357,9 +357,7 @@
 </div>
 
 <script>
-    const SUPABASE_URL='https://xyvxowlbvuqbggkslwqr.supabase.co';
-    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-    const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const _sb = createLocalClient();
     (async()=>{try{const{data}=await _sb.from('system_settings').select('value').eq('key','sys_version').single();if(data)document.getElementById('ver-chip').innerText=data.value;}catch(e){}})();
     function toggleTheme(){const h=document.documentElement;const l=h.getAttribute('data-theme')==='light';h.setAttribute('data-theme',l?'':'light');localStorage.setItem('fateen_theme',l?'dark':'light');document.getElementById('theme-icon').innerText=l?'🌙':'☀️';}
     (function(){const s=localStorage.getItem('fateen_theme');if(s==='light'){document.documentElement.setAttribute('data-theme','light');document.getElementById('theme-icon').innerText='☀️';}})();

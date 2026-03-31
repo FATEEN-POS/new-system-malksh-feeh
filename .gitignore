@@ -1,0 +1,20 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Tauri build artifacts
+src-tauri/target/
+
+# Android build artifacts
+android/
+*.keystore
+*.jks
+service-account.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp

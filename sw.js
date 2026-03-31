@@ -1,5 +1,5 @@
-// Fateen OS — Service Worker v2
-const CACHE_NAME = 'fateen-os-v2';
+// Fateen OS — Service Worker v3
+const CACHE_NAME = 'fateen-os-v3';
 
 const STATIC_ASSETS = [
   '/index.html',
@@ -16,7 +16,10 @@ const STATIC_ASSETS = [
   '/hr.html',
   '/marketer.html',
   '/developer.html',
-  '/no-internet.html'
+  '/settings.html',
+  '/no-internet.html',
+  '/db.js',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
@@ -39,8 +42,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
-  if (url.hostname.includes('supabase.co')) return;
 
   if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
     event.respondWith(

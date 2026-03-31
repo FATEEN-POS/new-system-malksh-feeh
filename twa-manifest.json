@@ -1,0 +1,46 @@
+{
+  "packageId": "com.fateenpos.app",
+  "host": "fateen-pos.github.io",
+  "name": "Fateen POS",
+  "launcherName": "فطين",
+  "display": "standalone",
+  "themeColor": "#00f2fe",
+  "backgroundColor": "#080808",
+  "startUrl": "/test-pos/index.html",
+  "iconUrl": "https://fateen-pos.github.io/test-pos/icons/icon-512.png",
+  "maskableIconUrl": "https://fateen-pos.github.io/test-pos/icons/icon-512.png",
+  "appVersion": "1",
+  "appVersionName": "1.0.0",
+  "shortcuts": [
+    {
+      "name": "الكاشير",
+      "short_name": "كاشير",
+      "url": "/test-pos/pos.html",
+      "icons": [{ "src": "https://fateen-pos.github.io/test-pos/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "enableNotifications": false,
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://fateen-pos.github.io/test-pos/manifest.json",
+  "fallbackType": "customtabs",
+  "orientation": "default",
+  "fingerprints": [],
+  "serviceAccountJsonFile": "./service-account.json",
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "fateen-pos"
+  },
+  "_note_signing": "Set signingKeyPassphrase and storeKeyPassphrase via environment variables or a local override file (not committed). See MIGRATION_OFFLINE.md.",
+  "signingKeyPassphrase": "",
+  "storeKeyPassphrase": ""
+}

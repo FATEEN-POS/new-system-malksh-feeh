@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
     <title>تسجيل الدخول</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/db.js"></script>
     <style>
         /* ======= THEMES ======= */
         :root {
@@ -297,6 +297,31 @@
 </head>
 <body>
 
+    <!-- FIRST-RUN WIZARD -->
+    <div id="wizardModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:none;justify-content:center;align-items:center;">
+      <div style="background:var(--card);border:1px solid var(--accent);border-radius:18px;padding:32px 28px;max-width:420px;width:92%;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">🏪</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--accent);margin-bottom:4px;">إعداد المتجر لأول مرة</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:22px;">أنشئ متجرك الآن للبدء بدون اتصال بالإنترنت</div>
+        <input id="wiz-store-name" type="text" placeholder="اسم المتجر *" style="width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;margin-bottom:10px;outline:none;text-align:right;">
+        <input id="wiz-store-key"  type="text" placeholder="كود المتجر (حروف/أرقام) *" style="width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;margin-bottom:10px;outline:none;text-align:right;">
+        <input id="wiz-owner"      type="text" placeholder="اسم المدير / المالك *" style="width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;margin-bottom:10px;outline:none;text-align:right;">
+        <input id="wiz-password"   type="password" placeholder="كلمة المرور *" style="width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;margin-bottom:6px;outline:none;text-align:right;">
+        <div id="wiz-err" style="color:#ff4d4d;font-size:12px;min-height:18px;margin-bottom:10px;"></div>
+        <button onclick="doWizardSetup()" style="width:100%;padding:12px;background:var(--accent);color:var(--btn-color);border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:800;cursor:pointer;">✅ إنشاء المتجر والبدء</button>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION EXPIRED -->
+    <div id="subExpiredModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,0.92);justify-content:center;align-items:center;">
+      <div style="background:var(--card);border:1px solid #ff4d4d;border-radius:18px;padding:32px 28px;max-width:380px;width:92%;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:10px;">🔒</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#ff4d4d;margin-bottom:8px;">انتهت صلاحية الاشتراك</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">يرجى التواصل مع الدعم لتجديد اشتراكك واستعادة الوصول.</div>
+        <button onclick="location.reload()" style="padding:10px 24px;background:#ff4d4d;color:#fff;border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">إعادة المحاولة</button>
+      </div>
+    </div>
+
     <!-- SPLASH -->
     <div id="splash">
         <img src="لوجو_فطين_ابيض.png" id="splash-logo-img" style="height:80px;object-fit:contain;margin-bottom:12px;" onerror="this.style.display='none';document.getElementById('splash-logo-txt').style.display='block'">
@@ -375,9 +400,7 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://xyvxowlbvuqbggkslwqr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const _supabase = createLocalClient();
 
         let currentStore = null;
 
@@ -504,10 +527,71 @@
             document.getElementById('passwordInput').value = '';
         }
 
+        // ======= FIRST-RUN WIZARD =======
+        async function doWizardSetup() {
+            const storeName = document.getElementById('wiz-store-name').value.trim();
+            const storeKey  = document.getElementById('wiz-store-key').value.trim().replace(/\s+/g, '_');
+            const owner     = document.getElementById('wiz-owner').value.trim();
+            const password  = document.getElementById('wiz-password').value;
+            const errEl     = document.getElementById('wiz-err');
+
+            if (!storeName || !storeKey || !owner || !password) {
+                errEl.innerText = 'يرجى ملء جميع الحقول';
+                return;
+            }
+
+            errEl.innerText = '';
+            try {
+                await _supabase.from('stores').insert([{
+                    store_key: storeKey, store_name: storeName, is_active: true,
+                    created_at: new Date().toISOString()
+                }]);
+                await _supabase.from('users').insert([{
+                    store_key: storeKey, username: owner, password: password,
+                    role: 'manager', created_at: new Date().toISOString()
+                }]);
+                await _supabase.from('system_settings').insert([
+                    { store_key: storeKey, key: 'sys_version', value: '1.0.0' }
+                ]);
+                initSubscription();
+                document.getElementById('wizardModal').style.display = 'none';
+                document.getElementById('storeKeyInput').value = storeKey;
+                document.getElementById('loginUI').style.display = 'block';
+                checkStore();
+            } catch (e) {
+                errEl.innerText = 'حدث خطأ: ' + (e.message || e);
+            }
+        }
+
         // ======= INIT =======
-        loadTheme();
-        loadSplash();
-        setTimeout(hideSplash, 2200);
+        async function initApp() {
+            loadTheme();
+
+            // Subscription check
+            const subOk = await checkSubscription();
+            if (!subOk) {
+                document.getElementById('splash').style.display = 'none';
+                const m = document.getElementById('subExpiredModal');
+                m.style.display = 'flex';
+                return;
+            }
+
+            // First-run wizard
+            const firstRun = await isFirstRun();
+            if (firstRun) {
+                initSubscription();
+                document.getElementById('splash').style.display = 'none';
+                const w = document.getElementById('wizardModal');
+                w.style.display = 'flex';
+                return;
+            }
+
+            // Normal flow
+            loadSplash();
+            setTimeout(hideSplash, 2200);
+        }
+
+        initApp();
 
         // ===== PWA Service Worker =====
         if('serviceWorker' in navigator){

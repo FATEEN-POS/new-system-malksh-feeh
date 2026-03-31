@@ -321,11 +321,9 @@
 
 <div id="toast-wrap"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/db.js"></script>
 <script>
-    const SURL="https://xyvxowlbvuqbggkslwqr.supabase.co";
-    const SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo";
-    const _sb=supabase.createClient(SURL,SKEY);
+    const _sb = createLocalClient();
     const storeKey=sessionStorage.getItem("store_key");
     let allEmps=[],salesMap={};
 

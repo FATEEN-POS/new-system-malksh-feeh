@@ -6,7 +6,7 @@
     <title>تواصل معانا </title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/db.js"></script>
     <style>
         :root {
             --bg:#080808; --surface:#111111; --surface2:#181818; --surface3:#202020;
@@ -231,9 +231,7 @@
 </div>
 
 <script>
-    const SUPABASE_URL='https://xyvxowlbvuqbggkslwqr.supabase.co';
-    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dnhvd2xidnVxYmdna3Nsd3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDY3NzksImV4cCI6MjA4NjY4Mjc3OX0.h48-mCH2jR5Edsi2zZogbTDE-HNNfhAlQpKp9oJB_Bo';
-    const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const _supabase = createLocalClient();
 
     // THEME
     function toggleTheme(){
