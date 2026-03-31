@@ -1,0 +1,36 @@
+{
+  "packageId": "me.fateen1.pos",
+  "host": "pos.fateen1.me",
+  "name": "Fateen POS",
+  "launcherName": "فطين",
+  "display": "standalone",
+  "themeColor": "#00f2fe",
+  "navigationColor": "#080808",
+  "backgroundColor": "#080808",
+  "enableNotifications": false,
+  "startUrl": "/index.html",
+  "iconUrl": "https://pos.fateen1.me/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "fateen-pos"
+  },
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://pos.fateen1.me/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://pos.fateen1.me/",
+  "minSdkVersion": 19,
+  "orientation": "default",
+  "tokenVersion": 2,
+  "additionalTrustedOrigins": []
+}

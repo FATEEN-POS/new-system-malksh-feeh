@@ -1,0 +1,65 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "http://localhost:3000",
+    "distDir": "../"
+  },
+  "package": {
+    "productName": "Fateen POS",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "Business",
+      "copyright": "2024 Fateen POS",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [],
+      "identifier": "me.fateen1.pos",
+      "longDescription": "نظام إدارة المبيعات والمخازن الذكي",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "Fateen POS",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 768,
+        "resizable": true,
+        "title": "Fateen POS",
+        "width": 1280,
+        "url": "https://pos.fateen1.me/index.html"
+      }
+    ]
+  }
+}
