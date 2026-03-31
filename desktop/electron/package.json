@@ -1,68 +1,33 @@
-name: Build Android APK (TWA)
-
-on:
-  push:
-    branches:
-      - main
-      - 'copilot/**'
-  workflow_dispatch:
-
-env:
-  # The hosted origin used for the TWA / Digital Asset Links verification.
-  # Change to your custom domain if you have one configured.
-  TWA_ORIGIN: https://fateen-pos.github.io/test-pos
-
-jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Set up Java (required by Gradle)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
-      - name: Initialize TWA project
-        run: |
-          mkdir -p android-twa
-          cd android-twa
-          yes | bubblewrap init \
-            --manifest "${{ env.TWA_ORIGIN }}/manifest.json" \
-            --directory . \
-            --skipPwaValidation
-        env:
-          BUBBLEWRAP_SKIP_PROMPTS: "true"
-
-      - name: Build debug APK
-        run: |
-          cd android-twa
-          yes | bubblewrap build --skipPwaValidation
-        env:
-          BUBBLEWRAP_SKIP_PROMPTS: "true"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fateen-pos-android-debug
-          path: |
-            android-twa/app/build/outputs/apk/**/*.apk
-            android-twa/*.apk
-          retention-days: 30
-          if-no-files-found: warn
+{
+  "name": "fateen-pos-desktop",
+  "productName": "Fateen POS",
+  "version": "1.0.0",
+  "description": "Fateen POS – نظام لإدارة الفروع والمخازن (Desktop)",
+  "main": "main.js",
+  "author": "FATEEN-POS",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.fateen.pos.desktop",
+    "productName": "Fateen POS",
+    "publish": null,
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FATEEN-POS/test-pos.git"
+  }
+}
