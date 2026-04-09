@@ -1,36 +1,28 @@
 {
-  "packageId": "me.fateen1.pos",
+  "packageId": "com.fateen.pos",
   "host": "pos.fateen1.me",
   "name": "Fateen POS",
-  "launcherName": "فطين",
+  "launcherName": "Fateen POS",
   "display": "standalone",
-  "themeColor": "#00f2fe",
-  "navigationColor": "#080808",
-  "backgroundColor": "#080808",
+  "themeColor": "#0f172a",
+  "navigationColor": "#0f172a",
+  "navigationColorDark": "#0f172a",
+  "navigationDividerColor": "#0f172a",
+  "backgroundColor": "#0f172a",
   "enableNotifications": false,
-  "startUrl": "/index.html",
-  "iconUrl": "https://pos.fateen1.me/icons/icon-512.png",
+  "startUrl": "/",
+  "iconUrl": "https://pos.fateen1.me/icons/icon-512x512.png",
+  "maskableIconUrl": "https://pos.fateen1.me/icons/icon-512x512.png",
   "splashScreenFadeOutDuration": 300,
-  "signingKey": {
-    "path": "./android.keystore",
-    "alias": "fateen-pos"
+  "signing": {
+    "app": "android.keystore",
+    "keystore": "android.keystore",
+    "alias": "androiddebugkey",
+    "fullBackupContent": "true"
   },
-  "appVersionCode": 1,
-  "appVersionName": "1.0.0",
-  "shortcuts": [],
-  "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://pos.fateen1.me/manifest.json",
-  "fallbackType": "customtabs",
-  "features": {},
-  "alphaDependencies": {
-    "enabled": false
-  },
-  "enableSiteSettingsShortcut": true,
-  "isChromeOSOnly": false,
-  "isMetaQuest": false,
-  "fullScopeUrl": "https://pos.fateen1.me/",
-  "minSdkVersion": 19,
-  "orientation": "default",
-  "tokenVersion": 2,
-  "additionalTrustedOrigins": []
+  "orientation": "portrait",
+  "serviceWorker": {
+    "src": "sw.js",
+    "useCache": true
+  }
 }

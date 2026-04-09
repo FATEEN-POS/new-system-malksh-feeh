@@ -3,6 +3,20 @@
 
 ---
 
+## 🔌 Offline-First / بدون إنترنت
+
+Fateen POS now runs **fully offline** using IndexedDB — no cloud dependency required.
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Run local dev server on port 3000 |
+| `npm run build:android` | Build Android APK via Bubblewrap (TWA) |
+| `npm run build:win` | Build Windows EXE via Tauri |
+
+See **[MIGRATION_OFFLINE.md](./MIGRATION_OFFLINE.md)** for full details on the offline layer, first-run setup, subscription check, and build instructions.
+
+---
+
 ##  Overview / نظرة عامة
 
 **English:**

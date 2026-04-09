@@ -1,12 +1,17 @@
 {
   "name": "fateen-pos",
   "version": "1.0.0",
-  "description": "Fateen POS - Offline-first point of sale system",
+  "description": "Fateen POS – Offline-first Arabic Point of Sale system",
+  "private": true,
   "scripts": {
     "build:android": "bubblewrap build",
-    "build:win": "npx tauri build"
+    "build:win": "tauri build",
+    "init:android": "bubblewrap init --manifest https://fateen-pos.github.io/test-pos/manifest.json",
+    "dev": "npx http-server -p 3000 -o",
+    "preview": "npx http-server -p 3000"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.6.0"
+    "@bubblewrap/cli": "^1.21.1",
+    "@tauri-apps/cli": "^2.0.0"
   }
 }
